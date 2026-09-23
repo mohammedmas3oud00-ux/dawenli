@@ -1,0 +1,10 @@
+{
+  "name": "@bawsala/config",
+  "version": "0.1.0",
+  "private": true,
+  "files": [
+    "tsconfig.base.json",
+    "tsconfig.library.json",
+    "tsconfig.nextjs.json"
+  ]
+}
