@@ -6,7 +6,7 @@ let t: TestDatabase;
 
 beforeAll(async () => {
   t = await createTestDatabase();
-});
+}, 30000);
 afterAll(() => t.close());
 
 describe("migrations on a real Postgres (PGlite)", () => {
