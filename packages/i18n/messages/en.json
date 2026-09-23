@@ -1,0 +1,137 @@
+{
+  "app": {
+    "name": "Bawsala",
+    "tagline": "From vision to daily action"
+  },
+  "common": {
+    "save": "Save",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "loading": "Loading…",
+    "or": "or",
+    "back": "Back",
+    "saved": "Saved",
+    "error": "Something went wrong. Please try again.",
+    "requiredField": "This field is required"
+  },
+  "nav": {
+    "today": "Today",
+    "settings": "Settings",
+    "signOut": "Sign out",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu"
+  },
+  "theme": {
+    "label": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "locale": {
+    "label": "Language"
+  },
+  "auth": {
+    "login": {
+      "title": "Welcome back",
+      "subtitle": "Sign in to continue to your compass",
+      "submit": "Sign in",
+      "noAccount": "Don't have an account?",
+      "register": "Create one",
+      "magicLink": "Email me a sign-in link",
+      "magicLinkSent": "Check your inbox — we sent you a sign-in link.",
+      "google": "Continue with Google"
+    },
+    "register": {
+      "title": "Create your account",
+      "subtitle": "Start connecting your vision to your day",
+      "submit": "Create account",
+      "haveAccount": "Already have an account?",
+      "login": "Sign in",
+      "confirmEmail": "Almost there — confirm your email address to finish signing up."
+    },
+    "fields": {
+      "email": "Email",
+      "password": "Password",
+      "displayName": "Your name"
+    },
+    "errors": {
+      "invalidCredentials": "Incorrect email or password.",
+      "emailNotConfirmed": "Please confirm your email address first.",
+      "userExists": "An account with this email already exists.",
+      "weakPassword": "Password must be at least 8 characters.",
+      "invalidEmail": "Enter a valid email address.",
+      "oauthFailed": "Sign-in with the provider failed. Please try again.",
+      "generic": "Could not sign you in. Please try again."
+    }
+  },
+  "today": {
+    "greeting": {
+      "morning": "Good morning{name}",
+      "afternoon": "Good afternoon{name}",
+      "evening": "Good evening{name}"
+    },
+    "energy": {
+      "title": "How is your energy right now?",
+      "description": "Your answer tunes today's task recommendations.",
+      "levels": {
+        "1": "Drained",
+        "2": "Low",
+        "3": "Steady",
+        "4": "Good",
+        "5": "Peak"
+      },
+      "current": "Current energy: {level}",
+      "notSet": "Not set yet"
+    },
+    "nextUp": {
+      "title": "What's next in Bawsala",
+      "description": "Foundation is live: accounts, profile, language and theme. Goals, projects, tasks and habits arrive in the next release."
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "profile": {
+      "title": "Profile",
+      "description": "How Bawsala addresses you and shows dates."
+    },
+    "preferences": {
+      "title": "Preferences",
+      "description": "Language, theme and calendar."
+    },
+    "fields": {
+      "displayName": "Display name",
+      "timezone": "Time zone",
+      "weekStartsOn": "Week starts on",
+      "locale": "Language",
+      "theme": "Theme"
+    },
+    "weekdays": {
+      "0": "Sunday",
+      "1": "Monday",
+      "2": "Tuesday",
+      "3": "Wednesday",
+      "4": "Thursday",
+      "5": "Friday",
+      "6": "Saturday"
+    },
+    "account": {
+      "title": "Account",
+      "email": "Email",
+      "memberSince": "Member since {date}"
+    }
+  },
+  "errors": {
+    "UNAUTHORIZED": "You need to sign in.",
+    "FORBIDDEN": "You don't have access to this.",
+    "NOT_FOUND": "Not found.",
+    "VALIDATION_FAILED": "Some fields are invalid.",
+    "CONFLICT": "This conflicts with existing data.",
+    "RATE_LIMITED": "Too many requests. Slow down a little.",
+    "INTERNAL": "Something went wrong on our side."
+  },
+  "notFound": {
+    "title": "Page not found",
+    "description": "The page you're looking for doesn't exist.",
+    "home": "Go to Today"
+  }
+}

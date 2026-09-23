@@ -1,0 +1,86 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: var(--font-inter), var(--font-arabic), ui-sans-serif, system-ui, sans-serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+
+  --radius: 0.5rem;
+}
+
+:root {
+  --background: oklch(99% 0 0);
+  --foreground: oklch(18% 0 0);
+  --card: oklch(100% 0 0);
+  --card-foreground: oklch(18% 0 0);
+  --muted: oklch(96% 0 0);
+  --muted-foreground: oklch(48% 0 0);
+  --border: oklch(91% 0 0);
+  --input: oklch(91% 0 0);
+  --ring: oklch(55% 0.12 250);
+  --primary: oklch(45% 0.12 250);
+  --primary-foreground: oklch(99% 0 0);
+  --accent: oklch(94% 0.03 250);
+  --accent-foreground: oklch(30% 0.08 250);
+  --destructive: oklch(55% 0.18 25);
+  --destructive-foreground: oklch(99% 0 0);
+  --success: oklch(55% 0.13 150);
+  --success-foreground: oklch(99% 0 0);
+}
+
+.dark {
+  --background: oklch(15% 0 0);
+  --foreground: oklch(95% 0 0);
+  --card: oklch(19% 0 0);
+  --card-foreground: oklch(95% 0 0);
+  --muted: oklch(24% 0 0);
+  --muted-foreground: oklch(68% 0 0);
+  --border: oklch(28% 0 0);
+  --input: oklch(28% 0 0);
+  --ring: oklch(70% 0.1 250);
+  --primary: oklch(72% 0.1 250);
+  --primary-foreground: oklch(15% 0 0);
+  --accent: oklch(26% 0.03 250);
+  --accent-foreground: oklch(88% 0.05 250);
+  --destructive: oklch(62% 0.18 25);
+  --destructive-foreground: oklch(15% 0 0);
+  --success: oklch(65% 0.13 150);
+  --success-foreground: oklch(15% 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  :lang(ar) {
+    font-family: var(--font-arabic), var(--font-inter), system-ui, sans-serif;
+  }
+}
