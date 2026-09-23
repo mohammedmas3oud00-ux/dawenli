@@ -1,21 +1,19 @@
-import { and, asc, desc, eq, gt, gte, inArray, isNull, lte, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray, isNull, or, sql } from "drizzle-orm";
 import {
   AppError,
   computePriority,
   createTaskSchema,
   recommendTasks,
   updateTaskSchema,
-  type CreateTaskInput,
   type EisenhowerQuadrant,
+  type EnergyLevel,
   type ListTasksQuery,
-  type PriorityInput,
   type RecommendationsQuery,
-  type TaskStatus,
   type UpdateTaskInput,
 } from "@bawsala/core";
 import type { Database } from "../client";
 import { goals, tasks, type Task } from "../schema";
-import { fromNumeric, owned, softDelete, toNumeric, userPriorityContext } from "./_shared";
+import { owned, softDelete, toNumeric, userPriorityContext } from "./_shared";
 
 export type TaskWithSubtasks = Task & { subtasks: Task[] };
 
@@ -26,7 +24,7 @@ async function getGoalPriority(db: Database, userId: string, goalId: string | nu
     .select({ priority: goals.priority })
     .from(goals)
     .where(owned(goals.userId, goals.deletedAt, userId, goals.id, goalId));
-  return g ? fromNumeric(g.priority) : null;
+  return g ? g.priority : null;
 }
 
 export async function listTasks(
@@ -100,7 +98,7 @@ export async function createTask(
   today: string,
   raw: unknown,
 ): Promise<Task> {
-  const input: CreateTaskInput = createTaskSchema.parse(raw);
+  const input = createTaskSchema.parse(raw);
   const ctx = await userPriorityContext(db, userId, today);
   const goalPriority = await getGoalPriority(db, userId, input.goalId);
 
@@ -161,7 +159,7 @@ export async function updateTask(
   const mergedUrgency = patch.urgency !== undefined ? patch.urgency : current.urgency;
   const mergedImpact = patch.impact ?? current.impact;
   const mergedDifficulty = patch.difficulty ?? current.difficulty;
-  const mergedEnergy = patch.energy ?? (current.energy as any);
+  const mergedEnergy = patch.energy ?? (current.energy as EnergyLevel);
   const mergedDueDate = patch.dueDate !== undefined ? patch.dueDate : current.dueDate;
   const mergedGoalId = patch.goalId !== undefined ? patch.goalId : current.goalId;
 
@@ -247,7 +245,7 @@ export async function deleteTask(
 export async function getEisenhowerMatrix(
   db: Database,
   userId: string,
-  today: string,
+  _today: string,
 ): Promise<Record<EisenhowerQuadrant, Task[]>> {
   const allActiveTasks = await db
     .select()
@@ -304,7 +302,7 @@ export async function getTaskRecommendations(
     urgency: t.urgency,
     impact: t.impact,
     difficulty: t.difficulty,
-    energy: t.energy as any,
+    energy: t.energy as EnergyLevel,
     estimateMinutes: t.estimateMinutes,
     dueDate: t.dueDate,
   }));

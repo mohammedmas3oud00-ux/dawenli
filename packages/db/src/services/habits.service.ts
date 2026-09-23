@@ -1,14 +1,12 @@
-import { and, asc, desc, eq, gte, isNull, lte, sql } from "drizzle-orm";
+import { and, asc, eq, gte, isNull, lte, sql } from "drizzle-orm";
 import {
   AppError,
   computeStreak,
-  createHabitCategorySchema,
   createHabitSchema,
   logHabitSchema,
   normalisePrayerLog,
   prayersPerformed,
   updateHabitSchema,
-  type CreateHabitCategoryInput,
   type CreateHabitInput,
   type HabitFrequency,
   type LogHabitInput,
@@ -181,6 +179,72 @@ export async function logHabit(
     const normalised = normalisePrayerLog(metadata);
     logValue = prayersPerformed(normalised);
     metadata = normalised as Record<string, unknown>;
+  }
+
+  if (logValue <= 0) {
+    await db
+      .delete(habitLogs)
+      .where(
+        and(
+          eq(habitLogs.habitId, habitId),
+          eq(habitLogs.userId, userId),
+          eq(habitLogs.logDate, input.date),
+        ),
+      );
+
+    const allLogs = await db
+      .select({
+        logDate: habitLogs.logDate,
+        completed: habitLogs.completed,
+      })
+      .from(habitLogs)
+      .where(and(eq(habitLogs.habitId, habitId), eq(habitLogs.userId, userId), isNull(habitLogs.deletedAt)))
+      .orderBy(asc(habitLogs.logDate));
+
+    const [profile] = await db
+      .select({ weekStartsOn: profiles.weekStartsOn })
+      .from(profiles)
+      .where(eq(profiles.id, userId));
+
+    const streakResult = computeStreak(
+      allLogs,
+      {
+        frequency: habit.frequency as HabitFrequency,
+        daysOfWeek: habit.daysOfWeek,
+        targetCount: habit.targetCount,
+      },
+      {
+        today,
+        weekStartsOn: profile?.weekStartsOn ?? 0,
+      },
+    );
+
+    await db
+      .update(habits)
+      .set({
+        currentStreak: streakResult.current,
+        longestStreak: streakResult.longest,
+        updatedAt: sql`now()`,
+      })
+      .where(eq(habits.id, habitId));
+
+    return {
+      log: {
+        id: "",
+        userId,
+        habitId,
+        logDate: input.date,
+        value: "0",
+        completed: false,
+        metadata: null,
+        note: null,
+        deletedAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      currentStreak: streakResult.current,
+      longestStreak: streakResult.longest,
+    };
   }
 
   const isCompleted = logValue >= (fromNumeric(habit.targetValue) ?? habit.targetCount ?? 1);

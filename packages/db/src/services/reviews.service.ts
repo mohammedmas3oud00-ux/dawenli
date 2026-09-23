@@ -6,7 +6,7 @@ import {
   type UpsertReviewInput,
 } from "@bawsala/core";
 import type { Database } from "../client";
-import { reviews, templates, type Review, type Template } from "../schema";
+import { reviews, type Review } from "../schema";
 import { owned, softDelete } from "./_shared";
 
 export async function listReviews(

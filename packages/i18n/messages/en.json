@@ -16,6 +16,13 @@
   },
   "nav": {
     "today": "Today",
+    "dashboard": "Dashboard",
+    "goals": "Goals",
+    "projects": "Projects",
+    "tasks": "Tasks",
+    "habits": "Habits",
+    "focus": "Focus",
+    "reviews": "Reviews",
     "settings": "Settings",
     "signOut": "Sign out",
     "openMenu": "Open menu",

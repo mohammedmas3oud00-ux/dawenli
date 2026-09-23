@@ -2,6 +2,8 @@ import { AppError } from "@bawsala/core";
 import type { User } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
+export type CurrentUser = User;
+
 export async function getCurrentUser(): Promise<User | null> {
   const supabase = await createSupabaseServerClient();
   const {

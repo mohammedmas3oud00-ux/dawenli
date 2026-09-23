@@ -1,21 +1,31 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
+  createArea,
+  createGoal,
   createHabit,
   createProject,
   createTask,
   deleteHabit,
   deleteTask,
+  findProjectByName,
   getEisenhowerMatrix,
+  getGoal,
   getHabit,
   getLatestReview,
+  getProject,
   getTask,
   getTaskRecommendations,
   getTodayHabitsStatus,
+  listAreas,
+  listGoals,
   listHabits,
+  listProjects,
   listReviews,
   listTasks,
   logHabit,
+  updateGoal,
   updateHabit,
+  updateProject,
   updateTask,
   upsertReview,
 } from "../src/services";
@@ -194,3 +204,72 @@ describe("Reviews Service", () => {
     expect(allDaily.some((r) => r.id === review.id)).toBe(true);
   });
 });
+
+describe("Areas, Goals, and Projects Services", () => {
+  it("creates areas, goals, and projects and links them with progress rollup", async () => {
+    const today = "2026-09-23";
+
+    // 1. Create an Area
+    const area = await createArea(t.db, userId, {
+      name: "Health & Fitness",
+      icon: "activity",
+      color: "#10b981",
+    });
+    expect(area.id).toBeDefined();
+    expect(area.name).toBe("Health & Fitness");
+
+    const areas = await listAreas(t.db, userId);
+    expect(areas.some((a) => a.id === area.id)).toBe(true);
+
+    // 2. Create a Goal
+    const goal = await createGoal(t.db, userId, {
+      title: "Run 10km Marathon",
+      horizon: "annual",
+      priority: 4,
+      areaId: area.id,
+    });
+    expect(goal.id).toBeDefined();
+    expect(goal.title).toBe("Run 10km Marathon");
+
+    const fetchedGoal = await getGoal(t.db, userId, goal.id);
+    expect(fetchedGoal.id).toBe(goal.id);
+
+    const updatedGoal = await updateGoal(t.db, userId, goal.id, {
+      priority: 5,
+    });
+    expect(updatedGoal.priority).toBe(5);
+
+    // 3. Create a Project linked to Goal
+    const project = await createProject(t.db, userId, {
+      title: "Marathon Training Program",
+      goalId: goal.id,
+      areaId: area.id,
+      status: "active",
+      weight: 1,
+    });
+    expect(project.id).toBeDefined();
+    expect(project.title).toBe("Marathon Training Program");
+
+    const fetchedProject = await getProject(t.db, userId, project.id, today);
+    expect(fetchedProject?.id).toBe(project.id);
+    expect(fetchedProject?.progress).toBeDefined();
+
+    // 4. Test findProjectByName
+    const foundProject = await findProjectByName(t.db, userId, "marathon training program");
+    expect(foundProject?.id).toBe(project.id);
+
+    // 5. Update Project
+    const updatedProject = await updateProject(t.db, userId, project.id, {
+      status: "completed",
+    });
+    expect(updatedProject.status).toBe("completed");
+
+    // 6. List Goals and Projects
+    const goalsList = await listGoals(t.db, userId, { horizon: "annual" });
+    expect(goalsList.some((g) => g.id === goal.id)).toBe(true);
+
+    const projectsList = await listProjects(t.db, userId, today);
+    expect(projectsList.some((p) => p.id === project.id)).toBe(true);
+  });
+});
+

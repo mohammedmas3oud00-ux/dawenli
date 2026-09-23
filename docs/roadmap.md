@@ -26,34 +26,36 @@
 ## Phase 2 — نظام الإنتاجية الأساسي (6-8 أسابيع)
 
 ### 2.1 الهرم (أسبوعان)
-- [ ] migration `0002_hierarchy` + RLS + progress triggers
+- [x] migration `0002_hierarchy` + RLS + progress triggers
 - [ ] Vision: صفحة واحدة، تحرير النص، عرض الأهداف المرتبطة
 - [ ] Areas: CRUD + أيقونات
-- [ ] Goals: CRUD، الهرم (annual → quarterly → monthly)، metric، manual progress
-- [ ] Projects: CRUD، ربط بهدف/مجال، شريط تقدم
+- [x] Goals: CRUD، الهرم (annual → quarterly → monthly → life)، metric، manual progress
+- [x] Projects: CRUD، ربط بهدف/مجال، شريط تقدم
 
 ### 2.2 المهام ومحرك الأولويات (أسبوعان)
-- [ ] Tasks CRUD + Subtasks + Quick add (لغة طبيعية بسيطة: `#project`, `!p1`, `@tomorrow`)
-- [ ] `engines/priority.ts` + اختبارات + Eisenhower matrix view
-- [ ] Views: Today، Inbox، Upcoming، by Project
+- [x] Tasks CRUD + Subtasks + Quick add (لغة طبيعية بسيطة: `#project`, `!p1`, `@tomorrow`)
+- [x] `engines/priority.ts` + اختبارات + Eisenhower matrix view
+- [x] Views: Today، Inbox، Upcoming، by Project
 - [ ] Recurrence (RRULE) للمهام المتكررة
-- [ ] `/api/v1/tasks/recommendations`
-- [ ] صفحة Today: مهام اليوم مرتبة + "لماذا هذه المهمة؟" (سلسلة Task → Project → Goal → Vision)
+- [x] `/api/v1/tasks/recommendations`
+- [x] صفحة Today: مهام اليوم مرتبة + "لماذا هذه المهمة؟" (سلسلة Task → Project → Goal → Vision)
 
 ### 2.3 العادات (أسبوعان)
-- [ ] migration `0003_habits` + seed الفئات
-- [ ] Habits CRUD (daily/weekly/monthly، value types)
-- [ ] Habit logs + `engines/streaks.ts` + pg_cron
-- [ ] القسم الروحي: preset الصلوات الخمس (on_time/late/missed/jamaah)، تتبع القرآن بالصفحات، الأذكار كـ checklist
+- [x] migration `0003_habits` + seed الفئات
+- [x] Habits CRUD (daily/weekly/monthly، value types)
+- [x] Habit logs + `engines/streaks.ts`
+- [x] القسم الروحي: preset الصلوات الخمس (on_time/late/missed/jamaah)، تتبع القرآن بالصفحات، الأذكار كـ checklist
 - [ ] Analytics: Heatmap سنوي، نسبة الإنجاز، أطول Streak
 
 ### 2.4 المراجعات (أسبوع)
-- [ ] migration `0004_templates_reviews` + قوالب النظام
-- [ ] Daily review: مزاج، طاقة، إنجازات، إخفاقات، دروس، تخطيط الغد (يحدّث `profiles.current_energy`)
+- [x] migration `0004_templates_reviews` + قوالب النظام
+- [x] Daily review: مزاج، طاقة، إنجازات، إخفاقات، دروس، تخطيط الغد (يحدّث `profiles.current_energy`)
 - [ ] Weekly review: snapshot آلي (مهام، مشاريع، عادات) + أسئلة القالب
 - [ ] Monthly / Quarterly / Yearly: نفس المحرك بقوالب مختلفة
 
-### 2.5 التلميع (أسبوع)
+### 2.5 التلميع ولوحة القيادة (أسبوع)
+- [x] Dashboard: مؤشرات KPI موحدة + أولويات Eisenhower Q1 + معمارية الربط الهرمي
+- [x] Focus Flowtime Timer: جلسات العمل العميق المرنة والمؤقت الصوتي
 - [ ] Progress tree (Top-down) في صفحة Vision
 - [ ] تصدير البيانات JSON + حذف الحساب
 - [ ] PWA: manifest + service worker + أيقونات

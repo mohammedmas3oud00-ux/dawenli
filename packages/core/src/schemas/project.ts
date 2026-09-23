@@ -30,7 +30,7 @@ export const createProjectSchema = projectBase.refine(datesAreOrdered, {
   message: "dueDate must be on or after startDate",
   path: ["dueDate"],
 });
-export type CreateProjectInput = z.infer<typeof createProjectSchema>;
+export type CreateProjectInput = z.input<typeof createProjectSchema>;
 
 export const updateProjectSchema = projectBase.partial().refine(datesAreOrdered, {
   message: "dueDate must be on or after startDate",

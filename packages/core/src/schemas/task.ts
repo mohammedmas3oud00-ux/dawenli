@@ -30,7 +30,7 @@ export const createTaskSchema = z.object({
   recurrenceRule: z.string().max(500).nullable().optional(),
   sortOrder: sortOrderSchema.default(0),
 });
-export type CreateTaskInput = z.infer<typeof createTaskSchema>;
+export type CreateTaskInput = z.input<typeof createTaskSchema>;
 
 export const updateTaskSchema = createTaskSchema.partial();
 export type UpdateTaskInput = z.infer<typeof updateTaskSchema>;

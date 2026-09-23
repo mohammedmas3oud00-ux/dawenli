@@ -1,6 +1,18 @@
 "use client";
 
-import { Menu, Settings, Sun, X } from "lucide-react";
+import {
+  BookOpenCheck,
+  CheckSquare,
+  Flame,
+  FolderKanban,
+  LayoutDashboard,
+  Menu,
+  Settings,
+  Sun,
+  Target,
+  Timer,
+  X,
+} from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -26,14 +38,42 @@ export function MobileNav() {
       {open ? (
         <nav
           id="mobile-nav"
-          className="absolute inset-x-0 top-14 z-20 flex flex-col gap-1 border-b bg-background p-3 shadow-md"
+          className="absolute inset-x-0 top-14 z-20 flex flex-col gap-1 border-b bg-background p-3 shadow-lg"
         >
           <NavLink href="/today" onClick={close}>
-            <Sun aria-hidden />
+            <Sun aria-hidden className="size-4" />
             {t("today")}
           </NavLink>
+          <NavLink href="/dashboard" onClick={close}>
+            <LayoutDashboard aria-hidden className="size-4" />
+            {t("dashboard")}
+          </NavLink>
+          <NavLink href="/goals" onClick={close}>
+            <Target aria-hidden className="size-4" />
+            {t("goals")}
+          </NavLink>
+          <NavLink href="/projects" onClick={close}>
+            <FolderKanban aria-hidden className="size-4" />
+            {t("projects")}
+          </NavLink>
+          <NavLink href="/tasks" onClick={close}>
+            <CheckSquare aria-hidden className="size-4" />
+            {t("tasks")}
+          </NavLink>
+          <NavLink href="/habits" onClick={close}>
+            <Flame aria-hidden className="size-4 text-amber-500" />
+            {t("habits")}
+          </NavLink>
+          <NavLink href="/focus" onClick={close}>
+            <Timer aria-hidden className="size-4 text-emerald-500" />
+            {t("focus")}
+          </NavLink>
+          <NavLink href="/reviews" onClick={close}>
+            <BookOpenCheck aria-hidden className="size-4" />
+            {t("reviews")}
+          </NavLink>
           <NavLink href="/settings" onClick={close}>
-            <Settings aria-hidden />
+            <Settings aria-hidden className="size-4" />
             {t("settings")}
           </NavLink>
         </nav>

@@ -101,9 +101,14 @@ export async function createProject(
   input: CreateProjectInput,
 ): Promise<Project> {
   const data = createProjectSchema.parse(input);
+  const { weight, ...rest } = data;
   const [row] = await db
     .insert(projects)
-    .values({ ...toRow(data), userId })
+    .values({
+      ...rest,
+      userId,
+      weight: toNumeric(weight) ?? undefined,
+    })
     .returning();
   return row!;
 }

@@ -75,9 +75,16 @@ function toRow(data: Partial<CreateGoalInput>) {
 export async function createGoal(db: Database, userId: string, input: CreateGoalInput): Promise<Goal> {
   const data = createGoalSchema.parse(input);
   if (data.parentId) await assertOwnedGoal(db, userId, data.parentId);
+  const { metricTarget, metricCurrent, manualProgress, ...rest } = data;
   const [row] = await db
     .insert(goals)
-    .values({ ...toRow(data), userId })
+    .values({
+      ...rest,
+      userId,
+      metricTarget: toNumeric(metricTarget),
+      metricCurrent: toNumeric(metricCurrent),
+      manualProgress: toNumeric(manualProgress),
+    })
     .returning();
   return row!;
 }

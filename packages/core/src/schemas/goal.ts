@@ -37,7 +37,7 @@ export const createGoalSchema = goalBase.refine(periodIsOrdered, {
   message: "periodEnd must be on or after periodStart",
   path: ["periodEnd"],
 });
-export type CreateGoalInput = z.infer<typeof createGoalSchema>;
+export type CreateGoalInput = z.input<typeof createGoalSchema>;
 
 export const updateGoalSchema = goalBase.partial().refine(periodIsOrdered, {
   message: "periodEnd must be on or after periodStart",

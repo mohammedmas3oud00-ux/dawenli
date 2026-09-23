@@ -27,6 +27,30 @@ export class AppError extends Error {
     this.details = details;
   }
 
+  static notFound(message?: string, details?: unknown) {
+    return new AppError("NOT_FOUND", message, details);
+  }
+
+  static unauthorized(message?: string, details?: unknown) {
+    return new AppError("UNAUTHORIZED", message, details);
+  }
+
+  static forbidden(message?: string, details?: unknown) {
+    return new AppError("FORBIDDEN", message, details);
+  }
+
+  static validationFailed(message?: string, details?: unknown) {
+    return new AppError("VALIDATION_FAILED", message, details);
+  }
+
+  static conflict(message?: string, details?: unknown) {
+    return new AppError("CONFLICT", message, details);
+  }
+
+  static internal(message?: string, details?: unknown) {
+    return new AppError("INTERNAL", message, details);
+  }
+
   toJSON() {
     return {
       error: {
