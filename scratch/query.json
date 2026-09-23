@@ -1,0 +1,1 @@
+{"query": "query { group(fullPath: \"labeeb-group1863239\") { id name duoWorkflowStatus { enabled } } }"}

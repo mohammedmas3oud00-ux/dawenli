@@ -1,10 +1,13 @@
 import { and, asc, eq, gte, isNull, lte, sql } from "drizzle-orm";
 import {
   AppError,
+  adhkarPerformed,
   computeStreak,
   createHabitSchema,
   logHabitSchema,
+  normaliseAdhkarLog,
   normalisePrayerLog,
+  normaliseQuranLog,
   prayersPerformed,
   updateHabitSchema,
   type CreateHabitInput,
@@ -174,10 +177,18 @@ export async function logHabit(
   let logValue = input.value;
   let metadata = input.metadata ?? null;
 
-  // Handle spiritual prayer preset
+  // Handle spiritual presets
   if (habit.preset === "prayers" && metadata) {
     const normalised = normalisePrayerLog(metadata);
     logValue = prayersPerformed(normalised);
+    metadata = normalised as Record<string, unknown>;
+  } else if (habit.preset === "adhkar" && metadata) {
+    const normalised = normaliseAdhkarLog(metadata);
+    logValue = adhkarPerformed(normalised);
+    metadata = normalised as Record<string, unknown>;
+  } else if (habit.preset === "quran" && metadata) {
+    const normalised = normaliseQuranLog(metadata, input.value);
+    logValue = normalised.pagesRead;
     metadata = normalised as Record<string, unknown>;
   }
 

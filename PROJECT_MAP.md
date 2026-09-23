@@ -86,6 +86,8 @@ d:\0.Bawsala/
 | **Goals** | `goals.service.ts` | `listGoals`, `getGoal`, `createGoal`, `updateGoal`, `deleteGoal`, `buildGoalTree` |
 | **Projects** | `projects.service.ts` | `listProjects`, `getProject`, `createProject`, `updateProject`, `deleteProject`, `findProjectByName` |
 | **Visions/Areas** | `hierarchy.service.ts` | `getVision`, `upsertVision`, `listAreas`, `createArea`, `deleteArea` |
+| **Time Tracking** | `time.service.ts` | `logTimeEntry`, `listTimeEntries`, `getTimeStats` |
+| **Knowledge** | `knowledge.service.ts` | `listNotes`, `getNote`, `createNote`, `updateNote`, `deleteNote`, `listResources`, `createResource`, `updateResource`, `deleteResource` |
 
 ---
 
@@ -94,12 +96,13 @@ d:\0.Bawsala/
 | Route | Name (Ar / En) | Purpose & Key Features |
 |---|---|---|
 | `/[locale]/dashboard` | لوحة القيادة / Dashboard | KPI metrics, Q1 urgent tasks, bottom-up alignment visualizer, energy cockpit |
-| `/[locale]/today` | اليوم / Today | Morning greeting, energy rating check-in (1-5), today's scheduled tasks |
+| `/[locale]/today` | اليوم / Today | Morning greeting, energy rating check-in (1-5), today's scheduled tasks, focus launcher, spiritual trackers |
 | `/[locale]/tasks` | المهام / Tasks | Eisenhower 2x2 matrix, quick-add parser (`@date !p1 #proj ~30m ^high`), task recommendations |
 | `/[locale]/goals` | الأهداف / Goals | Goals by horizon (life, annual, quarterly, monthly), progress rollup from projects/tasks |
 | `/[locale]/projects` | المشاريع / Projects | Active/completed projects, health status (`on_track`, `at_risk`, `completed`), progress bar |
-| `/[locale]/habits` | العادات / Habits | Daily habits, current & longest streak, Islamic 5-prayer tracker (jamaah, on-time, late, missed) |
-| `/[locale]/focus` | التركيز / Focus | Flowtime & Pomodoro timer, audio chime alert, task linkage |
+| `/[locale]/habits` | العادات / Habits | Daily habits, current & longest streak, Islamic 5-prayer tracker, Quran reading, Morning/Evening Adhkar |
+| `/[locale]/focus` | التركيز / Focus | Flowtime & Pomodoro timer, audio chime alert, automated time session logging to `time_entries` |
+| `/[locale]/knowledge` | المعرفة / Knowledge | Second Brain notes with `[[wikilinks]]`, learning library for books/courses/articles with status and ratings |
 | `/[locale]/reviews` | المراجعات / Reviews | Evening reflection form (mood, energy, wins, lessons) and history timeline |
 | `/[locale]/settings` | الإعدادات / Settings | Profile name, timezone, week starts on, theme toggle (light/dark/system) |
 
@@ -109,9 +112,9 @@ d:\0.Bawsala/
 
 | Quality Gate | Tooling | Status | Details |
 |---|---|---|---|
-| **TypeScript Build** | Turbopack / Next.js | ✅ **Passing** | Zero compile errors across all 27 routes |
+| **TypeScript Build** | Turbopack / Next.js | ✅ **Passing** | Zero compile errors across all 29 routes |
 | **Linting** | ESLint 9 + Prettier | ✅ **Passing** | 0 errors across `@bawsala/core`, `@bawsala/db`, `@bawsala/web` |
-| **Test Suite** | Vitest + PGlite | ✅ **Passing** | 149/149 tests passing (104 core, 20 db, 19 web, 6 i18n) |
+| **Test Suite** | Vitest + PGlite | ✅ **Passing** | 162/162 tests passing (113 core, 24 db, 19 web, 6 i18n) |
 | **Database Migrations** | PostgreSQL / PGlite | ✅ **Passing** | Real in-memory postgres migrations & service integration tests |
 | **AI Peer Review** | GitLab Duo CLI / Claude | ✅ **Audited** | Claude Fable 5.1 review executed, feedback addressed |
 
@@ -119,11 +122,12 @@ d:\0.Bawsala/
 
 ## 6. Upcoming Milestones (Roadmap Next Steps)
 
-1. **Phase 2.5 Polish:**
-   - Expand `today/page.tsx` to directly embed today's prioritized task list and prayer tracker.
-   - Add specialized checklist UI for Quran reading (page tracking) and Adhkar presets.
-2. **Phase 3 — Knowledge & Time Management:**
-   - Notes & Second Brain with wikilinks (`[[link]]`).
-   - Time tracking entries linked to tasks and projects.
+1. **Phase 2.5 Polish:** ✅ **Completed**
+   - Expanded `today/page.tsx` into a central execution cockpit (recommended task, quick start focus session, quick-add bar, today's action checklist).
+   - Added specialized spiritual tracker widgets (`PrayerTracker`, `QuranTracker`, `AdhkarTracker`) with streak and progress calculation.
+2. **Phase 3 — Knowledge & Time Management:** ✅ **Completed**
+   - Notes & Second Brain with wikilinks (`[[link]]`) and categories.
+   - Learning library for books, courses, articles with reading status and star ratings.
+   - Automated time tracking entries (`time_entries` table) linked to tasks, projects, and focus sessions.
 3. **Phase 4 — AI Integrations:**
    - Automated weekly review summaries and task breakdown engine.

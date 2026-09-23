@@ -1,10 +1,11 @@
 "use server";
 
 import { getLocale, getTranslations } from "next-intl/server";
+import { cookies } from "next/headers";
 import { redirect as redirectExternal } from "next/navigation";
 import { redirect } from "@/i18n/navigation";
 import type { ActionResult } from "@/lib/action-result";
-import { publicEnv } from "@/lib/env";
+import { hasSupabaseEnv, publicEnv } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { authErrorKey, loginSchema, magicLinkSchema, registerSchema, safeNextPath } from "./schemas";
 
@@ -29,6 +30,25 @@ export async function signInWithPassword(
   });
   if (!parsed.success) {
     return { status: "error", message: t("invalidEmail"), fieldErrors: fieldErrors(parsed.error) };
+  }
+
+  // Demo Mode login check (when using demo credentials, or DEMO_MODE, or no Supabase env)
+  const isDemo =
+    parsed.data.email === "demo@bawsala.life" ||
+    parsed.data.email.startsWith("demo") ||
+    process.env.DEMO_MODE === "true" ||
+    !hasSupabaseEnv();
+
+  if (isDemo) {
+    const cookieStore = await cookies();
+    cookieStore.set("bawsala_demo_session", "1", {
+      path: "/",
+      httpOnly: true,
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 7,
+    });
+    redirect({ href: safeNextPath(parsed.data.next, "/today"), locale: await getLocale() });
+    return { status: "success" };
   }
 
   const supabase = await createSupabaseServerClient();
@@ -120,8 +140,14 @@ export async function signInWithGoogle(formData: FormData): Promise<void> {
 }
 
 export async function signOut(): Promise<void> {
-  const supabase = await createSupabaseServerClient();
-  await supabase.auth.signOut();
+  const cookieStore = await cookies();
+  cookieStore.delete("bawsala_demo_session");
+  try {
+    const supabase = await createSupabaseServerClient();
+    await supabase.auth.signOut();
+  } catch {
+    // Ignore Supabase signout error in demo mode
+  }
   const locale = await getLocale();
   redirect({ href: "/login", locale });
 }

@@ -1,8 +1,12 @@
 import {
+  adhkarPerformed,
   isPrayerStatus,
+  normaliseAdhkarLog,
   normalisePrayerLog,
+  normaliseQuranLog,
   prayerQualityScore,
   prayersPerformed,
+  quranProgressPercent,
 } from "../src/engines/spiritual";
 
 describe("normalisePrayerLog", () => {
@@ -45,3 +49,41 @@ describe("prayersPerformed / prayerQualityScore", () => {
     expect(prayerQualityScore({ fajr: "jamaah", dhuhr: "on_time", asr: "late", maghrib: "missed" })).toBe(48);
   });
 });
+
+describe("Quran helpers", () => {
+  it("normalises Quran metadata safely", () => {
+    expect(normaliseQuranLog({ pagesRead: 10, currentPage: 120, juz: 6 })).toEqual({
+      pagesRead: 10,
+      currentPage: 120,
+      juz: 6,
+    });
+    expect(normaliseQuranLog(null, 5)).toEqual({ pagesRead: 5 });
+    expect(normaliseQuranLog({ pagesRead: -2 })).toEqual({ pagesRead: 0 });
+    expect(normaliseQuranLog({ currentPage: 700 })).toEqual({ pagesRead: 0, currentPage: 604 });
+  });
+
+  it("computes progress percent correctly", () => {
+    expect(quranProgressPercent(5, 20)).toBe(25);
+    expect(quranProgressPercent(25, 20)).toBe(100);
+    expect(quranProgressPercent(0, 20)).toBe(0);
+    expect(quranProgressPercent(5, 0)).toBe(0);
+  });
+});
+
+describe("Adhkar helpers", () => {
+  it("normalises Adhkar metadata correctly", () => {
+    expect(normaliseAdhkarLog({ morning: true, evening: false })).toEqual({
+      morning: true,
+      evening: false,
+    });
+    expect(normaliseAdhkarLog("invalid")).toEqual({});
+  });
+
+  it("counts adhkar completed correctly", () => {
+    expect(adhkarPerformed({ morning: true, evening: true })).toBe(2);
+    expect(adhkarPerformed({ morning: true })).toBe(1);
+    expect(adhkarPerformed({ morning: false, evening: false })).toBe(0);
+    expect(adhkarPerformed({})).toBe(0);
+  });
+});
+

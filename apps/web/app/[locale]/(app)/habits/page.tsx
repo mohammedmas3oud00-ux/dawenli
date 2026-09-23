@@ -7,8 +7,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { createHabitAction } from "@/features/habits/actions";
+import { AdhkarTracker } from "@/features/habits/components/adhkar-tracker";
 import { HabitItem } from "@/features/habits/components/habit-item";
 import { PrayerTracker } from "@/features/habits/components/prayer-tracker";
+import { QuranTracker } from "@/features/habits/components/quran-tracker";
 import { getHabitsWithStatusForUser } from "@/features/habits/queries";
 import { requireUser } from "@/lib/auth";
 import type { LocaleParams } from "@/lib/types";
@@ -26,7 +28,11 @@ export default async function HabitsPage({ params }: { params: LocaleParams }) {
   const habits = await getHabitsWithStatusForUser(user);
 
   const prayerHabit = habits.find((h) => h.preset === "prayers");
-  const regularHabits = habits.filter((h) => h.preset !== "prayers");
+  const quranHabit = habits.find((h) => h.preset === "quran");
+  const adhkarHabit = habits.find((h) => h.preset === "adhkar");
+  const regularHabits = habits.filter(
+    (h) => h.preset !== "prayers" && h.preset !== "quran" && h.preset !== "adhkar",
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -67,10 +73,10 @@ export default async function HabitsPage({ params }: { params: LocaleParams }) {
         </CardContent>
       </Card>
 
-      {/* Islamic Prayers Preset Widget if configured */}
-      {prayerHabit ? (
-        <PrayerTracker habit={prayerHabit} locale={locale} />
-      ) : null}
+      {/* Spiritual Presets Section if configured */}
+      {prayerHabit && <PrayerTracker habit={prayerHabit} locale={locale} />}
+      {quranHabit && <QuranTracker habit={quranHabit} locale={locale} />}
+      {adhkarHabit && <AdhkarTracker habit={adhkarHabit} locale={locale} />}
 
       {/* Regular Habits */}
       <div className="flex flex-col gap-3">

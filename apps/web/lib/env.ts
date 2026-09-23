@@ -47,9 +47,14 @@ export function serverEnv() {
   return serverCache;
 }
 
-/** True when the public Supabase variables are present (used by health checks). */
+/** True when real public Supabase variables are present (used by health checks and auth proxy). */
 export function hasSupabaseEnv(): boolean {
-  return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+  if (process.env.DEMO_MODE === "true") return false;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return false;
+  if (url.includes("<project-ref>") || key.includes("dummy")) return false;
+  return true;
 }
 
 export function hasDatabaseEnv(): boolean {

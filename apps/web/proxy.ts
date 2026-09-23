@@ -19,6 +19,18 @@ export default async function proxy(request: NextRequest) {
   // A redirect (e.g. "/" → "/ar") needs no auth work.
   if (response.status >= 300 && response.status < 400) return response;
 
+  const isDemo = request.cookies.get("bawsala_demo_session")?.value === "1";
+  if (isDemo) {
+    const decision = decide(analyseRoute(request.nextUrl.pathname), true, request.nextUrl.search);
+    if (decision.action === "allow") return response;
+
+    const url = request.nextUrl.clone();
+    url.pathname = decision.pathname;
+    url.search = "";
+    if (decision.next) url.searchParams.set("next", decision.next);
+    return copyCookies(response, NextResponse.redirect(url));
+  }
+
   if (!hasSupabaseEnv()) return response;
 
   const user = await refreshSupabaseSession(request, response);

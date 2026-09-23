@@ -16,11 +16,14 @@ export async function createHabitAction(formData: FormData): Promise<void> {
 
   if (!name) return;
 
+  const targetCount =
+    preset === "prayers" ? 5 : preset === "adhkar" ? 2 : preset === "quran" ? 4 : 1;
+
   await createHabit(db(), user.id, {
     name,
     frequency,
     preset,
-    targetCount: preset === "prayers" ? 5 : 1,
+    targetCount,
   });
 
   revalidatePath("/[locale]/habits", "page");
@@ -78,11 +81,108 @@ export async function logPrayerAction(habitId: string, prayer: string, status: s
   return { ok: true };
 }
 
+export async function logQuranAction(
+  habitId: string,
+  pagesRead: number,
+  currentPage?: number,
+  existingMetadata: Record<string, unknown> = {},
+) {
+  const user = await requireUser();
+  const profile = await getProfileForUser(user);
+  const now = new Date();
+  const today = new Intl.DateTimeFormat("en-CA", {
+    timeZone: profile.timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
+
+  const updatedMetadata = {
+    ...existingMetadata,
+    pagesRead,
+    ...(currentPage !== undefined ? { currentPage } : {}),
+  };
+
+  await logHabit(db(), user.id, habitId, today, {
+    date: today,
+    value: pagesRead,
+    metadata: updatedMetadata,
+  });
+
+  revalidatePath("/[locale]/habits", "page");
+  revalidatePath("/[locale]/today", "page");
+  revalidatePath("/[locale]/dashboard", "page");
+  return { ok: true };
+}
+
+export async function logAdhkarAction(
+  habitId: string,
+  period: "morning" | "evening",
+  completed: boolean,
+  existingMetadata: Record<string, unknown> = {},
+) {
+  const user = await requireUser();
+  const profile = await getProfileForUser(user);
+  const now = new Date();
+  const today = new Intl.DateTimeFormat("en-CA", {
+    timeZone: profile.timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
+
+  const updatedMetadata = {
+    ...existingMetadata,
+    [period]: completed,
+  };
+
+  const performed = (updatedMetadata.morning ? 1 : 0) + (updatedMetadata.evening ? 1 : 0);
+
+  await logHabit(db(), user.id, habitId, today, {
+    date: today,
+    value: performed,
+    metadata: updatedMetadata,
+  });
+
+  revalidatePath("/[locale]/habits", "page");
+  revalidatePath("/[locale]/today", "page");
+  revalidatePath("/[locale]/dashboard", "page");
+  return { ok: true };
+}
+
 export async function deleteHabitAction(habitId: string) {
   const user = await requireUser();
   await deleteHabit(db(), user.id, habitId);
 
   revalidatePath("/[locale]/habits", "page");
+  revalidatePath("/[locale]/today", "page");
   revalidatePath("/[locale]/dashboard", "page");
   return { ok: true };
 }
+
+export async function seedSpiritualHabitsAction(): Promise<void> {
+  const user = await requireUser();
+  await createHabit(db(), user.id, {
+    name: "الصلوات الخمس",
+    frequency: "daily",
+    preset: "prayers",
+    targetCount: 5,
+  });
+  await createHabit(db(), user.id, {
+    name: "ورد القرآن اليومي",
+    frequency: "daily",
+    preset: "quran",
+    targetCount: 4,
+  });
+  await createHabit(db(), user.id, {
+    name: "أذكار الصباح والمساء",
+    frequency: "daily",
+    preset: "adhkar",
+    targetCount: 2,
+  });
+
+  revalidatePath("/[locale]/habits", "page");
+  revalidatePath("/[locale]/today", "page");
+  revalidatePath("/[locale]/dashboard", "page");
+}
+

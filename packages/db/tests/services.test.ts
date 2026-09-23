@@ -3,7 +3,9 @@ import {
   createArea,
   createGoal,
   createHabit,
+  createNote,
   createProject,
+  createResource,
   createTask,
   deleteHabit,
   deleteTask,
@@ -15,14 +17,19 @@ import {
   getProject,
   getTask,
   getTaskRecommendations,
+  getTimeStats,
   getTodayHabitsStatus,
   listAreas,
   listGoals,
   listHabits,
+  listNotes,
   listProjects,
+  listResources,
   listReviews,
   listTasks,
+  listTimeEntries,
   logHabit,
+  logTimeEntry,
   updateGoal,
   updateHabit,
   updateProject,
@@ -214,6 +221,7 @@ describe("Areas, Goals, and Projects Services", () => {
       name: "Health & Fitness",
       icon: "activity",
       color: "#10b981",
+      sortOrder: 1,
     });
     expect(area.id).toBeDefined();
     expect(area.name).toBe("Health & Fitness");
@@ -232,7 +240,7 @@ describe("Areas, Goals, and Projects Services", () => {
     expect(goal.title).toBe("Run 10km Marathon");
 
     const fetchedGoal = await getGoal(t.db, userId, goal.id);
-    expect(fetchedGoal.id).toBe(goal.id);
+    expect(fetchedGoal?.id).toBe(goal.id);
 
     const updatedGoal = await updateGoal(t.db, userId, goal.id, {
       priority: 5,
@@ -272,4 +280,90 @@ describe("Areas, Goals, and Projects Services", () => {
     expect(projectsList.some((p) => p.id === project.id)).toBe(true);
   });
 });
+
+describe("Time Service", () => {
+  it("logs focus sessions and returns today stats", async () => {
+    const today = "2026-09-23";
+    const entry = await logTimeEntry(t.db, userId, {
+      durationMinutes: 25,
+      mode: "pomodoro",
+      notes: "Worked on Bawsala core features",
+      startedAt: `${today}T10:00:00Z`,
+      endedAt: `${today}T10:25:00Z`,
+    });
+
+    expect(entry.id).toBeDefined();
+    expect(entry.durationMinutes).toBe(25);
+    expect(entry.mode).toBe("pomodoro");
+
+    const entries = await listTimeEntries(t.db, userId, { limit: 10 });
+    expect(entries.length).toBeGreaterThan(0);
+    expect(entries.some((e) => e.id === entry.id)).toBe(true);
+
+    const stats = await getTimeStats(t.db, userId, today);
+    expect(stats.todayMinutes).toBeGreaterThanOrEqual(25);
+    expect(stats.todaySessions).toBeGreaterThanOrEqual(1);
+  });
+
+  it("accumulates actualMinutes on linked task when time is logged", async () => {
+    const today = "2026-09-23";
+    const task = await createTask(t.db, userId, today, {
+      title: "Task with time tracking",
+      estimateMinutes: 60,
+    });
+    expect(task.actualMinutes).toBeNull();
+
+    await logTimeEntry(t.db, userId, {
+      taskId: task.id,
+      durationMinutes: 30,
+      mode: "deep_work",
+    });
+
+    const updatedTask1 = await getTask(t.db, userId, task.id);
+    expect(updatedTask1.actualMinutes).toBe(30);
+
+    // Log another 15 minutes to verify accumulation
+    await logTimeEntry(t.db, userId, {
+      taskId: task.id,
+      durationMinutes: 15,
+      mode: "pomodoro",
+    });
+
+    const updatedTask2 = await getTask(t.db, userId, task.id);
+    expect(updatedTask2.actualMinutes).toBe(45);
+  });
+});
+
+describe("Knowledge Service", () => {
+  it("creates, lists, and updates notes and resources", async () => {
+    // 1. Notes
+    const note = await createNote(t.db, userId, {
+      title: "Architecture Decisions",
+      content: "We use [[Turborepo]] and [[Next.js]] for the stack.",
+      category: "concept",
+    });
+
+    expect(note.id).toBeDefined();
+    expect(note.title).toBe("Architecture Decisions");
+
+    const notesList = await listNotes(t.db, userId, { category: "concept" });
+    expect(notesList.some((n) => n.id === note.id)).toBe(true);
+
+    // 2. Resources
+    const resource = await createResource(t.db, userId, {
+      title: "Building a Second Brain",
+      type: "book",
+      author: "Tiago Forte",
+      status: "in_progress",
+      rating: 5,
+    });
+
+    expect(resource.id).toBeDefined();
+    expect(resource.status).toBe("in_progress");
+
+    const resourcesList = await listResources(t.db, userId, { type: "book" });
+    expect(resourcesList.some((r) => r.id === resource.id)).toBe(true);
+  });
+});
+
 

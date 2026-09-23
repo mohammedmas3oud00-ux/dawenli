@@ -19,7 +19,7 @@ const tableNames = (Object.values(schema) as unknown[])
   .map((t) => getTableName(t));
 
 describe("schema", () => {
-  it("exports the twelve MVP tables", () => {
+  it("exports the core and phase 3 tables", () => {
     expect([...tableNames].sort()).toEqual(
       [
         "areas",
@@ -27,12 +27,17 @@ describe("schema", () => {
         "habit_categories",
         "habit_logs",
         "habits",
+        "note_tags",
+        "notes",
         "profiles",
         "progress_cache",
         "projects",
+        "resources",
         "reviews",
+        "tags",
         "tasks",
         "templates",
+        "time_entries",
         "visions",
       ].sort(),
     );

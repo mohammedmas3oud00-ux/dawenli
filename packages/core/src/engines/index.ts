@@ -7,3 +7,4 @@ export * from "./quick-add";
 export * from "./recurrence";
 export * from "./spiritual";
 export * from "./streaks";
+export * from "./wikilinks";

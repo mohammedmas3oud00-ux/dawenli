@@ -1,0 +1,1 @@
+{"query": "query { __type(name: \"Group\") { fields { name type { name kind } } } }"}

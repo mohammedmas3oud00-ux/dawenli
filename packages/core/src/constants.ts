@@ -96,3 +96,16 @@ export type PriorityWeights = { [K in keyof typeof DEFAULT_PRIORITY_WEIGHTS]: nu
 /** Default day the week starts on (0 = Sunday … 6 = Saturday). */
 export const DEFAULT_WEEK_STARTS_ON = 6;
 export const DEFAULT_TIMEZONE = "Africa/Cairo";
+
+export const RESOURCE_TYPES = ["book", "course", "article", "podcast", "video"] as const;
+export type ResourceType = (typeof RESOURCE_TYPES)[number];
+
+export const RESOURCE_STATUSES = ["queued", "in_progress", "completed", "abandoned"] as const;
+export type ResourceStatus = (typeof RESOURCE_STATUSES)[number];
+
+export const NOTE_CATEGORIES = ["idea", "concept", "meeting", "summary", "journal", "general"] as const;
+export type NoteCategory = (typeof NOTE_CATEGORIES)[number];
+
+export const TIME_SESSION_MODES = ["pomodoro", "deep_work", "flowtime", "manual"] as const;
+export type TimeSessionMode = (typeof TIME_SESSION_MODES)[number];
+

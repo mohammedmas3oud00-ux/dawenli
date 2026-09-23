@@ -1,4 +1,5 @@
 import {
+  BookOpen,
   BookOpenCheck,
   CheckSquare,
   Compass,
@@ -50,6 +51,10 @@ export function Sidebar() {
         <NavLink href="/focus">
           <Timer aria-hidden className="size-4 text-emerald-500" />
           {t("nav.focus")}
+        </NavLink>
+        <NavLink href="/knowledge">
+          <BookOpen aria-hidden className="size-4 text-sky-500" />
+          {t("nav.knowledge")}
         </NavLink>
         <NavLink href="/reviews">
           <BookOpenCheck aria-hidden className="size-4" />

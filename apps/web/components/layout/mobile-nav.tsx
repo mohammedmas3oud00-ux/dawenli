@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  BookOpen,
   BookOpenCheck,
   CheckSquare,
   Flame,
@@ -67,6 +68,10 @@ export function MobileNav() {
           <NavLink href="/focus" onClick={close}>
             <Timer aria-hidden className="size-4 text-emerald-500" />
             {t("focus")}
+          </NavLink>
+          <NavLink href="/knowledge" onClick={close}>
+            <BookOpen aria-hidden className="size-4 text-sky-500" />
+            {t("knowledge")}
           </NavLink>
           <NavLink href="/reviews" onClick={close}>
             <BookOpenCheck aria-hidden className="size-4" />
