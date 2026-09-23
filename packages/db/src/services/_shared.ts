@@ -98,3 +98,16 @@ export async function loadUserContext(
     weekStartsOn: profile?.weekStartsOn ?? 6,
   };
 }
+
+export async function userPriorityContext(
+  db: Database,
+  userId: string,
+  today: string,
+): Promise<PriorityContext> {
+  const ctx = await loadUserContext(db, userId);
+  return {
+    today,
+    userEnergy: ctx.userEnergy,
+    weights: ctx.weights,
+  };
+}
