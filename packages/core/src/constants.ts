@@ -41,8 +41,23 @@ export type HabitValueType = (typeof HABIT_VALUE_TYPES)[number];
 export const HABIT_CATEGORY_KINDS = ["general", "spiritual"] as const;
 export type HabitCategoryKind = (typeof HABIT_CATEGORY_KINDS)[number];
 
+/** Built-in habit presets that unlock a specialised logging UI. */
+export const HABIT_PRESETS = ["prayers", "quran", "adhkar"] as const;
+export type HabitPreset = (typeof HABIT_PRESETS)[number];
+
+/** The five daily prayers, in order. Keys are used in `habit_logs.metadata`. */
+export const PRAYERS = ["fajr", "dhuhr", "asr", "maghrib", "isha"] as const;
+export type Prayer = (typeof PRAYERS)[number];
+
+export const PRAYER_STATUSES = ["jamaah", "on_time", "late", "missed"] as const;
+export type PrayerStatus = (typeof PRAYER_STATUSES)[number];
+
 export const REVIEW_TYPES = ["daily", "weekly", "monthly", "quarterly", "yearly"] as const;
 export type ReviewType = (typeof REVIEW_TYPES)[number];
+
+/** Derived project health used by the dashboard (see engines/analytics.ts). */
+export const PROJECT_HEALTHS = ["completed", "on_track", "at_risk", "overdue", "inactive"] as const;
+export type ProjectHealth = (typeof PROJECT_HEALTHS)[number];
 
 export const TEMPLATE_TYPES = [
   "daily_review",
