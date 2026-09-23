@@ -1,0 +1,49 @@
+/**
+ * Clean Web Audio API Chime Synthesizer
+ * Produces a soothing, soft acoustic sound (Zen Bell / Tibetan singing bowl harmonic)
+ */
+export function playFocusSound(type: 'complete' | 'break' | 'start' = 'complete') {
+  try {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+
+    const ctx = new AudioContextClass();
+    const now = ctx.currentTime;
+
+    if (type === 'start') {
+      // Soft uplifting double chime
+      playTone(ctx, 528, now, 0.4, 0.12); // Solfeggio 528Hz (Transformation)
+      playTone(ctx, 792, now + 0.15, 0.6, 0.1);
+    } else if (type === 'complete') {
+      // Warm gong/bowl chime (Harmonics of 432Hz)
+      playTone(ctx, 432, now, 1.8, 0.2);
+      playTone(ctx, 864, now + 0.05, 1.4, 0.12);
+      playTone(ctx, 1296, now + 0.1, 1.0, 0.08);
+    } else {
+      // Break reminder: soothing gentle pulse
+      playTone(ctx, 659.25, now, 0.8, 0.15); // E5
+      playTone(ctx, 523.25, now + 0.2, 1.2, 0.12); // C5
+    }
+  } catch (err) {
+    // AudioContext may be restricted by browser until user gesture, safe to ignore
+    console.debug('Audio chime skipped', err);
+  }
+}
+
+function playTone(ctx: AudioContext, frequency: number, startTime: number, duration: number, maxVolume: number) {
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(frequency, startTime);
+
+  gain.gain.setValueAtTime(0, startTime);
+  gain.gain.linearRampToValueAtTime(maxVolume, startTime + 0.05);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+
+  osc.start(startTime);
+  osc.stop(startTime + duration);
+}
