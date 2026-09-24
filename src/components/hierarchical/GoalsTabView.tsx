@@ -42,7 +42,7 @@ export const GoalsTabView: React.FC<GoalsTabViewProps> = ({
             <Target className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-base sm:text-lg font-black text-[#1a2420]">أهداف القيمة (Value Goals)</h1>
+            <h1 className="text-base sm:text-lg font-black text-[#1a2420]">أهداف القيمة</h1>
             <p className="text-xs text-[#636e67]">
               الأهداف الاستراتيجية التي تقود إلى تحقيق الرؤى وترتبط مباشرة بالمشاريع التنفيذية.
             </p>
@@ -169,7 +169,7 @@ export const GoalsTabView: React.FC<GoalsTabViewProps> = ({
                     onClick={() => onSelectGoal(goal.id, goal.vision_id || undefined, goal.pillar_id)}
                     className="w-full mt-2 py-2 px-3 bg-[#f8f7f4] hover:bg-[#ebf4f0] text-[#174235] rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-[#e7e3db] group-hover:border-[#cfe3d9] cursor-pointer"
                   >
-                    <span>الدخول وتصفح المشاريع (Projects)</span>
+                    <span>الدخول وتصفح المشاريع</span>
                     <ChevronLeft className="w-3.5 h-3.5" />
                   </button>
                 </div>

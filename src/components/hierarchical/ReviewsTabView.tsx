@@ -90,7 +90,7 @@ export const ReviewsTabView: React.FC<ReviewsTabViewProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-base font-semibold text-[#1a2420]">
-                  المراجعات الدورية (System Reviews)
+                  المراجعات الدورية
                 </h1>
                 <span className="text-xs font-mono text-[#78857e] tabular-nums">
                   ({reviews.length} مراجعة مسجلة)

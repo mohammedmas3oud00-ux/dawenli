@@ -80,7 +80,7 @@ export const PillarDetailView: React.FC<PillarDetailViewProps> = ({
             <Quote className="w-5 h-5 text-[#b08726] shrink-0 mt-0.5" />
             <div className="space-y-1">
               <span className="text-[11px] font-bold text-[#8a6519] tracking-wider uppercase">
-                الغاية الكبرى والبوصلة التوجيهية (The Big Why):
+                الغاية الكبرى والبوصلة التوجيهية:
               </span>
               <p className="text-sm sm:text-base font-medium text-[#2d281f] leading-relaxed">
                 «{pillar.purpose || 'لم يتم تحديد الغاية بعد.'}»
@@ -109,7 +109,7 @@ export const PillarDetailView: React.FC<PillarDetailViewProps> = ({
         <div>
           <h2 className="text-sm font-bold text-[#1a2420] flex items-center gap-2">
             <Eye className="w-4 h-4 text-[#174235]" />
-            <span>الرؤى المستقبلية (Visions) التابعة للركيزة</span>
+            <span>الرؤى المستقبلية التابعة للركيزة</span>
           </h2>
           <p className="text-[11px] text-[#6d7972]">
             الرؤية تمثل الصورة المستقبلية والأفق المنشود. انقر على أي رؤية للتعمق في أهدافها التابعة.
@@ -200,7 +200,7 @@ export const PillarDetailView: React.FC<PillarDetailViewProps> = ({
                   onClick={() => onSelectVision(vision.id)}
                   className="w-full mt-2 py-2 px-3 bg-[#f8f7f4] hover:bg-[#ebf4f0] text-[#174235] rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-[#e7e3db] group-hover:border-[#cfe3d9] cursor-pointer"
                 >
-                  <span>استعراض أهداف القيمة (Goals)</span>
+                  <span>استعراض أهداف القيمة</span>
                   <ChevronLeft className="w-3.5 h-3.5" />
                 </button>
               </div>

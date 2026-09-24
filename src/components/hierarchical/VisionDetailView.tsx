@@ -82,7 +82,7 @@ export const VisionDetailView: React.FC<VisionDetailViewProps> = ({
         {/* Vision Progress Rollup Bar */}
         <div className="bg-[#f8f7f4] p-3 rounded-xl border border-[#ece8e0] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2">
-            <span className="text-[#647169] font-medium">تقدم الرؤية التراكمي (Rollup):</span>
+            <span className="text-[#647169] font-medium">تقدم الرؤية التقدم التراكمي:</span>
             <span className="font-mono font-extrabold text-[#174235] text-sm">{vision.progress}%</span>
           </div>
           <div className="w-full sm:w-64">
@@ -96,7 +96,7 @@ export const VisionDetailView: React.FC<VisionDetailViewProps> = ({
         <div>
           <h2 className="text-sm font-bold text-[#1a2420] flex items-center gap-2">
             <Target className="w-4 h-4 text-[#174235]" />
-            <span>أهداف القيمة (Value Goals) التابعة لهذه الرؤية</span>
+            <span>أهداف القيمة التابعة لهذه الرؤية</span>
           </h2>
           <p className="text-[11px] text-[#6d7972]">
             أهداف محددة وقابلة للقياس تصب مباشرة في تحقيق هذه الرؤية.
@@ -187,7 +187,7 @@ export const VisionDetailView: React.FC<VisionDetailViewProps> = ({
                   onClick={() => onSelectGoal(goal.id)}
                   className="w-full mt-2 py-2 px-3 bg-[#f8f7f4] hover:bg-[#ebf4f0] text-[#174235] rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-[#e7e3db] group-hover:border-[#cfe3d9] cursor-pointer"
                 >
-                  <span>عرض المشاريع (Projects) التابعة</span>
+                  <span>عرض المشاريع التابعة</span>
                   <ChevronLeft className="w-3.5 h-3.5" />
                 </button>
               </div>

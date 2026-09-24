@@ -65,8 +65,9 @@ import {
 import { QuickAddModal } from './QuickAddModal';
 import { SqlSchemaModal } from './SqlSchemaModal';
 import { VoiceAiCaptureModal } from './VoiceAiCaptureModal';
+import { AuthModal } from './AuthModal';
 import { ToastContainer, ToastMessage } from './ToastNotification';
-import { Database, RotateCcw, Plus, Menu, Mic, Sparkles } from 'lucide-react';
+import { Database, RotateCcw, Plus, Menu, Mic, Sparkles, Sun, Moon, User, LogIn, LogOut } from 'lucide-react';
 
 export const HierarchicalApp: React.FC = () => {
   // Core Entities State
@@ -101,7 +102,85 @@ export const HierarchicalApp: React.FC = () => {
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [isSqlModalOpen, setIsSqlModalOpen] = useState(false);
   const [isVoiceAiModalOpen, setIsVoiceAiModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  // User Authentication State
+  const [currentUser, setCurrentUser] = useState<{ email: string; isGuest?: boolean } | null>(() => {
+    const saved = localStorage.getItem('dawenli_user');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return { email: 'mohammedmasoud.work@gmail.com', isGuest: false };
+  });
+
+  // Dark Mode Theme State
+  const [isDark, setIsDark] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('dawenli_theme');
+      if (saved) return saved === 'dark';
+      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('dawenli_theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('dawenli_theme', 'light');
+    }
+  }, [isDark]);
+
+  const handleToggleDark = () => {
+    setIsDark((prev) => !prev);
+  };
+
+  const handleAuthSuccess = (user: { email: string; isGuest?: boolean }) => {
+    setCurrentUser(user);
+    localStorage.setItem('dawenli_user', JSON.stringify(user));
+    setIsAuthModalOpen(false);
+    setToasts((prev) => [
+      ...prev,
+      {
+        id: `toast-${Date.now()}`,
+        type: 'success',
+        title: 'تم تسجيل الدخول بنجاح',
+        description: `مرحباً بك مجدداً ${user.email}`,
+      },
+    ]);
+  };
+
+  const handleSignOut = () => {
+    const guestUser = { email: 'ضيف المنظومة', isGuest: true };
+    setCurrentUser(guestUser);
+    localStorage.setItem('dawenli_user', JSON.stringify(guestUser));
+    setToasts((prev) => [
+      ...prev,
+      {
+        id: `toast-${Date.now()}`,
+        type: 'info',
+        title: 'تسجيل الخروج',
+        description: 'تم التبديل إلى وضع ضيف المنظومة المحلي',
+      },
+    ]);
+  };
+
+  const handleAdhanNotify = (prayerName: string) => {
+    setToasts((prev) => [
+      ...prev,
+      {
+        id: `toast-${Date.now()}`,
+        type: 'info',
+        title: 'حان الآن موعد الأذان',
+        description: `حان الآن موعد أذان ${prayerName} وفق توقيتك المحلي.`,
+      },
+    ]);
+  };
 
   // Review Modals State
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
@@ -188,7 +267,7 @@ export const HierarchicalApp: React.FC = () => {
 
   // Breadcrumbs Generator
   const breadcrumbItems: BreadcrumbItem[] = [
-    { id: 'root', label: 'الركائز (Pillars)', type: 'root' },
+    { id: 'root', label: 'الركائز', type: 'root' },
   ];
 
   if (currentPillar) {
@@ -990,7 +1069,7 @@ export const HierarchicalApp: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8f7f4] text-[#1a2420] flex font-sans antialiased selection:bg-[#174235] selection:text-white" dir="rtl">
+    <div className="min-h-screen bg-[#f8f7f4] dark:bg-slate-950 text-[#1a2420] dark:text-slate-100 flex font-sans antialiased selection:bg-[#174235] selection:text-white" dir="rtl">
       
       {/* 1. SIDEBAR NAVIGATION styled like Dawenli OS */}
       <Sidebar
@@ -1013,20 +1092,25 @@ export const HierarchicalApp: React.FC = () => {
         onCloseMobile={() => setIsMobileSidebarOpen(false)}
         onOpenQuickAdd={() => setIsQuickAddOpen(true)}
         onOpenVoiceAi={() => setIsVoiceAiModalOpen(true)}
+        isDark={isDark}
+        onToggleDark={handleToggleDark}
+        currentUser={currentUser}
+        onOpenAuth={() => setIsAuthModalOpen(true)}
+        onSignOut={handleSignOut}
       />
 
       {/* 2. MAIN CONTENT AREA */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         
         {/* Top App Header matching the clean header of screenshot 2 */}
-        <header className="bg-white border-b border-[#e8e5de] px-4 sm:px-6 py-3 sticky top-0 z-30 shadow-2xs">
+        <header className="bg-white dark:bg-slate-900 border-b border-[#e8e5de] dark:border-slate-800 px-4 sm:px-6 py-3 sticky top-0 z-30 shadow-2xs">
           <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
             
             {/* Left section: mobile hamburger & breadcrumbs */}
             <div className="flex items-center gap-3 min-w-0">
               <button
                 onClick={() => setIsMobileSidebarOpen(true)}
-                className="md:hidden p-2 text-[#65736b] hover:text-[#1a2420] rounded-xl hover:bg-[#f2efe8] cursor-pointer"
+                className="md:hidden p-2 text-[#65736b] dark:text-slate-400 hover:text-[#1a2420] dark:hover:text-slate-100 rounded-xl hover:bg-[#f2efe8] dark:hover:bg-slate-800 cursor-pointer"
                 title="القائمة الجانبية"
               >
                 <Menu className="w-5 h-5" />
@@ -1037,15 +1121,15 @@ export const HierarchicalApp: React.FC = () => {
                   <Breadcrumbs items={breadcrumbItems} onNavigate={handleBreadcrumbClick} />
                 </div>
               ) : (
-                <div className="flex items-center gap-1.5 text-xs text-[#6e7b74]">
-                  <span className="font-normal text-[#85928a]">دَوّنـلي</span>
-                  <span className="text-[#c2bcaf]">/</span>
-                  <span className="font-semibold text-[#1a2420]">
-                    {currentTab === 'inbox' && 'صندوق الوارد (GTD Inbox)'}
-                    {currentTab === 'focus' && 'جلسات التركيز (Pomodoro & Flowtime)'}
-                    {currentTab === 'timeblocking' && 'حجب الوقت اليومي (Time Blocking)'}
-                    {currentTab === 'habits' && 'متتبع العادات (Habits)'}
-                    {currentTab === 'vaults' && 'خزائن المعرفة (Vaults)'}
+                <div className="flex items-center gap-1.5 text-xs text-[#6e7b74] dark:text-slate-400">
+                  <span className="font-normal text-[#85928a] dark:text-slate-400">دَوّنـلي</span>
+                  <span className="text-[#c2bcaf] dark:text-slate-600">/</span>
+                  <span className="font-semibold text-[#1a2420] dark:text-slate-200">
+                    {currentTab === 'inbox' && 'صندوق الوارد'}
+                    {currentTab === 'focus' && 'جلسات التركيز'}
+                    {currentTab === 'timeblocking' && 'حجب الوقت اليومي'}
+                    {currentTab === 'habits' && 'متتبع العادات'}
+                    {currentTab === 'vaults' && 'خزائن المعرفة'}
                     {currentTab === 'pillars' && 'الركائز الأساسية'}
                     {currentTab === 'visions' && 'الرؤى المستقبلية'}
                     {currentTab === 'goals' && 'أهداف القيمة'}
@@ -1064,11 +1148,11 @@ export const HierarchicalApp: React.FC = () => {
               <button
                 onClick={() => setIsVoiceAiModalOpen(true)}
                 className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold rounded-xl text-xs shadow-xs transition-all cursor-pointer group"
-                title="تحدث بصوتك والتحليل والتفكيك الذكي بالذكاء الاصطناعي (Gemini)"
+                title="تحدث بصوتك والتحليل والتفكيك الذكي بالذكاء الاصطناعي"
               >
                 <Mic className="w-4 h-4 animate-pulse text-amber-100" />
                 <Sparkles className="w-3.5 h-3.5 text-amber-200 hidden sm:inline" />
-                <span className="whitespace-nowrap">تحدث بصوتك (AI)</span>
+                <span className="whitespace-nowrap">تحدث بصوتك</span>
               </button>
 
               {/* PRIMARY ACTION BUTTON: Deep Forest Green matching Dawenli */}
@@ -1081,20 +1165,43 @@ export const HierarchicalApp: React.FC = () => {
                 <span className="whitespace-nowrap">إضافة سريعة</span>
               </button>
 
+              {/* Theme Toggle Button */}
+              <button
+                onClick={handleToggleDark}
+                className="p-2 rounded-xl text-[#55615a] dark:text-slate-300 hover:bg-[#f2efe8] dark:hover:bg-slate-800 border border-[#e8e5de] dark:border-slate-700 transition-colors cursor-pointer"
+                title={isDark ? 'التحويل للوضع الفاتح' : 'التحويل للوضع الليلي'}
+              >
+                {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
+              </button>
+
+              {/* User Profile / Auth Button */}
+              <button
+                onClick={() => setIsAuthModalOpen(true)}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-[#e8e5de] dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-[#f2efe8] dark:hover:bg-slate-800 text-[#35403a] dark:text-slate-200 text-xs font-semibold cursor-pointer transition-colors"
+                title="حساب المستخدم وإعدادات السحابة"
+              >
+                <div className="w-5 h-5 rounded-full bg-[#174235] text-white flex items-center justify-center text-[10px] font-bold">
+                  {currentUser?.isGuest ? '؟' : (currentUser?.email?.[0]?.toUpperCase() || 'م')}
+                </div>
+                <span className="hidden sm:inline max-w-[120px] truncate text-[11px]">
+                  {currentUser?.isGuest ? 'ضيف المنظومة' : (currentUser?.email?.split('@')[0] || 'حسابي')}
+                </span>
+              </button>
+
               {/* SQL Schema button */}
               <button
                 onClick={() => setIsSqlModalOpen(true)}
-                className="hidden sm:flex items-center gap-1.5 px-3 py-2 bg-[#f8f7f4] hover:bg-[#edeae2] text-[#404c45] rounded-xl text-xs font-bold transition-colors cursor-pointer border border-[#e2ddd5]"
+                className="hidden sm:flex items-center gap-1.5 px-3 py-2 bg-[#f8f7f4] dark:bg-slate-800 hover:bg-[#edeae2] dark:hover:bg-slate-700 text-[#404c45] dark:text-slate-200 rounded-xl text-xs font-bold transition-colors cursor-pointer border border-[#e2ddd5] dark:border-slate-700"
                 title="عرض مخطط SQL وتريجرات الحساب التلقائي لـ Supabase"
               >
-                <Database className="w-3.5 h-3.5 text-[#174235]" />
+                <Database className="w-3.5 h-3.5 text-[#174235] dark:text-emerald-400" />
                 <span>مخطط SQL</span>
               </button>
 
               {/* Reset seed data button */}
               <button
                 onClick={handleResetData}
-                className="p-2 text-[#7d8982] hover:text-[#1a2420] hover:bg-[#f2efe8] rounded-xl transition-colors cursor-pointer"
+                className="p-2 text-[#7d8982] dark:text-slate-400 hover:text-[#1a2420] dark:hover:text-slate-100 hover:bg-[#f2efe8] dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
                 title="استعادة البيانات الأولية"
               >
                 <RotateCcw className="w-4 h-4" />
@@ -1221,6 +1328,7 @@ export const HierarchicalApp: React.FC = () => {
                     onCompleteTask={handleToggleTaskStatus}
                     onOpenTimeBlocking={() => setCurrentTab('timeblocking')}
                     onSelectProject={handleJumpToProject}
+                    onAdhanNotify={handleAdhanNotify}
                   />
                 )}
               </>
@@ -1541,6 +1649,15 @@ export const HierarchicalApp: React.FC = () => {
       <ToastContainer
         toasts={toasts}
         onDismiss={(id) => setToasts((prev) => prev.filter((t) => t.id !== id))}
+      />
+
+      {/* User Authentication & Supabase Cloud Sync Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        currentUser={currentUser}
+        onAuthSuccess={handleAuthSuccess}
+        onSignOut={handleSignOut}
       />
 
     </div>

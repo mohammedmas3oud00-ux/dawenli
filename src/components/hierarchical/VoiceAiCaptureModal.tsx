@@ -386,7 +386,7 @@ export const VoiceAiCaptureModal: React.FC<VoiceAiCaptureModalProps> = ({
                         ? 'bg-rose-500 text-white animate-bounce border-rose-600'
                         : 'bg-white hover:bg-[#f2efe9] text-[#174235] border-[#d8d4cc]'
                     }`}
-                    title={isRecordingAudio ? 'إيقاف التسجيل الصوتي' : 'تسجيل صوتي عالي الدقة (Gemini Transcribe)'}
+                    title={isRecordingAudio ? 'إيقاف التسجيل الصوتي' : 'تسجيل صوتي عالي عالية الدقة'}
                   >
                     {isRecordingAudio ? <Square className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current" />}
                   </button>
@@ -640,7 +640,7 @@ export const VoiceAiCaptureModal: React.FC<VoiceAiCaptureModalProps> = ({
               ) : (
                 <>
                   <Sparkles className="w-4 h-4 text-amber-300" />
-                  <span>تحليل وتفكيك الفكرة (Gemini AI)</span>
+                  <span>تحليل وتفكيك الفكرة بالذكاء الاصطناعي</span>
                 </>
               )}
             </button>

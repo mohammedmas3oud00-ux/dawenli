@@ -41,7 +41,7 @@ export const ProjectsTabView: React.FC<ProjectsTabViewProps> = ({
             <Folder className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-base sm:text-lg font-black text-[#1a2420]">المشروعات التنفيذية (Projects)</h1>
+            <h1 className="text-base sm:text-lg font-black text-[#1a2420]">المشروعات التنفيذية</h1>
             <p className="text-xs text-[#636e67]">
               المبادرات العملية القائمة، وكل مشروع يحتوي على مهام ترفع نسبة تقدمه تلقائياً فور إنجازها.
             </p>

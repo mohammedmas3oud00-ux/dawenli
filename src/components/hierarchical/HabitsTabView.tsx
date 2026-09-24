@@ -137,7 +137,7 @@ export const HabitsTabView: React.FC<HabitsTabViewProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-base font-semibold text-[#1a2420]">
-                  متتبع العادات (Habits Tracker)
+                  متتبع العادات
                 </h1>
                 <span className="text-xs font-mono text-[#78857e] tabular-nums">
                   ({completedTodayCount} من {totalHabits} منجزة اليوم)

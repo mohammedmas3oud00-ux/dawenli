@@ -1,16 +1,16 @@
 /**
- * Speech Recognition and Audio Capture Utility for Dawenli
- * Solves voice repetition / stutter issues and connects to Gemini AI
+ * Speech Recognition, AI Processing and Utility Service for Dawenli
  */
 
-// Comprehensive Arabic & General Speech De-duplicator
+// Robust Arabic & General Speech De-duplicator
 export function deduplicateArabicSpeech(rawText: string): string {
   if (!rawText) return '';
   let str = rawText.trim().replace(/\s+/g, ' ');
 
+  const words = str.split(' ').filter(Boolean);
+  if (words.length <= 1) return str;
+
   // 1. Resolve progressive interim-speech accumulation bug
-  // (e.g. "عايز عايز اعمل عايز اعمل موقع... عايز اعمل موقع الكتروني...")
-  const words = str.split(' ');
   if (words.length > 5) {
     const startWord = words[0];
     const startIndices: number[] = [];
@@ -31,43 +31,37 @@ export function deduplicateArabicSpeech(rawText: string): string {
     }
   }
 
-  let text = str;
-
-  // 2. Remove immediate consecutive word duplicates ("عايز عايز" -> "عايز")
-  text = text.replace(/(\b\S+\b)(?:\s+\1)+/gi, '$1');
-
-  // 3. Remove repeating multi-word phrases up to 10 words
-  // e.g. "عايز اعمل موقع عايز اعمل موقع" -> "عايز اعمل موقع"
-  for (let phraseLen = 10; phraseLen >= 2; phraseLen--) {
-    const pattern = new RegExp(`(\\b(?:\\S+\\s+){${phraseLen - 1}}\\S+\\b)(?:\\s+\\1)+`, 'gi');
-    text = text.replace(pattern, '$1');
+  // 2. Remove immediate consecutive word duplicates
+  const tokens = str.split(' ').filter(Boolean);
+  const cleanTokens: string[] = [];
+  for (let i = 0; i < tokens.length; i++) {
+    if (i === 0 || tokens[i] !== tokens[i - 1]) {
+      cleanTokens.push(tokens[i]);
+    }
   }
 
-  // 4. Handle remaining cumulative prefix stutter
-  const cleanedTokens = text.split(' ');
-  if (cleanedTokens.length > 3) {
-    const finalWords: string[] = [];
+  // 3. Remove repeating multi-word phrases (e.g. 2 to 8 words)
+  let result = cleanTokens;
+  for (let phraseLen = Math.min(8, Math.floor(result.length / 2)); phraseLen >= 2; phraseLen--) {
+    const compacted: string[] = [];
     let i = 0;
-    while (i < cleanedTokens.length) {
-      finalWords.push(cleanedTokens[i]);
-      let matchedRepeat = false;
-      for (let len = Math.min(8, finalWords.length); len >= 2; len--) {
-        const lastChunk = finalWords.slice(-len).join(' ');
-        const nextChunk = cleanedTokens.slice(i + 1, i + 1 + len).join(' ');
-        if (lastChunk === nextChunk) {
-          i += len;
-          matchedRepeat = true;
-          break;
+    while (i < result.length) {
+      if (i + 2 * phraseLen <= result.length) {
+        const p1 = result.slice(i, i + phraseLen).join(' ');
+        const p2 = result.slice(i + phraseLen, i + 2 * phraseLen).join(' ');
+        if (p1 === p2) {
+          compacted.push(...result.slice(i, i + phraseLen));
+          i += 2 * phraseLen;
+          continue;
         }
       }
-      if (!matchedRepeat) {
-        i++;
-      }
+      compacted.push(result[i]);
+      i++;
     }
-    text = finalWords.join(' ');
+    result = compacted;
   }
 
-  return text.trim();
+  return result.join(' ').trim();
 }
 
 export interface AiVoiceAnalysisResult {
@@ -88,7 +82,7 @@ export interface AiVoiceAnalysisResult {
 }
 
 /**
- * Call Server-Side Gemini to analyze and decompose spoken text
+ * Call Server-Side Gemini to analyze and decompose spoken or typed text
  */
 export async function analyzeVoiceInput(
   speechText: string,
@@ -188,6 +182,74 @@ export async function performAiSmartReview(
     throw new Error(err.error || 'فشل التحليل الذكي للمراجعة');
   }
 
+  const json = await res.json();
+  return json.data;
+}
+
+export interface AiInboxAnalysisResult {
+  suggestedDestination: 'task' | 'project' | 'vault' | 'habit';
+  actionableTitle: string;
+  suggestedPillarId?: string;
+  suggestedPillarTitle: string;
+  suggestedProjectId?: string;
+  suggestedProjectTitle?: string;
+  priority: 'high' | 'medium' | 'low';
+  energyLevel: 'high' | 'medium' | 'low';
+  estimatedMinutes?: number;
+  category?: string;
+  reasoning: string;
+}
+
+/**
+ * Analyze an inbox item with AI and recommend destination (Task, Project, Vault, Habit)
+ */
+export async function analyzeInboxItemWithAi(
+  item: { title: string; content?: string; url?: string },
+  context: { pillars: Array<{ id: string; title: string }>; projects: Array<{ id: string; title: string; goal_id?: string }> }
+): Promise<AiInboxAnalysisResult> {
+  const res = await fetch('/api/ai/analyze-inbox', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      title: item.title,
+      content: item.content || '',
+      url: item.url || '',
+      pillars: context.pillars,
+      projects: context.projects,
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'فشل تحليل عنصر صندوق الوارد بالذكاء الاصطناعي');
+  }
+
+  const json = await res.json();
+  return json.data;
+}
+
+export interface PrayerTimesData {
+  Fajr: string;
+  Sunrise: string;
+  Dhuhr: string;
+  Asr: string;
+  Maghrib: string;
+  Isha: string;
+  date: string;
+  hijri?: string;
+  hijriMonthArabic?: string;
+  isFallback?: boolean;
+}
+
+/**
+ * Fetch 5 daily prayer times from backend
+ */
+export async function fetchPrayerTimes(coords?: { lat: number; lng: number }): Promise<PrayerTimesData> {
+  const params = coords ? `?lat=${coords.lat}&lng=${coords.lng}` : '';
+  const res = await fetch(`/api/prayer-times${params}`);
+  if (!res.ok) {
+    throw new Error('فشل جلب مواقيت الصلاة');
+  }
   const json = await res.json();
   return json.data;
 }

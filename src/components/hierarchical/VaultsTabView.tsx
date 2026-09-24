@@ -150,7 +150,7 @@ export const VaultsTabView: React.FC<VaultsTabViewProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-base font-semibold text-[#1a2420]">
-                  خزائن المعرفة (PPV Vaults)
+                  خزائن المعرفة
                 </h1>
                 <span className="text-xs font-mono text-[#78857e] tabular-nums">
                   ({vaults.length} عناصر معرفية)

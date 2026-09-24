@@ -70,7 +70,7 @@ export const PillarModal: React.FC<PillarModalProps> = ({
         <div className="p-4 sm:p-5 border-b border-[#f0eee9] flex items-center justify-between bg-[#fbfbfa]">
           <div>
             <h3 className="font-bold text-sm text-[#1a2420]">
-              {initialPillar ? 'تعديل الركيزة (Pillar)' : 'إضافة ركيزة حياة جديدة (New Pillar)'}
+              {initialPillar ? 'تعديل الركيزة' : 'إضافة ركيزة حياة جديدة'}
             </h3>
             <p className="text-[11px] text-[#6d7972]">الركيزة تمثل مجالك الحياتي الأكبر وغايتك الأساسية</p>
           </div>
@@ -107,7 +107,7 @@ export const PillarModal: React.FC<PillarModalProps> = ({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="font-bold text-[#3a453f] block mb-1">المجموعة (Pillar Group):</label>
+              <label className="font-bold text-[#3a453f] block mb-1">المجموعة:</label>
               <input
                 type="text"
                 value={pillarGroup}
@@ -118,7 +118,7 @@ export const PillarModal: React.FC<PillarModalProps> = ({
             </div>
 
             <div>
-              <label className="font-bold text-[#3a453f] block mb-1">ترتيب الأولوية (Priority):</label>
+              <label className="font-bold text-[#3a453f] block mb-1">ترتيب الأولوية:</label>
               <input
                 type="number"
                 min={1}
@@ -143,7 +143,7 @@ export const PillarModal: React.FC<PillarModalProps> = ({
 
           <div className="flex items-center justify-between p-3 bg-[#f8f7f4] rounded-xl border border-[#ece8e0]">
             <div>
-              <span className="font-bold text-[#1a2420] block">عرض في الصفحة الرئيسية (Show on Home)</span>
+              <span className="font-bold text-[#1a2420] block">عرض في الصفحة الرئيسية</span>
               <span className="text-[11px] text-[#78857e]">تثبيت الركيزة في لوحة المتابعة السريعة</span>
             </div>
             <input
@@ -239,7 +239,7 @@ export const VisionModal: React.FC<VisionModalProps> = ({
         <div className="p-4 sm:p-5 border-b border-[#f0eee9] flex items-center justify-between bg-[#fbfbfa]">
           <div>
             <h3 className="font-bold text-sm text-[#1a2420]">
-              {initialVision ? 'تعديل الرؤية (Edit Vision)' : 'صياغة رؤية مستقبلية جديدة (New Vision)'}
+              {initialVision ? 'تعديل الرؤية' : 'صياغة رؤية مستقبلية جديدة'}
             </h3>
             {pillarTitle && (
               <p className="text-[11px] text-[#174235] font-semibold mt-0.5">
@@ -292,7 +292,7 @@ export const VisionModal: React.FC<VisionModalProps> = ({
           </div>
 
           <div>
-            <label className="font-bold text-[#3a453f] block mb-1">الأفق الزمني (Timeframe):</label>
+            <label className="font-bold text-[#3a453f] block mb-1">الأفق الزمني:</label>
             <input
               type="text"
               value={timeframe}
@@ -389,7 +389,7 @@ export const ValueGoalModal: React.FC<ValueGoalModalProps> = ({
         <div className="p-4 sm:p-5 border-b border-[#f0eee9] flex items-center justify-between bg-[#fbfbfa]">
           <div>
             <h3 className="font-bold text-sm text-[#1a2420]">
-              {initialGoal ? 'تعديل هدف القيمة (Edit Goal)' : 'إضافة هدف قيمة استراتيجي (New Goal)'}
+              {initialGoal ? 'تعديل هدف القيمة' : 'إضافة هدف قيمة استراتيجي'}
             </h3>
             {parentTitle && (
               <p className="text-[11px] text-[#174235] font-semibold mt-0.5">
@@ -559,7 +559,7 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
         <div className="p-4 sm:p-5 border-b border-[#f0eee9] flex items-center justify-between bg-[#fbfbfa]">
           <div>
             <h3 className="font-bold text-sm text-[#1a2420]">
-              {initialProject ? 'تعديل المشروع (Edit Project)' : 'إضافة مشروع تنفيذي جديد (New Project)'}
+              {initialProject ? 'تعديل المشروع' : 'إضافة مشروع تنفيذي جديد'}
             </h3>
             {goalTitle && (
               <p className="text-[11px] text-[#174235] font-semibold mt-0.5">
@@ -737,7 +737,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
         <div className="p-4 sm:p-5 border-b border-[#f0eee9] flex items-center justify-between bg-[#fbfbfa]">
           <div>
             <h3 className="font-bold text-sm text-[#1a2420]">
-              {initialTask ? 'تعديل المهمة (Edit Task)' : 'إضافة مهمة جديدة (New Task)'}
+              {initialTask ? 'تعديل المهمة' : 'إضافة مهمة جديدة'}
             </h3>
             {projectTitle && (
               <p className="text-[11px] text-[#174235] font-semibold mt-0.5">

@@ -3,6 +3,7 @@ import { Plus, Edit2, Trash2, ChevronLeft, Database } from 'lucide-react';
 import { Pillar, Task, Project, ValueGoal } from '../../types/hierarchical';
 import { ProgressBar } from './ProgressBar';
 import { NextBestTaskSpotlight } from './NextBestTaskSpotlight';
+import { PrayerTimesCard } from './PrayerTimesCard';
 
 interface PillarsListViewProps {
   pillars: Pillar[];
@@ -18,6 +19,7 @@ interface PillarsListViewProps {
   onCompleteTask?: (taskId: string) => void;
   onOpenTimeBlocking?: () => void;
   onSelectProject?: (projectId: string) => void;
+  onAdhanNotify?: (prayerName: string) => void;
 }
 
 export const PillarsListView: React.FC<PillarsListViewProps> = ({
@@ -34,6 +36,7 @@ export const PillarsListView: React.FC<PillarsListViewProps> = ({
   onCompleteTask,
   onOpenTimeBlocking,
   onSelectProject,
+  onAdhanNotify,
 }) => {
   const [selectedGroup, setSelectedGroup] = useState<string>('all');
 
@@ -48,7 +51,7 @@ export const PillarsListView: React.FC<PillarsListViewProps> = ({
   return (
     <div className="space-y-6">
       
-      {/* 0. HERO SPOTLIGHT: أفضل مهمة للقيام بها الآن (Next Best Action) */}
+      {/* 0. HERO SPOTLIGHT: أفضل مهمة للقيام بها الآن */}
       {tasks && projects && goals && onStartFocus && onCompleteTask && (
         <NextBestTaskSpotlight
           tasks={tasks}
@@ -62,37 +65,42 @@ export const PillarsListView: React.FC<PillarsListViewProps> = ({
         />
       )}
 
-      {/* Clean Light Header (replacing the old dark banner) */}
-      <div className="bg-white border border-[#e8e5de] rounded-2xl p-5 sm:p-6 shadow-2xs">
+      {/* 1. Daily Prayer Times & Adhan Schedule */}
+      <PrayerTimesCard onAdhanNotify={onAdhanNotify} />
+
+      {/* 2. Pillars Header Section */}
+      <div className="bg-white dark:bg-slate-900 border border-[#e8e5de] dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-2xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <span className="text-sm">🏛️</span>
-              <h1 className="text-lg sm:text-xl font-black text-[#1a2420]">
-                الركائز الأساسية (Pillars)
+              <h1 className="text-lg sm:text-xl font-black text-[#1a2420] dark:text-slate-100">
+                الركائز الأساسية
               </h1>
-              <span className="text-[11px] px-2.5 py-0.5 rounded-md font-bold bg-[#ebf4f0] text-[#174235] border border-[#cfe3d9]">
+              <span className="text-[11px] px-2.5 py-0.5 rounded-md font-bold bg-[#ebf4f0] dark:bg-emerald-950/70 text-[#174235] dark:text-emerald-300 border border-[#cfe3d9] dark:border-emerald-800">
                 {pillars.length} ركائز
               </span>
             </div>
-            <p className="text-xs text-[#636e67]">
+            <p className="text-xs text-[#636e67] dark:text-slate-400">
               المجالات الكبرى للحياة. يتم حساب نسب الإنجاز تصاعدياً تلقائياً من المهام حتى الركائز.
             </p>
           </div>
 
           <div className="flex items-center gap-2.5 shrink-0">
             <button
+              type="button"
               onClick={onOpenSqlModal}
-              className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-[#f6f5f1] text-[#3a443f] border border-[#e3dfd7] rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs"
+              className="flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-slate-800 hover:bg-[#f6f5f1] dark:hover:bg-slate-700 text-[#3a443f] dark:text-slate-200 border border-[#e3dfd7] dark:border-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs"
               title="عرض كود SQL التأسيسي لـ Supabase والتريجرات"
             >
-              <Database className="w-3.5 h-3.5 text-[#174235]" />
+              <Database className="w-3.5 h-3.5 text-[#174235] dark:text-emerald-400" />
               <span>مخطط SQL</span>
             </button>
 
             <button
+              type="button"
               onClick={onNewPillar}
-              className="flex items-center gap-1.5 px-4 py-2 bg-[#174235] hover:bg-[#12352a] text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+              className="flex items-center gap-1.5 px-4 py-2 bg-[#174235] dark:bg-emerald-700 hover:bg-[#12352a] dark:hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>ركيزة جديدة</span>
@@ -100,17 +108,18 @@ export const PillarsListView: React.FC<PillarsListViewProps> = ({
           </div>
         </div>
 
-        {/* Group Filter Tabs in soft beige / green accent */}
-        <div className="flex items-center gap-1.5 mt-4 pt-4 border-t border-[#f0eee9] overflow-x-auto text-xs">
-          <span className="text-[#838d86] font-medium pl-1 text-[11px]">المجموعة:</span>
+        {/* Group Filter Tabs */}
+        <div className="flex items-center gap-1.5 mt-4 pt-4 border-t border-[#f0eee9] dark:border-slate-800 overflow-x-auto text-xs">
+          <span className="text-[#838d86] dark:text-slate-400 font-medium pl-1 text-[11px]">المجموعة:</span>
           {groups.map((group) => (
             <button
               key={group}
+              type="button"
               onClick={() => setSelectedGroup(group)}
               className={`px-3 py-1.5 rounded-lg font-bold transition-all text-xs cursor-pointer whitespace-nowrap ${
                 selectedGroup === group
-                  ? 'bg-[#174235] text-white shadow-2xs'
-                  : 'text-[#5b6660] hover:text-[#174235] hover:bg-[#f2efe9]'
+                  ? 'bg-[#174235] dark:bg-emerald-600 text-white shadow-2xs'
+                  : 'text-[#5b6660] dark:text-slate-300 hover:text-[#174235] dark:hover:text-emerald-300 hover:bg-[#f2efe9] dark:hover:bg-slate-800'
               }`}
             >
               {group === 'all' ? 'جميع الركائز' : group}
@@ -119,36 +128,38 @@ export const PillarsListView: React.FC<PillarsListViewProps> = ({
         </div>
       </div>
 
-      {/* Pillars Grid */}
+      {/* 3. Pillars Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {filteredPillars.map((pillar) => (
           <div
             key={pillar.id}
-            className="bg-white border border-[#e8e5de] hover:border-[#174235]/40 rounded-2xl p-5 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between space-y-4 group"
+            className="bg-white dark:bg-slate-900 border border-[#e8e5de] dark:border-slate-800 hover:border-[#174235]/40 dark:hover:border-emerald-500/50 rounded-2xl p-5 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between space-y-4 group"
           >
             {/* Header info */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] px-2 py-0.5 rounded font-mono font-bold bg-[#f3f0e8] text-[#555047]">
+                  <span className="text-[10px] px-2 py-0.5 rounded font-mono font-bold bg-[#f3f0e8] dark:bg-slate-800 text-[#555047] dark:text-slate-300 border border-[#e4dfd5] dark:border-slate-700">
                     أولوية #{pillar.priority}
                   </span>
-                  <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-[#ebf4f0] text-[#174235] border border-[#d6e9df]">
+                  <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-[#ebf4f0] dark:bg-emerald-950/70 text-[#174235] dark:text-emerald-300 border border-[#d6e9df] dark:border-emerald-800">
                     {pillar.pillar_group}
                   </span>
                 </div>
 
                 <div className="flex items-center gap-1">
                   <button
+                    type="button"
                     onClick={() => onEditPillar(pillar)}
-                    className="p-1 text-[#838d86] hover:text-[#1a2420] rounded transition-colors cursor-pointer"
+                    className="p-1 text-[#838d86] dark:text-slate-400 hover:text-[#1a2420] dark:hover:text-slate-100 rounded transition-colors cursor-pointer"
                     title="تعديل الركيزة"
                   >
                     <Edit2 className="w-3.5 h-3.5" />
                   </button>
                   <button
+                    type="button"
                     onClick={() => onDeletePillar(pillar.id)}
-                    className="p-1 text-[#838d86] hover:text-rose-600 rounded transition-colors cursor-pointer"
+                    className="p-1 text-[#838d86] dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded transition-colors cursor-pointer"
                     title="حذف الركيزة"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -160,22 +171,22 @@ export const PillarsListView: React.FC<PillarsListViewProps> = ({
               <div>
                 <h3
                   onClick={() => onSelectPillar(pillar.id)}
-                  className="font-black text-base text-[#1a2420] group-hover:text-[#174235] transition-colors cursor-pointer flex items-center gap-2"
+                  className="font-black text-base text-[#1a2420] dark:text-slate-100 group-hover:text-[#174235] dark:group-hover:text-emerald-400 transition-colors cursor-pointer flex items-center gap-2"
                 >
                   <span>{pillar.title}</span>
                 </h3>
                 {pillar.description && (
-                  <p className="text-xs text-[#636e67] mt-1 line-clamp-2 leading-relaxed">
+                  <p className="text-xs text-[#636e67] dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">
                     {pillar.description}
                   </p>
                 )}
               </div>
 
-              {/* The Purpose (The Big Why) */}
+              {/* The Purpose */}
               {pillar.purpose && (
-                <div className="bg-[#faf8f4] border border-[#ede7dc] rounded-xl p-3 text-[11px] text-[#4b4335] leading-relaxed">
-                  <span className="font-bold block text-[10px] text-[#916b1e] mb-0.5 uppercase tracking-wide">
-                    الغاية التوجيهية (Purpose):
+                <div className="bg-[#faf8f4] dark:bg-slate-800/80 border border-[#ede7dc] dark:border-slate-700 rounded-xl p-3 text-[11px] text-[#4b4335] dark:text-slate-300 leading-relaxed">
+                  <span className="font-bold block text-[10px] text-[#916b1e] dark:text-amber-400 mb-0.5 uppercase tracking-wide">
+                    الغاية التوجيهية:
                   </span>
                   <p className="line-clamp-2 italic font-medium">«{pillar.purpose}»</p>
                 </div>
@@ -183,11 +194,11 @@ export const PillarsListView: React.FC<PillarsListViewProps> = ({
             </div>
 
             {/* Bottom Progress and Navigation */}
-            <div className="pt-3 border-t border-[#f0eee9] space-y-3">
+            <div className="pt-3 border-t border-[#f0eee9] dark:border-slate-800 space-y-3">
               <div className="space-y-1">
-                <div className="flex items-center justify-between text-xs font-bold text-[#3a443f]">
-                  <span className="text-[11px] font-semibold text-[#838d86]">نسبة التقدم الكلي:</span>
-                  <span className="font-mono text-[#174235] text-xs font-bold">{pillar.progress}%</span>
+                <div className="flex items-center justify-between text-xs font-bold text-[#3a443f] dark:text-slate-300">
+                  <span className="text-[11px] font-semibold text-[#838d86] dark:text-slate-400">نسبة التقدم الكلي:</span>
+                  <span className="font-mono text-[#174235] dark:text-emerald-400 text-xs font-bold">{pillar.progress}%</span>
                 </div>
                 <ProgressBar
                   progress={pillar.progress}
@@ -200,8 +211,9 @@ export const PillarsListView: React.FC<PillarsListViewProps> = ({
 
               {/* Drill-down button */}
               <button
+                type="button"
                 onClick={() => onSelectPillar(pillar.id)}
-                className="w-full py-2 px-3 bg-[#f8f7f4] hover:bg-[#ebf4f0] text-[#174235] rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-[#e7e3db] group-hover:border-[#cfe3d9] cursor-pointer"
+                className="w-full py-2 px-3 bg-[#f8f7f4] dark:bg-slate-800 hover:bg-[#ebf4f0] dark:hover:bg-slate-700 text-[#174235] dark:text-emerald-300 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-[#e7e3db] dark:border-slate-700 group-hover:border-[#cfe3d9] dark:group-hover:border-emerald-800 cursor-pointer"
               >
                 <span>الدخول واستعراض الرؤى والأهداف</span>
                 <ChevronLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5" />

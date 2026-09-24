@@ -1,30 +1,20 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Play, 
   Pause, 
   RotateCcw, 
   CheckCircle2, 
-  Sparkles, 
-  Timer, 
   Waves, 
-  Flame, 
   Coffee, 
   Volume2, 
   VolumeX, 
-  AlertCircle, 
   ArrowRight,
   Clock,
-  Layers,
-  Folder,
   Zap,
-  Check,
   Calendar,
-  BarChart2,
-  Trash2,
   Target
 } from 'lucide-react';
 import { Task, Project, Pillar, FocusMode, FocusSessionRecord } from '../../types/hierarchical';
-import { CustomSelect } from './CustomSelect';
 import { playFocusSound } from '../../utils/audioChime';
 
 interface FocusSessionViewProps {
@@ -60,40 +50,29 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
   const [customIntention, setCustomIntention] = useState<string>('');
 
   // Pomodoro Configuration
-  const [workDurationMinutes, setWorkDurationMinutes] = useState<number>(25);
-  const [shortBreakMinutes, setShortBreakMinutes] = useState<number>(5);
-  const [longBreakMinutes, setLongBreakMinutes] = useState<number>(15);
+  const [workDurationMinutes] = useState<number>(25);
+  const [shortBreakMinutes] = useState<number>(5);
+  const [longBreakMinutes] = useState<number>(15);
   const [pomodoroPhase, setPomodoroPhase] = useState<PomodoroPhase>('work');
 
   // Timer State
   const [isActive, setIsActive] = useState<boolean>(false);
-  const [secondsRemaining, setSecondsRemaining] = useState<number>(25 * 60); // Pomodoro countdown
-  const [flowSeconds, setFlowSeconds] = useState<number>(0); // Flowtime count-up
-  const [isInBreak, setIsInBreak] = useState<boolean>(false); // Flowtime break mode
+  const [secondsRemaining, setSecondsRemaining] = useState<number>(25 * 60);
+  const [flowSeconds, setFlowSeconds] = useState<number>(0);
+  const [isInBreak, setIsInBreak] = useState<boolean>(false);
   const [breakSecondsRemaining, setBreakSecondsRemaining] = useState<number>(0);
 
   // Distraction & session metrics
   const [distractionsCount, setDistractionsCount] = useState<number>(0);
-  const [sessionNotes, setSessionNotes] = useState<string>('');
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
   const [completedPomodorosCount, setCompletedPomodorosCount] = useState<number>(0);
-
-  // Suggested flow break display
   const [suggestedBreakNotice, setSuggestedBreakNotice] = useState<string | null>(null);
 
   const activeTask = tasks.find(t => t.id === selectedTaskId) || initialTask;
   const activeProject = activeTask ? projects.find(p => p.id === activeTask.project_id) : undefined;
   const activePillar = activeProject ? pillars.find(p => p.id === (activeProject as any).pillar_id) : undefined;
 
-  // Active tasks options for custom select
   const activeTasksList = tasks.filter(t => t.status !== 'done');
-  const taskOptions = [
-    { value: '', label: '🎯 نية تركيز حرة (بدون مهمة مسجلة)' },
-    ...activeTasksList.map(t => ({
-      value: t.id,
-      label: `${t.title} ${t.priority === 'high' ? '🔴' : t.priority === 'medium' ? '🟡' : '🟢'}`,
-    })),
-  ];
 
   // If initialTask changes from outside, adopt it
   useEffect(() => {
@@ -121,51 +100,35 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
 
     if (isActive) {
       if (mode === 'pomodoro') {
-        // Countdown
         if (secondsRemaining > 0) {
           interval = setInterval(() => {
             setSecondsRemaining((prev) => prev - 1);
           }, 1000);
         } else {
-          // Finished Pomodoro phase!
           setIsActive(false);
           if (soundEnabled) playFocusSound(pomodoroPhase === 'work' ? 'complete' : 'break');
 
           if (pomodoroPhase === 'work') {
-            const nextPomodoroCount = completedPomodorosCount + 1;
-            setCompletedPomodorosCount(nextPomodoroCount);
-
-            // Save session record
+            setCompletedPomodorosCount(prev => prev + 1);
             logCurrentSession(workDurationMinutes * 60, 'pomodoro');
-
-            // Suggest short or long break
-            if (nextPomodoroCount % 4 === 0) {
-              switchPomodoroPhase('long_break');
-            } else {
-              switchPomodoroPhase('short_break');
-            }
-          } else {
-            // Break finished, ready to work again
-            switchPomodoroPhase('work');
           }
         }
       } else {
-        // Flowtime Mode: Count-up if working, count-down if in break
-        if (!isInBreak) {
-          interval = setInterval(() => {
-            setFlowSeconds((prev) => prev + 1);
-          }, 1000);
-        } else {
+        if (isInBreak) {
           if (breakSecondsRemaining > 0) {
             interval = setInterval(() => {
               setBreakSecondsRemaining((prev) => prev - 1);
             }, 1000);
           } else {
-            setIsActive(false);
             setIsInBreak(false);
-            setSuggestedBreakNotice(null);
+            setIsActive(false);
             if (soundEnabled) playFocusSound('break');
+            setSuggestedBreakNotice(null);
           }
+        } else {
+          interval = setInterval(() => {
+            setFlowSeconds((prev) => prev + 1);
+          }, 1000);
         }
       }
     }
@@ -173,66 +136,45 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isActive, secondsRemaining, flowSeconds, isInBreak, breakSecondsRemaining, mode, pomodoroPhase, workDurationMinutes, shortBreakMinutes, longBreakMinutes, completedPomodorosCount, soundEnabled]);
+  }, [isActive, secondsRemaining, flowSeconds, isInBreak, breakSecondsRemaining, mode, pomodoroPhase, soundEnabled]);
 
-  // Log session to store
-  const logCurrentSession = (durationSec: number, sessionMode: FocusMode) => {
-    const today = new Date().toISOString().split('T')[0];
-    const newRecord: FocusSessionRecord = {
-      id: `fs-${Date.now()}`,
-      task_id: activeTask?.id || null,
-      task_title: activeTask ? activeTask.title : customIntention || 'جلسة تركيز حر',
+  const logCurrentSession = (durationSecs: number, sessionType: FocusMode) => {
+    if (durationSecs < 60) return;
+
+    const record: FocusSessionRecord = {
+      id: `focus-${Date.now()}`,
+      task_id: selectedTaskId || null,
+      task_title: activeTask?.title,
       project_title: activeProject?.title,
       pillar_title: activePillar?.title,
-      mode: sessionMode,
-      duration_seconds: durationSec,
-      date: today,
+      duration_seconds: durationSecs,
+      mode: sessionType,
       completed_at: new Date().toISOString(),
-      notes: sessionNotes || undefined,
+      date: new Date().toISOString().split('T')[0],
       distractions_count: distractionsCount,
+      notes: customIntention || activeTask?.title || 'جلسة تركيز حر',
     };
-    onSaveSession(newRecord);
-    setDistractionsCount(0);
-    setSessionNotes('');
-  };
 
-  // Flowtime: Stop flow and calculate break
-  const handleFlowtimeBreak = () => {
-    if (flowSeconds < 60) return; // ignore less than a minute
-
-    setIsActive(false);
-    const flowMinutes = Math.floor(flowSeconds / 60);
-
-    // Flowtime standard break calculation:
-    // < 25m => 5m break
-    // 25-50m => 8m break
-    // 50-90m => 15m break
-    // > 90m => 25m break
-    let suggestedBreak = 5;
-    if (flowMinutes >= 90) suggestedBreak = 25;
-    else if (flowMinutes >= 50) suggestedBreak = 15;
-    else if (flowMinutes >= 25) suggestedBreak = 8;
-
-    logCurrentSession(flowSeconds, 'flowtime');
-
-    setSuggestedBreakNotice(`تدفق رائع! ركّزت لمدة ${flowMinutes} دقيقة متواصلة. الاستراحة المقترحة هي ${suggestedBreak} دقائق.`);
-    setBreakSecondsRemaining(suggestedBreak * 60);
-    setIsInBreak(true);
-    setFlowSeconds(0);
-    if (soundEnabled) playFocusSound('complete');
+    onSaveSession(record);
   };
 
   const handleToggleTimer = () => {
     if (!isActive && soundEnabled) {
       playFocusSound('start');
     }
-    setIsActive((prev) => !prev);
+    setIsActive(!isActive);
   };
 
   const handleResetTimer = () => {
     setIsActive(false);
     if (mode === 'pomodoro') {
-      switchPomodoroPhase(pomodoroPhase);
+      setSecondsRemaining(
+        pomodoroPhase === 'work' 
+          ? workDurationMinutes * 60 
+          : pomodoroPhase === 'short_break' 
+          ? shortBreakMinutes * 60 
+          : longBreakMinutes * 60
+      );
     } else {
       setFlowSeconds(0);
       setIsInBreak(false);
@@ -241,10 +183,26 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
     }
   };
 
+  const handleFlowtimeBreak = () => {
+    if (flowSeconds < 60) return;
+    const minsWorked = Math.floor(flowSeconds / 60);
+
+    let breakMins = 5;
+    if (minsWorked > 90) breakMins = 25;
+    else if (minsWorked > 50) breakMins = 15;
+    else if (minsWorked > 25) breakMins = 8;
+
+    logCurrentSession(flowSeconds, 'flowtime');
+
+    setBreakSecondsRemaining(breakMins * 60);
+    setIsInBreak(true);
+    setFlowSeconds(0);
+    setSuggestedBreakNotice(`استراحة مستحقة: ${breakMins} دقائق بعد تدفق دام ${minsWorked} دقيقة.`);
+  };
+
   const handleCompleteCurrentTask = () => {
-    if (!activeTask) return;
-    onToggleTaskStatus(activeTask.id);
-    if (isActive) {
+    if (activeTask) {
+      onToggleTaskStatus(activeTask.id);
       if (mode === 'pomodoro') {
         logCurrentSession(workDurationMinutes * 60 - secondsRemaining, 'pomodoro');
       } else {
@@ -255,7 +213,6 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
     if (soundEnabled) playFocusSound('complete');
   };
 
-  // Format MM:SS or HH:MM:SS
   const formatTime = (totalSeconds: number) => {
     const hours = Math.floor(totalSeconds / 3600);
     const mins = Math.floor((totalSeconds % 3600) / 60);
@@ -266,7 +223,6 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Compute Today's Stats
   const todayStr = new Date().toISOString().split('T')[0];
   const todaySessions = sessionsHistory.filter(s => s.date === todayStr);
   const totalFocusSecondsToday = todaySessions.reduce((acc, s) => acc + s.duration_seconds, 0);
@@ -276,19 +232,19 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
     <div className="space-y-6 max-w-5xl mx-auto">
       
       {/* 1. Header & Navigation */}
-      <div className="bg-white border border-[#e8e5de] rounded-2xl p-5 sm:p-6 shadow-2xs">
+      <div className="bg-white dark:bg-slate-900 border border-[#e8e5de] dark:border-slate-800 rounded-2xl p-4 sm:p-6 shadow-2xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <span className="text-xl">🍅</span>
-              <h1 className="text-lg sm:text-xl font-black text-[#1a2420]">
-                مركز جلسات التركيز العميق (Deep Work Hub)
+              <h1 className="text-base sm:text-xl font-black text-[#1a2420] dark:text-slate-100">
+                مركز جلسات التركيز العميق
               </h1>
-              <span className="text-[11px] px-2.5 py-0.5 rounded-md font-bold bg-[#ebf4f0] text-[#174235] border border-[#cfe3d9]">
-                {mode === 'pomodoro' ? 'تقنية بومودورو' : 'تقنية Flowtime'}
+              <span className="text-[11px] px-2.5 py-0.5 rounded-md font-bold bg-[#ebf4f0] dark:bg-emerald-950/70 text-[#174235] dark:text-emerald-300 border border-[#cfe3d9] dark:border-emerald-800">
+                {mode === 'pomodoro' ? 'تقنية بومودورو' : 'تقنية التدفق الحر'}
               </span>
             </div>
-            <p className="text-xs text-[#636e67]">
+            <p className="text-xs text-[#636e67] dark:text-slate-400">
               اختر مهمتك وادخل في حالة التدفق الذهني الخالية من المشتتات مع قياس وقتك الفعلي.
             </p>
           </div>
@@ -300,8 +256,8 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
               onClick={() => setSoundEnabled(!soundEnabled)}
               className={`p-2 rounded-xl border transition-colors cursor-pointer ${
                 soundEnabled 
-                  ? 'bg-[#ebf4f0] text-[#174235] border-[#cfe3d9]' 
-                  : 'bg-[#faf8f4] text-[#86968c] border-[#e8e4db]'
+                  ? 'bg-[#ebf4f0] dark:bg-emerald-950 text-[#174235] dark:text-emerald-300 border-[#cfe3d9] dark:border-emerald-800' 
+                  : 'bg-[#faf8f4] dark:bg-slate-800 text-[#86968c] dark:text-slate-500 border-[#e8e4db] dark:border-slate-700'
               }`}
               title={soundEnabled ? 'كتم التنبيهات الصوتية' : 'تفعيل التنبيهات الصوتية'}
             >
@@ -313,9 +269,9 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
               <button
                 type="button"
                 onClick={onOpenTimeBlocking}
-                className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-[#f6f5f1] text-[#3a443f] border border-[#e3dfd7] rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs"
+                className="flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-slate-800 hover:bg-[#f6f5f1] dark:hover:bg-slate-700 text-[#3a443f] dark:text-slate-200 border border-[#e3dfd7] dark:border-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs"
               >
-                <Calendar className="w-3.5 h-3.5 text-[#174235]" />
+                <Calendar className="w-3.5 h-3.5 text-[#174235] dark:text-emerald-400" />
                 <span>جدول حجب الوقت</span>
               </button>
             )}
@@ -325,7 +281,7 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
               <button
                 type="button"
                 onClick={onBackToHierarchy}
-                className="flex items-center gap-1 px-3 py-2 bg-[#f4f2ed] hover:bg-[#ebe7df] text-[#334239] rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                className="flex items-center gap-1 px-3 py-2 bg-[#f4f2ed] dark:bg-slate-800 hover:bg-[#ebe7df] dark:hover:bg-slate-700 text-[#334239] dark:text-slate-200 rounded-xl text-xs font-bold transition-colors cursor-pointer"
               >
                 <span>العودة للرئيسية</span>
                 <ArrowRight className="w-3.5 h-3.5 rotate-180" />
@@ -335,7 +291,7 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
         </div>
 
         {/* Mode Switcher Tabs */}
-        <div className="flex items-center gap-2 mt-5 pt-4 border-t border-[#f0eee9]">
+        <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-[#f0eee9] dark:border-slate-800">
           <button
             type="button"
             onClick={() => {
@@ -344,12 +300,12 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
             }}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               mode === 'pomodoro'
-                ? 'bg-[#174235] text-white shadow-xs'
-                : 'bg-[#f4f2ed] text-[#55645b] hover:bg-[#eae6dd]'
+                ? 'bg-[#174235] dark:bg-emerald-700 text-white shadow-xs'
+                : 'bg-[#f4f2ed] dark:bg-slate-800 text-[#55645b] dark:text-slate-400 hover:bg-[#eae6dd] dark:hover:bg-slate-700'
             }`}
           >
             <span>🍅</span>
-            <span>بومودورو (Pomodoro)</span>
+            <span>بومودورو</span>
             <span className="text-[10px] opacity-80 font-normal">فترات تنازلية محددة</span>
           </button>
 
@@ -361,48 +317,42 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
             }}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               mode === 'flowtime'
-                ? 'bg-[#174235] text-white shadow-xs'
-                : 'bg-[#f4f2ed] text-[#55645b] hover:bg-[#eae6dd]'
+                ? 'bg-[#174235] dark:bg-emerald-700 text-white shadow-xs'
+                : 'bg-[#f4f2ed] dark:bg-slate-800 text-[#55645b] dark:text-slate-400 hover:bg-[#eae6dd] dark:hover:bg-slate-700'
             }`}
           >
             <Waves className="w-4 h-4 text-cyan-400" />
-            <span>تقنية التدفق الحر (Flowtime)</span>
+            <span>تقنية التدفق الحر</span>
             <span className="text-[10px] opacity-80 font-normal">عداد تصاعدي بلا مقاطعة</span>
           </button>
         </div>
       </div>
 
       {/* 2. Main Focus Stage Card */}
-      <div className="bg-white border border-[#e8e5de] rounded-3xl p-6 sm:p-10 shadow-sm text-center relative overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 border border-[#e8e5de] dark:border-slate-800 rounded-3xl p-5 sm:p-8 shadow-sm text-center relative overflow-hidden">
         
-        {/* Subtle decorative glow when active */}
-        <div className={`absolute -top-24 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full blur-3xl pointer-events-none transition-all duration-700 ${
-          isActive 
-            ? (mode === 'pomodoro' && pomodoroPhase !== 'work') || isInBreak
-              ? 'bg-amber-400/10'
-              : 'bg-emerald-500/15 scale-110'
-            : 'bg-transparent'
-        }`} />
-
         {/* Task Selection Section */}
         <div className="max-w-xl mx-auto space-y-3 relative z-10">
-          <label className="block text-xs font-bold text-[#55645b]">
+          <label className="block text-xs font-bold text-[#55645b] dark:text-slate-400 text-right">
             المهمة المراد التركيز عليها الآن:
           </label>
 
           <div className="relative">
-            <CustomSelect
+            <select
               value={selectedTaskId}
-              onChange={(val) => {
-                setSelectedTaskId(val);
-                if (val) setCustomIntention('');
+              onChange={(e) => {
+                setSelectedTaskId(e.target.value);
+                if (e.target.value) setCustomIntention('');
               }}
-              options={taskOptions}
-              prefixIcon={<Target className="w-4 h-4 text-[#174235]" />}
-              className="w-full text-right"
-              buttonClassName="w-full py-2.5 px-3.5 text-xs font-bold rounded-xl border border-[#d8d4cc] bg-[#faf8f5]"
-              dropdownClassName="w-full max-h-60"
-            />
+              className="w-full py-2.5 px-3.5 text-xs font-bold rounded-xl border border-[#d8d4cc] dark:border-slate-700 bg-[#faf8f5] dark:bg-slate-800 text-[#1a2420] dark:text-slate-100 outline-hidden focus:border-[#174235] cursor-pointer"
+            >
+              <option value="">🎯 نية تركيز حرة (بدون مهمة مسجلة)</option>
+              {activeTasksList.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.title} ({t.priority === 'high' ? 'أولوية قصوى' : t.priority === 'medium' ? 'أولوية متوسطة' : 'أولوية هادئة'})
+                </option>
+              ))}
+            </select>
           </div>
 
           {!selectedTaskId && (
@@ -411,24 +361,26 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
               value={customIntention}
               onChange={(e) => setCustomIntention(e.target.value)}
               placeholder="اكتب نية التركيز لجلسة اليوم (مثلاً: إنهاء مراجعة الكود، قراءة 20 صفحة)..."
-              className="w-full px-3.5 py-2 border border-[#d8d4cc] rounded-xl text-xs bg-[#faf8f5] text-[#1a2420] outline-hidden focus:border-[#174235] transition-all"
+              className="w-full px-3.5 py-2 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-xs bg-[#faf8f5] dark:bg-slate-800 text-[#1a2420] dark:text-slate-100 outline-hidden focus:border-[#174235] transition-all"
             />
           )}
 
           {/* Active Task Breadcrumb context if linked */}
           {activeTask && (
-            <div className="flex items-center justify-center gap-2 text-xs text-[#6e7d73] pt-1">
+            <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-[#6e7d73] dark:text-slate-400 pt-1">
               {activePillar && (
-                <span className="font-bold text-[#1a2420]">🏛️ {activePillar.title}</span>
+                <span className="font-bold text-[#1a2420] dark:text-slate-200">🏛️ {activePillar.title}</span>
               )}
               {activeProject && (
                 <>
                   <span className="text-[#c2bcaf]">/</span>
-                  <span className="font-semibold text-[#174235]">📁 {activeProject.title}</span>
+                  <span className="font-semibold text-[#174235] dark:text-emerald-400">📁 {activeProject.title}</span>
                 </>
               )}
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                activeTask.priority === 'high' ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800'
+                activeTask.priority === 'high' 
+                  ? 'bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300' 
+                  : 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300'
               }`}>
                 {activeTask.priority === 'high' ? 'أولوية عالية' : 'أولوية متوسطة'}
               </span>
@@ -441,14 +393,14 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
           <div className="mt-8 space-y-6 relative z-10">
             
             {/* Pomodoro Phase Selector */}
-            <div className="inline-flex items-center bg-[#f4f2ed] p-1 rounded-2xl border border-[#e4e0d6] gap-1">
+            <div className="inline-flex flex-wrap items-center justify-center bg-[#f4f2ed] dark:bg-slate-800 p-1 rounded-2xl border border-[#e4e0d6] dark:border-slate-700 gap-1">
               <button
                 type="button"
                 onClick={() => switchPomodoroPhase('work')}
-                className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                className={`px-3 sm:px-4 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                   pomodoroPhase === 'work'
-                    ? 'bg-[#174235] text-white shadow-2xs'
-                    : 'text-[#637269] hover:text-[#174235]'
+                    ? 'bg-[#174235] dark:bg-emerald-700 text-white shadow-2xs'
+                    : 'text-[#637269] dark:text-slate-400 hover:text-[#174235]'
                 }`}
               >
                 <span>🧠</span>
@@ -458,10 +410,10 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
               <button
                 type="button"
                 onClick={() => switchPomodoroPhase('short_break')}
-                className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                className={`px-3 sm:px-4 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                   pomodoroPhase === 'short_break'
                     ? 'bg-amber-700 text-white shadow-2xs'
-                    : 'text-[#637269] hover:text-amber-800'
+                    : 'text-[#637269] dark:text-slate-400 hover:text-amber-800'
                 }`}
               >
                 <Coffee className="w-3.5 h-3.5" />
@@ -471,10 +423,10 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
               <button
                 type="button"
                 onClick={() => switchPomodoroPhase('long_break')}
-                className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                className={`px-3 sm:px-4 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                   pomodoroPhase === 'long_break'
                     ? 'bg-sky-700 text-white shadow-2xs'
-                    : 'text-[#637269] hover:text-sky-800'
+                    : 'text-[#637269] dark:text-slate-400 hover:text-sky-800'
                 }`}
               >
                 <span>🌴</span>
@@ -482,14 +434,14 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
               </button>
             </div>
 
-            {/* Giant Digital Countdown Display */}
-            <div className="py-4 select-none">
-              <div className="text-6xl sm:text-8xl font-black tracking-tight text-[#1a2420] font-mono">
+            {/* Digital Countdown Display */}
+            <div className="py-2 select-none">
+              <div className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tight text-[#1a2420] dark:text-slate-100 font-mono tabular-nums">
                 {formatTime(secondsRemaining)}
               </div>
-              <p className="text-xs text-[#718278] font-bold mt-2">
+              <p className="text-xs text-[#718278] dark:text-slate-400 font-bold mt-2">
                 {pomodoroPhase === 'work' 
-                  ? 'جلسة تركيز عميق قيد التشغيل' 
+                  ? 'جلسة تركيز قيد التشغيل' 
                   : pomodoroPhase === 'short_break' 
                   ? 'استراحة قصيرة: تمدد، اشرب ماء، وتنفس بعمق' 
                   : 'استراحة طويلة: استعد طاقتك بالكامل'}
@@ -498,7 +450,7 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
 
             {/* Tomato completed counters */}
             <div className="flex items-center justify-center gap-2">
-              <span className="text-xs text-[#718278] font-bold">بومودورو اليوم:</span>
+              <span className="text-xs text-[#718278] dark:text-slate-400 font-bold">جلسات اليوم:</span>
               <div className="flex items-center gap-1">
                 {Array.from({ length: Math.max(4, completedPomodorosCount) }).map((_, idx) => (
                   <span
@@ -518,31 +470,27 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
         ) : (
           /* FLOWTIME MODE DISPLAY */
           <div className="mt-8 space-y-6 relative z-10">
-            
-            {/* Notice if in suggested break */}
             {suggestedBreakNotice && (
-              <div className="max-w-md mx-auto p-3.5 bg-amber-50 border border-amber-200 rounded-2xl text-xs font-bold text-amber-900 flex items-center gap-2 shadow-2xs">
+              <div className="max-w-md mx-auto p-3.5 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 rounded-2xl text-xs font-bold text-amber-900 dark:text-amber-300 flex items-center gap-2 shadow-2xs">
                 <Coffee className="w-4 h-4 text-amber-700 shrink-0" />
                 <span>{suggestedBreakNotice}</span>
               </div>
             )}
 
-            {/* Giant Stopwatch Display */}
-            <div className="py-4 select-none">
-              <div className="text-6xl sm:text-8xl font-black tracking-tight text-[#1a2420] font-mono">
+            <div className="py-2 select-none">
+              <div className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tight text-[#1a2420] dark:text-slate-100 font-mono tabular-nums">
                 {isInBreak ? formatTime(breakSecondsRemaining) : formatTime(flowSeconds)}
               </div>
-              <p className="text-xs text-[#718278] font-bold mt-2">
+              <p className="text-xs text-[#718278] dark:text-slate-400 font-bold mt-2">
                 {isInBreak 
-                  ? '⏳ استراحة التدفق المقترحة (تنازلي)' 
+                  ? 'استراحة التدفق المقترحة (تنازلي)' 
                   : isActive 
-                  ? '🌊 حالة التدفق نشطة (Stopwatch) - اعمل بحرية حتى تشعر بالحاجة للراحة' 
+                  ? 'حالة التدفق نشطة - اعمل بحرية حتى تشعر بالحاجة للراحة' 
                   : 'جاهز لبدء التدفق الحر؟ اضغط تشغيل'}
               </p>
             </div>
 
-            {/* Flowtime Break Recommendation Helper pills */}
-            <div className="max-w-lg mx-auto bg-[#faf8f4] border border-[#e8e4db] rounded-2xl p-3 text-[11px] text-[#637269] flex items-center justify-around">
+            <div className="max-w-lg mx-auto bg-[#faf8f4] dark:bg-slate-800 border border-[#e8e4db] dark:border-slate-700 rounded-2xl p-3 text-[11px] text-[#637269] dark:text-slate-400 flex flex-wrap items-center justify-around gap-2">
               <span>أقل من 25د: <strong>راحة 5د</strong></span>
               <span>•</span>
               <span>25-50د: <strong>راحة 8د</strong></span>
@@ -551,21 +499,20 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
               <span>•</span>
               <span>+90د: <strong>راحة 25د</strong></span>
             </div>
-
           </div>
         )}
 
-        {/* Primary Controls Row */}
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-3 relative z-10">
+        {/* Primary Controls Row - Wrap cleanly without overlapping */}
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5 sm:gap-3 relative z-10">
           
           {/* Start / Pause Button */}
           <button
             type="button"
             onClick={handleToggleTimer}
-            className={`flex items-center gap-2 px-8 py-3.5 rounded-2xl text-sm font-black transition-all shadow-md hover:shadow-lg cursor-pointer ${
+            className={`flex items-center gap-2 px-6 sm:px-8 py-3 rounded-2xl text-xs sm:text-sm font-black transition-all shadow-md hover:shadow-lg cursor-pointer ${
               isActive
                 ? 'bg-amber-600 hover:bg-amber-700 text-white'
-                : 'bg-[#174235] hover:bg-[#12362b] text-white'
+                : 'bg-[#174235] dark:bg-emerald-700 hover:bg-[#12362b] text-white'
             }`}
           >
             {isActive ? (
@@ -586,7 +533,7 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
             <button
               type="button"
               onClick={handleFlowtimeBreak}
-              className="flex items-center gap-1.5 px-5 py-3.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-2xl text-xs font-black shadow-xs cursor-pointer transition-all"
+              className="flex items-center gap-1.5 px-4 sm:px-5 py-3 bg-emerald-700 hover:bg-emerald-800 text-white rounded-2xl text-xs font-black shadow-xs cursor-pointer transition-all"
             >
               <Coffee className="w-4 h-4" />
               <span>أخذ استراحة وتدوين التدفق</span>
@@ -597,18 +544,18 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
           <button
             type="button"
             onClick={handleResetTimer}
-            className="p-3.5 bg-[#f4f2ed] hover:bg-[#eae6dd] text-[#4d5c52] rounded-2xl border border-[#dedad0] transition-colors cursor-pointer"
+            className="p-3 bg-[#f4f2ed] dark:bg-slate-800 hover:bg-[#eae6dd] dark:hover:bg-slate-700 text-[#4d5c52] dark:text-slate-300 rounded-2xl border border-[#dedad0] dark:border-slate-700 transition-colors cursor-pointer"
             title="إعادة ضبط المؤقت"
           >
             <RotateCcw className="w-4 h-4" />
           </button>
 
-          {/* Mindful Distraction Button */}
+          {/* Distraction Button */}
           {isActive && (
             <button
               type="button"
               onClick={() => setDistractionsCount(prev => prev + 1)}
-              className="flex items-center gap-1.5 px-4 py-3 bg-[#fdf8f4] hover:bg-[#fbede1] text-[#b45309] border border-[#fed7aa] rounded-2xl text-xs font-bold transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-3.5 sm:px-4 py-3 bg-[#fdf8f4] dark:bg-amber-950/60 hover:bg-[#fbede1] text-[#b45309] dark:text-amber-300 border border-[#fed7aa] dark:border-amber-800 rounded-2xl text-xs font-bold transition-all cursor-pointer"
               title="سجل التشتت الذهني لملاحظته دون الاستسلام له"
             >
               <Zap className="w-3.5 h-3.5 text-amber-500" />
@@ -621,9 +568,9 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
             <button
               type="button"
               onClick={handleCompleteCurrentTask}
-              className="flex items-center gap-1.5 px-5 py-3.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-2xl text-xs font-bold transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-4 sm:px-5 py-3 bg-emerald-50 dark:bg-emerald-950/70 hover:bg-emerald-100 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 rounded-2xl text-xs font-bold transition-all cursor-pointer"
             >
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               <span>تم إنجاز المهمة بنجاح 🎉</span>
             </button>
           )}
@@ -636,86 +583,41 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         
         {/* Metric 1 */}
-        <div className="bg-white border border-[#e8e5de] rounded-2xl p-4 shadow-2xs flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-[#ebf4ef] text-[#174235] flex items-center justify-center font-bold">
+        <div className="bg-white dark:bg-slate-900 border border-[#e8e5de] dark:border-slate-800 rounded-2xl p-4 shadow-2xs flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-[#ebf4ef] dark:bg-emerald-950 text-[#174235] dark:text-emerald-300 flex items-center justify-center font-bold">
             <Clock className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-[11px] text-[#718278] font-bold block">إجمالي التركيز اليوم</span>
-            <span className="text-xl font-black text-[#1a2420]">{totalFocusMinutesToday} دقيقة</span>
+            <span className="text-[11px] text-[#718278] dark:text-slate-400 font-bold block">إجمالي التركيز اليوم</span>
+            <span className="text-xl font-black text-[#1a2420] dark:text-slate-100">{totalFocusMinutesToday} دقيقة</span>
           </div>
         </div>
 
         {/* Metric 2 */}
-        <div className="bg-white border border-[#e8e5de] rounded-2xl p-4 shadow-2xs flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-bold">
-            <Flame className="w-5 h-5" />
+        <div className="bg-white dark:bg-slate-900 border border-[#e8e5de] dark:border-slate-800 rounded-2xl p-4 shadow-2xs flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 flex items-center justify-center font-bold">
+            <span className="text-lg">🍅</span>
           </div>
           <div>
-            <span className="text-[11px] text-[#718278] font-bold block">عدد الجلسات المكتملة</span>
-            <span className="text-xl font-black text-[#1a2420]">{todaySessions.length} جلسات</span>
+            <span className="text-[11px] text-[#718278] dark:text-slate-400 font-bold block">جلسات مكتملة</span>
+            <span className="text-xl font-black text-[#1a2420] dark:text-slate-100">{todaySessions.length} جلسة</span>
           </div>
         </div>
 
         {/* Metric 3 */}
-        <div className="bg-white border border-[#e8e5de] rounded-2xl p-4 shadow-2xs flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-700 flex items-center justify-center font-bold">
-            <BarChart2 className="w-5 h-5" />
+        <div className="bg-white dark:bg-slate-900 border border-[#e8e5de] dark:border-slate-800 rounded-2xl p-4 shadow-2xs flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-sky-50 dark:bg-sky-950 text-sky-700 dark:text-sky-300 flex items-center justify-center font-bold">
+            <Target className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-[11px] text-[#718278] font-bold block">متوسط مدة الجلسة</span>
-            <span className="text-xl font-black text-[#1a2420]">
-              {todaySessions.length > 0 ? Math.round(totalFocusMinutesToday / todaySessions.length) : 0} دقيقة
+            <span className="text-[11px] text-[#718278] dark:text-slate-400 font-bold block">المهمة النشطة</span>
+            <span className="text-xs font-bold text-[#1a2420] dark:text-slate-200 truncate max-w-[180px] block">
+              {activeTask?.title || 'نية تركيز حرة'}
             </span>
           </div>
         </div>
 
       </div>
-
-      {/* 4. Focus Session Log History */}
-      {sessionsHistory.length > 0 && (
-        <div className="bg-white border border-[#e8e5de] rounded-2xl p-5 shadow-2xs">
-          <div className="flex items-center justify-between pb-3 border-b border-[#f0eee9]">
-            <h3 className="text-xs font-black text-[#1a2420] flex items-center gap-1.5">
-              <span>سجل جلسات التركيز الموثقة</span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#f4f2ed] text-[#637269]">
-                {sessionsHistory.length}
-              </span>
-            </h3>
-          </div>
-
-          <div className="divide-y divide-[#f2efe9] mt-2 max-h-60 overflow-y-auto">
-            {sessionsHistory.slice(0, 8).map((session) => (
-              <div key={session.id} className="py-2.5 flex items-center justify-between gap-3 text-xs">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <span className="text-sm">
-                    {session.mode === 'pomodoro' ? '🍅' : '🌊'}
-                  </span>
-                  <div className="min-w-0">
-                    <p className="font-bold text-[#1a2420] truncate">
-                      {session.task_title || 'جلسة تركيز'}
-                    </p>
-                    {session.project_title && (
-                      <p className="text-[10px] text-[#718278] truncate">
-                        {session.project_title}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 shrink-0 text-[11px] font-bold text-[#55645b]">
-                  <span className="px-2 py-0.5 rounded-md bg-[#faf8f4] border border-[#e8e4db]">
-                    {Math.round(session.duration_seconds / 60)} دقيقة
-                  </span>
-                  <span className="text-[10px] text-[#86968c]">
-                    {new Date(session.completed_at).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
     </div>
   );

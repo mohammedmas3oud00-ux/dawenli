@@ -34,7 +34,7 @@ interface TimeBlockingViewProps {
 
 const CATEGORY_CONFIG: Record<TimeBlockCategory, { label: string; bg: string; border: string; text: string; icon: string }> = {
   deep_work: {
-    label: 'تركيز عميق (Deep Work)',
+    label: 'تركيز عميق',
     bg: 'bg-[#174235]/10',
     border: 'border-[#174235]/30',
     text: 'text-[#174235]',
@@ -295,7 +295,7 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
             <div className="flex items-center gap-2">
               <span className="text-xl">📅</span>
               <h1 className="text-lg sm:text-xl font-black text-[#1a2420]">
-                حجب الوقت اليومي (Time Blocking)
+                حجب الوقت اليومي
               </h1>
               <span className="text-[11px] px-2.5 py-0.5 rounded-md font-bold bg-[#ebf4f0] text-[#174235] border border-[#cfe3d9]">
                 {dayBlocks.length} كتل مجدولة
@@ -400,7 +400,7 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-white text-[#174235] hover:bg-emerald-50 rounded-lg text-xs font-bold transition-colors cursor-pointer"
               >
                 <Play className="w-3.5 h-3.5 fill-[#174235]" />
-                <span>بدء مؤقت التركيز (Focus)</span>
+                <span>بدء مؤقت التركيز</span>
               </button>
             )}
           </div>
@@ -602,7 +602,7 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
           <div className="bg-white border border-[#e8e5de] rounded-2xl p-5 shadow-2xs space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-black text-[#1a2420] flex items-center gap-1.5">
-                <span>مهام غير مجدولة (Backlog)</span>
+                <span>مهام غير مهام غير مجدولة</span>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#ebf4ef] text-[#174235] font-bold">
                   {unscheduledTasks.length}
                 </span>
@@ -746,7 +746,7 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
                   value={formCategory}
                   onChange={(val) => setFormCategory(val as TimeBlockCategory)}
                   options={[
-                    { value: 'deep_work', label: '🧠 تركيز عميق (Deep Work)' },
+                    { value: 'deep_work', label: '🧠 تركيز عميق' },
                     { value: 'shallow_work', label: '⚡ عمل إجرائي ومتابعات' },
                     { value: 'meeting', label: '🤝 اجتماع أو تواصل' },
                     { value: 'health_habit', label: '🏃 صحة وعادات ورياضة' },

@@ -39,7 +39,7 @@ export const VisionsTabView: React.FC<VisionsTabViewProps> = ({
             <Eye className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-base sm:text-lg font-black text-[#1a2420]">الرؤى المستقبلية (Visions)</h1>
+            <h1 className="text-base sm:text-lg font-black text-[#1a2420]">الرؤى المستقبلية</h1>
             <p className="text-xs text-[#636e67]">
               الآفاق والصور الكبرى المنشودة، موزعة ومربوطة بالركائز الأساسية للحياة.
             </p>
@@ -146,7 +146,7 @@ export const VisionsTabView: React.FC<VisionsTabViewProps> = ({
                     onClick={() => onSelectVision(vision.id, vision.pillar_id)}
                     className="w-full mt-2 py-2 px-3 bg-[#f8f7f4] hover:bg-[#ebf4f0] text-[#174235] rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-[#e7e3db] group-hover:border-[#cfe3d9] cursor-pointer"
                   >
-                    <span>الدخول وتصفح الأهداف (Goals)</span>
+                    <span>الدخول وتصفح الأهداف</span>
                     <ChevronLeft className="w-3.5 h-3.5" />
                   </button>
                 </div>

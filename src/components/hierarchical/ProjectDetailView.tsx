@@ -106,7 +106,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                 ) : (
                   <>
                     <Sparkles className="w-3.5 h-3.5 text-amber-200" />
-                    <span>تفكيك ذكي (AI)</span>
+                    <span>تفكيك تفكيك ذكي</span>
                   </>
                 )}
               </button>
@@ -159,7 +159,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
           <div>
             <h2 className="text-sm font-bold text-[#1a2420] flex items-center gap-2">
               <CheckSquare className="w-4 h-4 text-[#174235]" />
-              <span>المهام التنفيذية (Actionable Tasks)</span>
+              <span>المهام التنفيذية</span>
             </h2>
             <p className="text-[11px] text-[#6d7972]">
               انقر على مربع الاختيار لتسجيل الإنجاز وتحديث نسب المشروع والهدف والرؤية والركيزة فوراً.

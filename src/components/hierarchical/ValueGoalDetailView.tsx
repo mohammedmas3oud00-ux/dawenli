@@ -110,7 +110,7 @@ export const ValueGoalDetailView: React.FC<ValueGoalDetailViewProps> = ({
           <div>
             <h2 className="text-sm font-bold text-[#1a2420] flex items-center gap-2">
               <Folder className="w-4 h-4 text-[#174235]" />
-              <span>المشاريع التنفيذية (Projects)</span>
+              <span>المشاريع التنفيذية</span>
             </h2>
             <p className="text-[11px] text-[#6d7972]">
               المبادرات العملية التي تحقق هذا الهدف. انقر على أي مشروع للتعمق في المهام وقوائم الإنجاز.
@@ -207,7 +207,7 @@ export const ValueGoalDetailView: React.FC<ValueGoalDetailViewProps> = ({
                     onClick={() => onSelectProject(proj.id)}
                     className="w-full mt-2 py-2 px-3 bg-[#f8f7f4] hover:bg-[#ebf4f0] text-[#174235] rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-[#e7e3db] group-hover:border-[#cfe3d9] cursor-pointer"
                   >
-                    <span>الدخول وتصفح المهام (Tasks)</span>
+                    <span>الدخول وتصفح المهام</span>
                     <ChevronLeft className="w-3.5 h-3.5" />
                   </button>
                 </div>

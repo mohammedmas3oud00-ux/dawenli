@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-sans: 'Cairo', 'IBM Plex Sans Arabic', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
@@ -12,10 +14,18 @@
     font-family: 'Cairo', 'IBM Plex Sans Arabic', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     direction: rtl;
   }
+  html.dark, html.dark body {
+    background-color: #0b1210;
+    color: #edf2ef;
+  }
   select, option {
     font-family: inherit;
     background-color: #ffffff;
     color: #1a2420;
+  }
+  .dark select, .dark option {
+    background-color: #1a2622;
+    color: #edf2ef;
   }
 }
 
@@ -31,6 +41,12 @@
   background: #cbd5e1;
   border-radius: 9999px;
 }
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
 }

@@ -262,7 +262,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
             </div>
             <div>
               <h3 className="font-black text-sm text-[#1a2420]">
-                {initialReview ? 'تعديل المراجعة' : 'مراجعة دورية شاملة (System Review)'}
+                {initialReview ? 'تعديل المراجعة' : 'مراجعة دورية شاملة'}
               </h3>
               <p className="text-[11px] text-[#6a7770]">
                 تأمل يدوي مع تشخيص تحليلي آلي مرتبط بالركائز والمشاريع والمهام
@@ -412,7 +412,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
               <div>
                 <label className="block font-bold text-[#1a2420] mb-1 flex items-center gap-1.5">
                   <CheckCircle2 className="w-3.5 h-3.5 text-[#174235]" />
-                  <span>أبرز الانتصارات والإنجازات (Wins):</span>
+                  <span>أبرز الانتصارات والإنجازات:</span>
                 </label>
                 <textarea
                   rows={2}
@@ -427,7 +427,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
               <div>
                 <label className="block font-bold text-[#1a2420] mb-1 flex items-center gap-1.5">
                   <AlertTriangle className="w-3.5 h-3.5 text-[#b08726]" />
-                  <span>المعوقات والتحديات (Bottlenecks & Friction):</span>
+                  <span>المعوقات والتحديات:</span>
                 </label>
                 <textarea
                   rows={2}
@@ -442,7 +442,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
               <div>
                 <label className="block font-bold text-[#1a2420] mb-1 flex items-center gap-1.5">
                   <Lightbulb className="w-3.5 h-3.5 text-[#174235]" />
-                  <span>الدروس المستفادة والتحسينات (Lessons & Insights):</span>
+                  <span>الدروس المستفادة والتحسينات:</span>
                 </label>
                 <textarea
                   rows={2}
@@ -457,7 +457,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
               <div>
                 <label className="block font-bold text-[#1a2420] mb-1 flex items-center gap-1.5">
                   <ArrowRight className="w-3.5 h-3.5 text-[#174235]" />
-                  <span>التزامات وأولويات الفترة القادمة (Next Commitments):</span>
+                  <span>التزامات وأولويات الفترة القادمة:</span>
                 </label>
                 <textarea
                   rows={2}
@@ -471,7 +471,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
               {/* General Notes */}
               <div>
                 <label className="block font-semibold text-[#5c6861] mb-1">
-                  ملاحظات وتأملات حرة (Notes):
+                  ملاحظات وتأملات ملاحظات حرة:
                 </label>
                 <textarea
                   rows={2}
@@ -511,7 +511,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                     onClick={runGeminiAiAudit}
                     disabled={isGeneratingAudit}
                     className="px-3 py-1.5 bg-[#174235] text-white hover:bg-[#12352a] rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
-                    title="تحليل استراتيجي عميق بالذكاء الاصطناعي (Gemini AI)"
+                    title="تحليل استراتيجي عميق بالذكاء الاصطناعي"
                   >
                     <Sparkles className="w-3.5 h-3.5 text-amber-300" />
                     <span>{isGeneratingAudit ? 'جاري التحليل...' : 'تشخيص Gemini الذكي'}</span>
@@ -531,7 +531,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
               {/* Smart Summary */}
               <div className="bg-[#faf8f4] border border-[#ece5da] rounded-xl p-3.5 text-xs text-[#362f25] leading-relaxed">
                 <span className="font-bold block text-[11px] text-[#8f681a] mb-1 uppercase tracking-wide">
-                  الملخص التحليلي الذكي (Automated Diagnostic Summary):
+                  الملخص التحليلي الذكي:
                 </span>
                 <p className="font-medium">{smartSummary}</p>
               </div>
@@ -598,7 +598,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 font-bold text-[#1a2420]">
                     <Activity className="w-4 h-4 text-[#174235]" />
-                    <span>إجراءات تنفيذية مستخرجة (Action Items)</span>
+                    <span>إجراءات تنفيذية مستخرجة</span>
                   </div>
                   <span className="text-[10px] text-[#7d8982]">
                     يمكن تحويلها لمهام حقيقية بنقرة واحدة داخل أي مشروع

@@ -50,7 +50,7 @@ export const TasksTabView: React.FC<TasksTabViewProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-base font-semibold text-[#1a2420]">كل المهام اليومية (Tasks)</h1>
+                <h1 className="text-base font-semibold text-[#1a2420]">كل المهام اليومية</h1>
                 <span className="text-xs font-mono text-[#78857e] tabular-nums">
                   ({todoCount} متبقية · {doneCount} منجزة)
                 </span>

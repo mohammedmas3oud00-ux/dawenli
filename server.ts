@@ -24,14 +24,80 @@ const ai = new GoogleGenAI({
   },
 });
 
-// Helper to remove speech-to-text stutter and repeated phrases
+// Robust model cascade list to handle transient 503 / high demand spikes
+const MODEL_CASCADE = [
+  'gemini-3-flash-preview',
+  'gemini-flash-latest',
+  'gemini-3.6-flash',
+  'gemini-3.7-flash',
+];
+
+function safeParseJson(text: string): any {
+  if (!text) return null;
+  let cleaned = text.trim();
+  if (cleaned.startsWith('```json')) {
+    cleaned = cleaned.replace(/^```json\s*/i, '').replace(/\s*```$/i, '');
+  } else if (cleaned.startsWith('```')) {
+    cleaned = cleaned.replace(/^```\s*/, '').replace(/\s*```$/, '');
+  }
+  return JSON.parse(cleaned.trim());
+}
+
+/**
+ * Resilient content generator that tries preferred models with retries
+ */
+async function generateContentWithFallback(params: {
+  contents: any;
+  config?: any;
+  preferredModel?: string;
+  maxRetries?: number;
+}): Promise<any> {
+  const models = params.preferredModel 
+    ? [params.preferredModel, ...MODEL_CASCADE.filter(m => m !== params.preferredModel)]
+    : MODEL_CASCADE;
+
+  let lastError: any = null;
+
+  for (const model of models) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error(`Timeout after 12000ms on model ${model}`)), 12000)
+        );
+        const apiPromise = ai.models.generateContent({
+          model,
+          contents: params.contents,
+          config: params.config,
+        });
+
+        const response: any = await Promise.race([apiPromise, timeoutPromise]);
+        if (response && response.text) {
+          return { response, modelUsed: model };
+        }
+      } catch (err: any) {
+        lastError = err;
+        const isTransient = err.status === 503 || err.status === 429 || err.message?.includes('high demand') || err.message?.includes('Timeout');
+        if (isTransient && attempt === 0) {
+          await new Promise((r) => setTimeout(r, 600));
+          continue;
+        }
+        break; // try next model in cascade
+      }
+    }
+  }
+
+  throw lastError || new Error('تعذر معالجة الطلب عبر نماذج الذكاء الاصطناعي حالياً');
+}
+
+// Helper to remove speech-to-text stutter and repeated phrases (Unicode safe for Arabic)
 function sanitizeSpeechText(rawText: string): string {
   if (!rawText) return '';
   let str = rawText.trim().replace(/\s+/g, ' ');
 
+  const words = str.split(' ').filter(Boolean);
+  if (words.length <= 1) return str;
+
   // 1. Resolve progressive interim-speech accumulation bug
-  // (e.g. "عايز عايز اعمل عايز اعمل موقع... عايز اعمل موقع الكتروني...")
-  const words = str.split(' ');
   if (words.length > 5) {
     const startWord = words[0];
     const startIndices: number[] = [];
@@ -52,18 +118,37 @@ function sanitizeSpeechText(rawText: string): string {
     }
   }
 
-  let text = str;
-
-  // 2. Remove repeated consecutive words: e.g. "عايز عايز" -> "عايز"
-  text = text.replace(/(\b\S+\b)(?:\s+\1)+/gi, '$1');
-
-  // 3. Remove repeating multi-word phrases (e.g. "عايز اعمل موقع عايز اعمل موقع")
-  for (let n = 10; n >= 2; n--) {
-    const regex = new RegExp(`(\\b(?:\\S+\\s+){${n - 1}}\\S+\\b)(?:\\s+\\1)+`, 'gi');
-    text = text.replace(regex, '$1');
+  // 2. Remove immediate consecutive duplicate words
+  const cleanTokens: string[] = [];
+  const currentTokens = str.split(' ').filter(Boolean);
+  for (let i = 0; i < currentTokens.length; i++) {
+    if (i === 0 || currentTokens[i] !== currentTokens[i - 1]) {
+      cleanTokens.push(currentTokens[i]);
+    }
   }
 
-  return text.trim();
+  // 3. Remove repeating multi-word phrases (from 8 words down to 2)
+  let result = cleanTokens;
+  for (let phraseLen = Math.min(8, Math.floor(result.length / 2)); phraseLen >= 2; phraseLen--) {
+    const compacted: string[] = [];
+    let i = 0;
+    while (i < result.length) {
+      if (i + 2 * phraseLen <= result.length) {
+        const p1 = result.slice(i, i + phraseLen).join(' ');
+        const p2 = result.slice(i + phraseLen, i + 2 * phraseLen).join(' ');
+        if (p1 === p2) {
+          compacted.push(...result.slice(i, i + phraseLen));
+          i += 2 * phraseLen;
+          continue;
+        }
+      }
+      compacted.push(result[i]);
+      i++;
+    }
+    result = compacted;
+  }
+
+  return result.join(' ').trim();
 }
 
 /**
@@ -80,13 +165,13 @@ app.post('/api/ai/analyze-voice', async (req, res) => {
     const preCleanedText = sanitizeSpeechText(speechText);
 
     const prompt = `
-أنت خبير استراتيجي في إدارة الإنتاجية الشخصية والأنظمة الهرمية (مثل نظام دوّنلي و PPV و GTD).
-قام المستخدم بالتحدث أو إدخال الفكرة التالية بصوته (قد تحتوي الفكرة الأصلية على تكرار ناتج عن عيوب الإملاء الصوتي):
+أنت خبير استراتيجي في إدارة الإنتاجية الشخصية والأنظمة الهرمية لنظام دوّنلي (الركائز ← الرؤى ← أهداف القيمة ← المشاريع ← المهام التنفيذية).
+قام المستخدم بإدخال أو التحدث بالفكرة التالية:
 """
 ${speechText}
 """
 
-النص المنقى مبدئياً:
+النص المنقى من التأتأة وعيوب الإملاء:
 """
 ${preCleanedText}
 """
@@ -95,24 +180,21 @@ ${preCleanedText}
 المشاريع الحالية: ${JSON.stringify(existingProjects)}
 
 مهمتك:
-1. تنقية النص تماماً من أي تكرار أو تردد أو أخطاء إملاء صوتي، واستخلاص العبارة الواضحة والصريحة.
+1. تنقية النص تماماً من أي تردد أو أخطاء، وصياغة فكرة واضحة ومحددة.
 2. فهم نية المستخدم:
-   - هل هي رغبة في بناء مشروع/نظام متكامل أو موقع (يحتاج تفكيكاً إلى أهداف ومشاريع ومهام)؟
-   - أم هي مهمة واحدة تنفيذية محددة؟
-   - أم فكرة/ملاحظة عامة للمستقبل (Inbox/Idea)؟
-   - أم عادة سلوكية؟
-3. إذا كانت فكرة مشروع أو نظام (مثل: "عايز اعمل موقع الكتروني او نظام يخليني اقدر اعمل صور ونصوص اعلانيه للشغل بتاعي"):
-   - صغ عنواناً دقيقاً وجذاباً للمشروع/الهدف.
-   - اقترح الركيزة المناسبة (مثلاً: ركيزة العمل، المال، أو الإنتاجية).
-   - قم بتفكيك هذا المشروع إلى قائمة من (3 إلى 6) مهام تنفيذية عملية ومرتبة منطقياً، مع تحديد أولوية كل مهمة (high, medium, low)، ومستوى الطاقة (low, medium, high)، وتقدير الوقت بالساعات (0.5 إلى 4).
-4. أخرج النتيجة بتنسيق JSON متوافق مع المخطط.
+   - هل هي بناء مشروع أو مبادرة متعددة الخطوات؟ (project_breakdown)
+   - أم مهمة إجرائية مفردة؟ (single_task)
+   - أم فكرة أو معلومة للأرشيف؟ (idea_note)
+   - أم عادة سلوكية يومية؟ (habit)
+3. صياغة عنوان ملهم ومباشر للمشروع مستوحى بدقة من موضوع المستخدم نفسه.
+4. اقتراح الركيزة الأنسب من بين الركائز المتاحة.
+5. تفكيك الفكرة إلى 3 إلى 6 مهام عملية، قابلة للإنجاز الفوري ومحددة بدقة لموضوع المستخدم، مع تحديد الأولوية (high, medium, low)، ومستوى الطاقة (low, medium, high)، والوقت التقديري بالساعات (0.5 إلى 4).
 `;
 
     let parsed: any = null;
 
     try {
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
+      const { response } = await generateContentWithFallback({
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
@@ -141,7 +223,7 @@ ${preCleanedText}
               },
               projectTitle: {
                 type: Type.STRING,
-                description: 'اسم المشروع المقترح',
+                description: 'اسم المشروع المقترح بدقة من صلب فكرة المستخدم',
               },
               projectDescription: {
                 type: Type.STRING,
@@ -168,62 +250,58 @@ ${preCleanedText}
         },
       });
 
-      parsed = JSON.parse(response.text?.trim() || '{}');
-    } catch (apiErr) {
-      console.warn('Gemini API call failed, generating smart local fallback decomposition:', apiErr);
+      parsed = safeParseJson(response.text) || {};
+    } catch (apiErr: any) {
+      console.warn('Gemini API call failed, generating contextual semantic fallback:', apiErr?.message);
       
-      // Smart offline fallback for Arabic decomposition
+      // Dynamic semantic fallback strictly derived from the user's actual text
       const clean = preCleanedText;
-      let projectTitle = 'مشروع: ' + clean.slice(0, 50);
-      let summary = clean;
-      let suggestedPillar = existingPillars[0] || 'العمل والمهنة';
-
-      if (clean.includes('موقع') || clean.includes('نظام') || clean.includes('صور') || clean.includes('اعلانيه')) {
-        projectTitle = 'تطوير موقع ونظام الذكاء الاصطناعي لإنشاء الصور والنصوص الإعلانية';
-        summary = 'بناء منصة متكاملة لإنتاج وتصميم المحتوى الإعلاني والصور الموجهة للعمل تلقائياً';
-        suggestedPillar = existingPillars.find((p: string) => p.includes('عمل') || p.includes('مهن') || p.includes('مال')) || 'العمل والمهنة';
+      const cleanTitle = clean.length > 45 ? clean.slice(0, 45).trim() + '...' : clean;
+      
+      let matchedPillar = existingPillars[0] || 'العمل والمسار المهني';
+      if (/دين|صلاة|قرآن|عبادة|ذكر|الله|مسجد/i.test(clean)) {
+        matchedPillar = existingPillars.find((p: string) => p.includes('الله') || p.includes('دين') || p.includes('إيمان')) || matchedPillar;
+      } else if (/صحة|رياضة|تمرين|جسم|نوم|أكل|حمية/i.test(clean)) {
+        matchedPillar = existingPillars.find((p: string) => p.includes('صحة') || p.includes('جسد') || p.includes('بدن')) || matchedPillar;
+      } else if (/مال|استثمار|راتب|مصاريف|ادخار|شراء|بيع|تجارة/i.test(clean)) {
+        matchedPillar = existingPillars.find((p: string) => p.includes('مال') || p.includes('استثمار') || p.includes('ثروة')) || matchedPillar;
+      } else if (/تعلم|قراءة|كتاب|مهارة|دورة|لغة|برمجة/i.test(clean)) {
+        matchedPillar = existingPillars.find((p: string) => p.includes('ذات') || p.includes('مهار') || p.includes('تطوير') || p.includes('علم')) || matchedPillar;
       }
 
       parsed = {
         cleanedTranscription: clean,
         intentType: 'project_breakdown',
-        summary,
-        suggestedPillarTitle: suggestedPillar,
-        valueGoalTitle: 'أتمتة وتطوير منظومة العمل الرقمي والتسويقي',
-        projectTitle,
-        projectDescription: `مشروع استراتيجي مستخلص من فكرة المستخدم: "${clean}"`,
+        summary: `تنفيذ ومتابعة: ${cleanTitle}`,
+        suggestedPillarTitle: matchedPillar,
+        valueGoalTitle: `تطوير وإتقان مبادرات ${matchedPillar}`,
+        projectTitle: `مشروع: ${cleanTitle}`,
+        projectDescription: `مبادرة تنفيذية مستخلصة من فكرة المستخدم: "${clean}"`,
         tasks: [
           {
-            title: 'تحديد متطلبات النظام ونماذج الذكاء الاصطناعي لتوليد الصور والنصوص',
-            description: 'دراسة الأدوات والمكتبات المناسبة لاحتياجات العمل وتحديد واجهات برمجة التطبيقات',
+            title: `تحديد متطلبات ونطاق العمل الخاص بـ "${cleanTitle}"`,
+            description: 'وضع المعايير الأساسية وتحديد الأولويات ومصادر التنفيذ',
             priority: 'high',
             energyLevel: 'high',
-            estimatedHours: 2,
+            estimatedHours: 1.5,
           },
           {
-            title: 'تصميم واجهة المستخدم وتجربة الاستخدام لموقع توليد الإعلانات',
-            description: 'رسم المخطط الهيكلي وتحديد شاشات إدخال الأوصاف وعرض النتائج',
+            title: `إعداد خطة التنفيذ والخطوات الإجرائية الأولى`,
+            description: 'تقسيم العمل إلى مراحل صغيرة واضحة والبدء بالمرحلة الأولى',
             priority: 'medium',
             energyLevel: 'medium',
             estimatedHours: 2,
           },
           {
-            title: 'برمجة محرك تكامل واجهات الذكاء الاصطناعي للنصوص والصور',
-            description: 'ربط النماذج ومعالجة الأوامر واستقبال المخرجات الإعلانية بجودة عالية',
+            title: `التنفيذ الفعلي للمرحلة الرئيسية واختبار النتائج`,
+            description: 'التركيز على إنجاز جوهر المبادرة بجودة وإتقان',
             priority: 'high',
             energyLevel: 'high',
             estimatedHours: 3,
           },
           {
-            title: 'تخصيص قوالب وهوية المواد الإعلانية لتناسب طبيعة الشغل',
-            description: 'إعداد الأبعاد والأنماط والألوان المخصصة لهوية العمل التسويقية',
-            priority: 'medium',
-            energyLevel: 'medium',
-            estimatedHours: 1.5,
-          },
-          {
-            title: 'اختبار النظام وإطلاق النسخة التجريبية الأولى للعمل',
-            description: 'تجربة إنشاء أول حملة إعلانية كاملة وتقييم سرعة وجودة النتائج',
+            title: `المراجعة والتقييم وتثبيت المخرجات في المستودع`,
+            description: 'التأكد من اكتمال الأهداف وتوثيق النتائج للرجوع إليها',
             priority: 'medium',
             energyLevel: 'low',
             estimatedHours: 1,
@@ -262,19 +340,36 @@ app.post('/api/ai/transcribe', async (req, res) => {
       },
     };
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.5-transcribe',
-      contents: {
-        parts: [
-          audioPart,
-          {
-            text: 'قم بتفريغ هذا التسجيل الصوتي بدقة عالية باللغة العربية. إذا كان هناك كلمات مكررة بسبب التأتأة أو التردد قم بإزالتها واكتب النص السليم مباشرة.',
-          },
-        ],
-      },
-    });
+    let transcribed = '';
+    try {
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.5-transcribe',
+        contents: {
+          parts: [
+            audioPart,
+            {
+              text: 'قم بتفريغ هذا التسجيل الصوتي بدقة عالية باللغة العربية. إذا كان هناك كلمات مكررة بسبب التأتأة أو التردد قم بإزالتها واكتب النص السليم مباشرة.',
+            },
+          ],
+        },
+      });
+      transcribed = response.text?.trim() || '';
+    } catch (primaryErr) {
+      console.warn('Primary transcribe model failed, trying fallback:', primaryErr);
+      const fallback = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: {
+          parts: [
+            audioPart,
+            {
+              text: 'فرغ هذا التسجيل الصوتي بدقة إلى نص عربي واضح ونقي من التكرار.',
+            },
+          ],
+        },
+      });
+      transcribed = fallback.text?.trim() || '';
+    }
 
-    const transcribed = response.text?.trim() || '';
     return res.json({
       success: true,
       transcription: sanitizeSpeechText(transcribed),
@@ -305,14 +400,13 @@ app.post('/api/ai/decompose-project', async (req, res) => {
 - الركيزة التابع لها: "${pillarTitle}"
 
 المطلوب:
-فكك هذا المشروع إلى قائمة من 4 إلى 7 مهام تنفيذية واضحة وملموسة وقابلة للإنجاز المباشر، مرتبة بالتسلسل المنطقي.
+فكك هذا المشروع إلى قائمة من 4 إلى 6 مهام تنفيذية واضحة وملموسة وقابلة للإنجاز المباشر، مرتبة بالتسلسل المنطقي.
 حدد لكل مهمة: الأولوية (high, medium, low)، مستوى الطاقة الذهنية (low, medium, high)، وعدد الساعات التقديري (0.5 إلى 4 ساعات).
 `;
 
     let tasks: any[] = [];
     try {
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
+      const { response } = await generateContentWithFallback({
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
@@ -339,7 +433,7 @@ app.post('/api/ai/decompose-project', async (req, res) => {
         },
       });
 
-      const parsed = JSON.parse(response.text?.trim() || '{}');
+      const parsed = safeParseJson(response.text) || {};
       tasks = parsed.tasks || [];
     } catch (apiErr) {
       console.warn('Gemini decompose API failed, using fallback decomposition:', apiErr);
@@ -360,20 +454,20 @@ app.post('/api/ai/decompose-project', async (req, res) => {
         },
         {
           title: `التنفيذ الإجرائي الرئيسي ومتابعة المراحل`,
-          description: 'إنجاز المكونات الجوهرية وفق المعايير المطلوبة',
+          description: 'إنجاز المكونات الجوهرية للمشروع بأعلى درجات الإتقان',
           priority: 'high',
           energyLevel: 'high',
           estimatedHours: 3,
         },
         {
-          title: `المراجعة والتدقيق واختبار الجودة قبل الاعتماد`,
+          title: `المراجعة والتدقيق والاعتماد النهائي`,
           description: 'فحص المخرجات والتأكد من توافقها مع أهداف الركيزة',
           priority: 'medium',
           energyLevel: 'medium',
           estimatedHours: 1.5,
         },
         {
-          title: `الإطلاق والتوثيق وإغلاق المشروع رسمياً`,
+          title: `التوثيق وإغلاق المشروع رسمياً`,
           description: 'تسجيل الدروس المستفادة والاحتفال بالإنجاز',
           priority: 'medium',
           energyLevel: 'low',
@@ -419,8 +513,7 @@ ${JSON.stringify(systemMetrics || {}, null, 2)}
 
     let data: any = null;
     try {
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
+      const { response } = await generateContentWithFallback({
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
@@ -450,7 +543,7 @@ ${JSON.stringify(systemMetrics || {}, null, 2)}
         },
       });
 
-      data = JSON.parse(response.text?.trim() || '{}');
+      data = safeParseJson(response.text) || {};
     } catch (apiErr) {
       console.warn('Gemini review API failed, using fallback diagnostic summary:', apiErr);
       data = {
@@ -466,7 +559,7 @@ ${JSON.stringify(systemMetrics || {}, null, 2)}
           'تشتت نسبي بين الأهداف العاجلة والأهداف ذات الأثر البعيد',
         ],
         recommendations: [
-          'تخصيص فترات حجب وقت يومية (Time Blocking) للمهام ذات الطاقة العالية',
+          'تخصيص فترات حجب وقت يومية للمهام ذات الطاقة العالية',
           'تصفية صندوق الوارد أسبوعياً لتقليل الضوضاء الذهنية',
           'التركيز على مشروع واحد ذو أولوية استراتيجية قصوى حتى اكتماله',
         ],
@@ -489,6 +582,216 @@ ${JSON.stringify(systemMetrics || {}, null, 2)}
   } catch (error: any) {
     console.error('Error in /api/ai/smart-review:', error);
     return res.status(500).json({ error: 'فشل التحليل الذكي للمراجعة', details: error.message });
+  }
+});
+
+/**
+ * Endpoint 5: AI Analysis for GTD Inbox Items
+ * Evaluates an inbox item and recommends whether it belongs in Tasks, Projects, Vaults, or Habits
+ */
+app.post('/api/ai/analyze-inbox', async (req, res) => {
+  try {
+    const { title, content = '', url = '', pillars = [], projects = [] } = req.body;
+
+    if (!title || typeof title !== 'string' || !title.trim()) {
+      return res.status(400).json({ error: 'عنوان العنصر مطلوب للتحليل' });
+    }
+
+    const prompt = `
+أنت خبير في معالجة صندوق الوارد وفق منهجية GTD ونظام دوّنلي الهرمي.
+قام المستخدم بالتقاط العنصر التالي في صندوق الوارد:
+- العنوان: "${title}"
+- المحتوى/الملاحظة: "${content}"
+- الرابط المرجعي: "${url}"
+
+الركائز المتاحة في النظام: ${JSON.stringify(pillars.map((p: any) => ({ id: p.id, title: p.title })))}
+المشاريع المتاحة: ${JSON.stringify(projects.map((pr: any) => ({ id: pr.id, title: pr.title, goal_id: pr.goal_id })))}
+
+المطلوب بدقة:
+1. صنف هذا العنصر إلى أحد المسارات التالية:
+   - "task": مهمة تنفيذية واحدة محددة قابلة للإنجاز المباشر.
+   - "project": مبادرة مركبة تتطلب خطوات متعددة ووقت أطول.
+   - "vault": معلومة مرجعية، ملخص، مقال، أو ملاحظة للمستقبل (خزائن المعرفة).
+   - "habit": سلوك متكرر أو روتين يومي/أسبوعي يرغب في بنائه.
+2. اقترح الركيزة المناسبة من بين الركائز المتاحة (أعد معرف الركيزة pillar_id واسمها).
+3. إذا كان المسار task أو project، اقترح المشروع الأنسب إن وجد، أو اقترح اسماً لمشروع جديد.
+4. اقترح أولوية (high, medium, low) ومستوى طاقة مطلوب (high, medium, low).
+5. صغ عنواناً إجرائياً محسناً يبدأ بفعل أمر أو وصف واضح (actionableTitle).
+6. قدم تعليلاً استراتيجياً موجزاً في جملة واحدة (reasoning).
+`;
+
+    let recommendation: any = null;
+
+    try {
+      const { response } = await generateContentWithFallback({
+        contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              suggestedDestination: {
+                type: Type.STRING,
+                description: 'task أو project أو vault أو habit',
+              },
+              actionableTitle: {
+                type: Type.STRING,
+                description: 'عنوان محسن ومباشر للعنصر',
+              },
+              suggestedPillarId: {
+                type: Type.STRING,
+                description: 'معرف الركيزة الأنسب إن أمكن مطابقتها',
+              },
+              suggestedPillarTitle: {
+                type: Type.STRING,
+                description: 'اسم الركيزة المقترحة',
+              },
+              suggestedProjectId: {
+                type: Type.STRING,
+                description: 'معرف المشروع المقترح إن وجد',
+              },
+              suggestedProjectTitle: {
+                type: Type.STRING,
+                description: 'اسم المشروع المقترح أو اسم مشروع جديد',
+              },
+              priority: {
+                type: Type.STRING,
+                description: 'high أو medium أو low',
+              },
+              energyLevel: {
+                type: Type.STRING,
+                description: 'high أو medium أو low',
+              },
+              estimatedMinutes: {
+                type: Type.NUMBER,
+                description: 'تقدير الدقائق التقريبية لإنجازها إن كانت مهمة',
+              },
+              category: {
+                type: Type.STRING,
+                description: 'تصنيف إضافي مثلاً: تعلم، تنفيذ، تسوق، قراءة، فكرة',
+              },
+              reasoning: {
+                type: Type.STRING,
+                description: 'سبب اختيار هذا التصنيف في جملة واحدة واضحة',
+              },
+            },
+            required: ['suggestedDestination', 'actionableTitle', 'suggestedPillarTitle', 'priority', 'reasoning'],
+          },
+        },
+      });
+
+      recommendation = safeParseJson(response.text) || {};
+    } catch (apiErr) {
+      console.warn('Inbox AI analysis fallback:', apiErr);
+
+      // Contextual heuristic fallback
+      const fullText = `${title} ${content}`.toLowerCase();
+      let dest: 'task' | 'project' | 'vault' | 'habit' = 'task';
+      let reasoning = 'عنصر إجرائي محدد يمكن تنفيذه في خطوة مباشرة.';
+
+      if (url || fullText.includes('كتاب') || fullText.includes('مقال') || fullText.includes('ملخص') || fullText.includes('رابط') || fullText.includes('فيديو')) {
+        dest = 'vault';
+        reasoning = 'المحتوى يتضمن مادة مرجعية أو رابطاً للمطالعة، الأفضل حفظه في خزائن المعرفة.';
+      } else if (fullText.includes('يوميا') || fullText.includes('عادة') || fullText.includes('كل يوم') || fullText.includes('صباح') || fullText.includes('روتين')) {
+        dest = 'habit';
+        reasoning = 'يبدو كفعل متكرر يتطلب المداومة والمتابعة كعادة يومية.';
+      } else if (fullText.includes('مشروع') || fullText.includes('بناء') || fullText.includes('نظام') || fullText.includes('تطوير') || fullText.includes('إطلاق')) {
+        dest = 'project';
+        reasoning = 'فكرة متعددة المراحل تتطلب تخطيطاً وتقسيماً لمجموعة من المهام.';
+      }
+
+      const defaultPillar = pillars[0] || { id: 'pillar-1', title: 'العمل والمسار المهني' };
+
+      recommendation = {
+        suggestedDestination: dest,
+        actionableTitle: title,
+        suggestedPillarId: defaultPillar.id,
+        suggestedPillarTitle: defaultPillar.title,
+        priority: 'medium',
+        energyLevel: 'medium',
+        estimatedMinutes: 30,
+        category: dest === 'vault' ? 'مرجع معرفي' : dest === 'habit' ? 'عادة' : 'إنجاز',
+        reasoning,
+      };
+    }
+
+    return res.json({
+      success: true,
+      data: recommendation,
+    });
+  } catch (error: any) {
+    console.error('Error in /api/ai/analyze-inbox:', error);
+    return res.status(500).json({ error: 'فشل تحليل عنصر صندوق الوارد', details: error.message });
+  }
+});
+
+/**
+ * Endpoint 6: Prayer Times & Adhan Schedule
+ * Provides accurate daily prayer times via Aladhan API with server-side caching & fallback
+ */
+let cachedPrayerTimes: { date: string; data: any } | null = null;
+
+app.get('/api/prayer-times', async (req, res) => {
+  try {
+    const lat = req.query.lat ? String(req.query.lat) : '30.0444'; // Default to Cairo / Middle East
+    const lng = req.query.lng ? String(req.query.lng) : '31.2357';
+    const city = req.query.city ? String(req.query.city) : '';
+    const country = req.query.country ? String(req.query.country) : '';
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    const cacheKey = `${todayStr}_${lat}_${lng}_${city}`;
+
+    if (cachedPrayerTimes && cachedPrayerTimes.date === cacheKey) {
+      return res.json({ success: true, data: cachedPrayerTimes.data });
+    }
+
+    let url = `https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lng}&method=5`; // Egyptian General Authority of Survey or Umm Al-Qura
+    if (city && country) {
+      url = `https://api.aladhan.com/v1/timingsByCity?city=${encodeURIComponent(city)}&country=${encodeURIComponent(country)}&method=5`;
+    }
+
+    const response = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    if (!response.ok) {
+      throw new Error(`Aladhan API responded with status ${response.status}`);
+    }
+
+    const json = await response.json();
+    const timings = json?.data?.timings || {};
+
+    const cleanTimings = {
+      Fajr: timings.Fajr?.slice(0, 5) || '04:30',
+      Sunrise: timings.Sunrise?.slice(0, 5) || '05:55',
+      Dhuhr: timings.Dhuhr?.slice(0, 5) || '12:00',
+      Asr: timings.Asr?.slice(0, 5) || '15:25',
+      Maghrib: timings.Maghrib?.slice(0, 5) || '18:05',
+      Isha: timings.Isha?.slice(0, 5) || '19:25',
+      date: json?.data?.date?.readable || todayStr,
+      hijri: json?.data?.date?.hijri?.date || '',
+      hijriMonthArabic: json?.data?.date?.hijri?.month?.ar || '',
+    };
+
+    cachedPrayerTimes = {
+      date: cacheKey,
+      data: cleanTimings,
+    };
+
+    return res.json({ success: true, data: cleanTimings });
+  } catch (error: any) {
+    console.warn('Failed to fetch from Aladhan API, using standard reliable prayer calculation:', error.message);
+    // Reliable static prayer times fallback
+    const fallbackTimings = {
+      Fajr: '04:30',
+      Sunrise: '05:55',
+      Dhuhr: '12:00',
+      Asr: '15:25',
+      Maghrib: '18:05',
+      Isha: '19:25',
+      date: new Date().toLocaleDateString('ar-EG'),
+      hijri: '',
+      hijriMonthArabic: '',
+      isFallback: true,
+    };
+    return res.json({ success: true, data: fallbackTimings });
   }
 });
 
