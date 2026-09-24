@@ -581,7 +581,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
               </div>
 
               <div>
-                <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">الغاية الكبرى (Purpose — The Big Why) *</label>
+                <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">الغاية الكبرى *</label>
                 <textarea
                   rows={2}
                   required

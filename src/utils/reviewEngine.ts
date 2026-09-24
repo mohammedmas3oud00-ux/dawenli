@@ -148,11 +148,11 @@ export function generateAutomatedAudit(
 
   // Recommendations according to frequency
   if (frequency === 'daily') {
-    recommendations.push('حدد غداً مهمة واحدة رئيسية ذات أثر حاسم (Highlight of the Day) قبل البدء بالمهام الروتينية.');
+    recommendations.push('حدد غداً مهمة واحدة رئيسية ذات أثر حاسم قبل البدء بالمهام الروتينية.');
     if (snapshot.tasks_overdue_count > 0) {
       recommendations.push('قم بتصفية المهام المتأخرة إما بتنفيذها أو تأجيلها بتاريخ صريح لمنع التراكم الذهني.');
     }
-    recommendations.push('خصص جلسة تركيز عميق (Deep Work) لمدة 45 دقيقة للمشروع الأكثر أهمية.');
+    recommendations.push('خصص جلسة تركيز عميق لمدة 45 دقيقة للمشروع الأكثر أهمية.');
     
     // Suggested actions
     suggested_actions.push({
@@ -186,7 +186,7 @@ export function generateAutomatedAudit(
       project_id: projects[0]?.id,
     });
   } else if (frequency === 'quarterly') {
-    recommendations.push('مراجعة الرؤى الاستراتيجية (Visions): هل المسار الحالي يقودك للصورة المنشودة في الأفق الزمني؟');
+    recommendations.push('مراجعة الرؤى الاستراتيجية: هل المسار الحالي يقودك للصورة المنشودة في الأفق الزمني؟');
     recommendations.push('تقييم ربع سنوي للعادات الكبرى ونظام التشغيل الشخصي وإجراء التعديلات الهيكلية اللازمة.');
     recommendations.push('إيقاف أو تحويل المبادرات غير المجدية لتركيز الموارد على المشاريع ذات العائد الأعلى.');
 
@@ -198,7 +198,7 @@ export function generateAutomatedAudit(
     });
   } else {
     // Yearly
-    recommendations.push('مراجعة الغايات الكبرى (Purpose — The Big Why) لكافة الركائز والتأكد من توافق البوصلة الداخلية.');
+    recommendations.push('مراجعة الغايات الكبرى لكافة الركائز والتأكد من توافق البوصلة الداخلية.');
     recommendations.push('الاحتفاء بالمحطات الكبرى المنجزة خلال العام وتدوين الدروس التأسيسية التي شكّلت خبرتك.');
     recommendations.push('صياغة الرؤى والمشاريع التحولية للعام القادم وفق التسلسل الهرمي الصاعد.');
 
@@ -286,7 +286,7 @@ export function getInitialSeedReviews(
       rating: 8,
       focus_pillar_id: null,
       wins: 'تقدم كبير في مشروع التدريب العملي ونمو واضح في أهداف ركيزة بناء الذات.',
-      challenges: 'تأخر بسيط في إتمام التمارين الرياضية الخاصة بركيزة الصحة (Vitality).',
+      challenges: 'تأخر بسيط في إتمام التمارين الرياضية الخاصة بركيزة الصحة.',
       lessons: 'جدولة مواعيد الصحة والرياضة كأنها مواعيد عمل مقدسة في التقويم يمنع تفويتها.',
       next_commitments: 'تسليم المخرج النهائي لمشروع المتجر، وتثبيت 3 حصص رياضية في الأسبوع.',
       notes: 'الأسبوع كان منتجاً، والمطلوب الآن الحفاظ على التوازن الشامل وتفادي الاحتراق.',
@@ -328,7 +328,7 @@ export function getInitialSeedReviews(
       id: 'rev-quarterly-1',
       frequency: 'quarterly',
       date: formatDate(45),
-      title: 'مراجعة الربع الثالث (Q3) — فحص البوصلة والاستراتيجية',
+      title: 'مراجعة الربع الثالث — فحص البوصلة والاستراتيجية',
       rating: 8,
       focus_pillar_id: null,
       wins: 'تأسيس المنظومة الهرمية بالكامل وربط الركائز بالرؤى والأهداف والمشاريع والمهام.',
@@ -356,7 +356,7 @@ export function getInitialSeedReviews(
       focus_pillar_id: null,
       wins: 'قفزات نوعية في الوعي، وبناء مشاريع مستقلة، وترسيخ عادات قوية في البناء الذاتي والروحي.',
       challenges: 'تحديات التوازن بين ضغوط العمل والعناية بالجسد والراحة النفسية.',
-      lessons: 'الغاية الكبرى (The Big Why) هي الوقود الحقيقي الذي يبقيك مستمراً عندما تخبو الحماسة اللحظية.',
+      lessons: 'الغاية الكبرى هي الوقود الحقيقي الذي يبقيك مستمراً عندما تخبو الحماسة اللحظية.',
       next_commitments: 'تجديد الرؤى الخمسية ومضاعفة الأثر في الركائز الرئيسية للحياة.',
       notes: 'سنة كانت حافلة بالنمو والتعلم والتحولات الإيجابية العميقة.',
       snapshot: generateSystemSnapshot(pillars, visions, goals, projects, tasks),

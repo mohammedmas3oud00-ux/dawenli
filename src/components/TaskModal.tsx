@@ -287,7 +287,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
               <div>
                 <div className="flex justify-between font-semibold text-slate-700 mb-1">
-                  <span>التأثير الاستراتيجي (Impact):</span>
+                  <span>التأثير الاستراتيجي:</span>
                   <span className="font-mono text-indigo-600 font-bold">{impactScore}/10</span>
                 </div>
                 <input
@@ -302,7 +302,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
 
               <div>
                 <div className="flex justify-between font-semibold text-slate-700 mb-1">
-                  <span>القيمة الناتجة (Value Score):</span>
+                  <span>القيمة الناتجة:</span>
                   <span className="font-mono text-emerald-600 font-bold">{valueScore}/10</span>
                 </div>
                 <input
@@ -359,10 +359,10 @@ export const TaskModal: React.FC<TaskModalProps> = ({
                 onChange={(e) => setStatus(e.target.value as TaskStatus)}
                 className="w-full px-3 py-2 border border-slate-300 rounded-md text-slate-800 cursor-pointer"
               >
-                <option value="todo">قائمة الانتظار (To Do)</option>
-                <option value="in_progress">قيد التنفيذ (In Progress)</option>
-                <option value="in_review">قيد المراجعة (In Review)</option>
-                <option value="completed">مكتملة بنجاح (Completed)</option>
+                <option value="todo">قائمة الانتظار</option>
+                <option value="in_progress">قيد التنفيذ</option>
+                <option value="in_review">قيد المراجعة</option>
+                <option value="completed">مكتملة بنجاح</option>
               </select>
             </div>
 
@@ -375,10 +375,10 @@ export const TaskModal: React.FC<TaskModalProps> = ({
                 onChange={(e) => setPriority(e.target.value as Priority)}
                 className="w-full px-3 py-2 border border-slate-300 rounded-md text-slate-800 cursor-pointer"
               >
-                <option value="urgent">عاجلة جداً (Urgent)</option>
-                <option value="high">مرتفعة (High)</option>
-                <option value="medium">متوسطة (Medium)</option>
-                <option value="low">منخفضة (Low)</option>
+                <option value="urgent">عاجلة جداً</option>
+                <option value="high">مرتفعة</option>
+                <option value="medium">متوسطة</option>
+                <option value="low">منخفضة</option>
               </select>
             </div>
           </div>
@@ -463,7 +463,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
           {/* Subtasks Builder */}
           <div>
             <label className="block font-semibold text-slate-800 mb-1.5">
-              قائمة المهام الفرعية (Subtasks):
+              قائمة المهام الفرعية:
             </label>
             
             <div className="flex gap-2 mb-2">

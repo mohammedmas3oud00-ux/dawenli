@@ -229,7 +229,7 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
                   النسبة = (60% × أوزان المهام الرئيسية) + (40% × معدل اكتمال المهام الفرعية الدقيقة)
                 </div>
                 <p>
-                  <strong>حساب عميق ومتعدد الطبقات:</strong> يضمن عدم بقاء التقدم ثابتاً أثناء تنفيذ مهمة ضخمة؛ فكلما أتم الفريق مهمة فرعية (Subtask) ترتفع نسبة المشروع تدريجياً وبشكل فوري!
+                  <strong>حساب عميق ومتعدد الطبقات:</strong> يضمن عدم بقاء التقدم ثابتاً أثناء تنفيذ مهمة ضخمة؛ فكلما أتم الفريق مهمة فرعية ترتفع نسبة المشروع تدريجياً وبشكل فوري!
                 </p>
               </div>
             )}
@@ -289,7 +289,7 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
             <div>
               <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
                 <Sparkles className="w-4 h-4 text-amber-500" />
-                <span>مختبر محاكاة التقدم (What-If Simulator)</span>
+                <span>مختبر محاكاة التقدم</span>
               </h3>
               <p className="text-xs text-slate-600">
                 حدد المهام غير المكتملة لترى فوراً كيف ستقفز نسبة إنجاز المشروع وصحته عند إتمامها!

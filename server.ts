@@ -14,22 +14,29 @@ const PORT = 3000;
 
 app.use(express.json({ limit: '25mb' }));
 
-// Server-side Gemini client utility
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-  httpOptions: {
-    headers: {
-      'User-Agent': 'aistudio-build',
+// Helper to get GoogleGenAI client with fallback to request header or env
+function getAiClient(customKey?: string) {
+  const apiKey = (customKey || process.env.GEMINI_API_KEY || '').trim();
+  return new GoogleGenAI({
+    apiKey,
+    httpOptions: {
+      headers: {
+        'User-Agent': 'aistudio-build',
+      },
     },
-  },
-});
+  });
+}
 
-// Robust model cascade list to handle transient 503 / high demand spikes
+// Default instance using env
+const ai = getAiClient();
+
+// Robust model cascade list prioritized by availability and quota
 const MODEL_CASCADE = [
-  'gemini-3-flash-preview',
-  'gemini-flash-latest',
+  'gemini-3.5-flash-lite',
+  'gemini-3.1-flash-lite',
+  'gemini-flash-lite-latest',
   'gemini-3.6-flash',
-  'gemini-3.7-flash',
+  'gemini-3-flash-preview',
 ];
 
 function safeParseJson(text: string): any {
@@ -40,7 +47,34 @@ function safeParseJson(text: string): any {
   } else if (cleaned.startsWith('```')) {
     cleaned = cleaned.replace(/^```\s*/, '').replace(/\s*```$/, '');
   }
-  return JSON.parse(cleaned.trim());
+  try {
+    return JSON.parse(cleaned.trim());
+  } catch (e) {
+    const match = cleaned.match(/(\{[\s\S]*\}|\[[\s\S]*\])/);
+    if (match) {
+      try {
+        return JSON.parse(match[0]);
+      } catch (err) {}
+    }
+    return null;
+  }
+}
+
+// Normalizer helpers for priority and energy
+function normalizePriority(val: any): 'high' | 'medium' | 'low' {
+  if (!val) return 'medium';
+  const str = String(val).toLowerCase();
+  if (str.includes('high') || str.includes('عالي') || str.includes('قصوى') || str.includes('مهم')) return 'high';
+  if (str.includes('low') || str.includes('منخفض') || str.includes('هادئ')) return 'low';
+  return 'medium';
+}
+
+function normalizeEnergy(val: any): 'high' | 'medium' | 'low' {
+  if (!val) return 'medium';
+  const str = String(val).toLowerCase();
+  if (str.includes('high') || str.includes('عالي') || str.includes('شديد')) return 'high';
+  if (str.includes('low') || str.includes('منخفض') || str.includes('بسيط')) return 'low';
+  return 'medium';
 }
 
 /**
@@ -51,11 +85,13 @@ async function generateContentWithFallback(params: {
   config?: any;
   preferredModel?: string;
   maxRetries?: number;
+  customKey?: string;
 }): Promise<any> {
   const models = params.preferredModel 
     ? [params.preferredModel, ...MODEL_CASCADE.filter(m => m !== params.preferredModel)]
     : MODEL_CASCADE;
 
+  const client = params.customKey ? getAiClient(params.customKey) : ai;
   let lastError: any = null;
 
   for (const model of models) {
@@ -64,7 +100,7 @@ async function generateContentWithFallback(params: {
         const timeoutPromise = new Promise((_, reject) =>
           setTimeout(() => reject(new Error(`Timeout after 12000ms on model ${model}`)), 12000)
         );
-        const apiPromise = ai.models.generateContent({
+        const apiPromise = client.models.generateContent({
           model,
           contents: params.contents,
           config: params.config,
@@ -152,23 +188,26 @@ function sanitizeSpeechText(rawText: string): string {
 }
 
 /**
- * Endpoint 1: Analyze Spoken or Typed Idea and Decompose into Hierarchy
+ * Endpoint 1: Analyze Spoken or Typed Idea and Decompose into Hierarchy (Text & Voice Analysis)
  */
-app.post('/api/ai/analyze-voice', async (req, res) => {
+async function handleAnalyzeInput(req: express.Request, res: express.Response) {
   try {
-    const { speechText, existingPillars = [], existingProjects = [] } = req.body;
+    const rawInput = req.body.speechText || req.body.text || req.body.prompt;
+    const existingPillars = req.body.existingPillars || [];
+    const existingProjects = req.body.existingProjects || [];
+    const customKey = (req.headers['x-gemini-api-key'] as string) || undefined;
 
-    if (!speechText || typeof speechText !== 'string' || !speechText.trim()) {
+    if (!rawInput || typeof rawInput !== 'string' || !rawInput.trim()) {
       return res.status(400).json({ error: 'لم يتم إرسال أي نص للتحليل' });
     }
 
-    const preCleanedText = sanitizeSpeechText(speechText);
+    const preCleanedText = sanitizeSpeechText(rawInput);
 
     const prompt = `
 أنت خبير استراتيجي في إدارة الإنتاجية الشخصية والأنظمة الهرمية لنظام دوّنلي (الركائز ← الرؤى ← أهداف القيمة ← المشاريع ← المهام التنفيذية).
 قام المستخدم بإدخال أو التحدث بالفكرة التالية:
 """
-${speechText}
+${rawInput}
 """
 
 النص المنقى من التأتأة وعيوب الإملاء:
@@ -191,137 +230,93 @@ ${preCleanedText}
 5. تفكيك الفكرة إلى 3 إلى 6 مهام عملية، قابلة للإنجاز الفوري ومحددة بدقة لموضوع المستخدم، مع تحديد الأولوية (high, medium, low)، ومستوى الطاقة (low, medium, high)، والوقت التقديري بالساعات (0.5 إلى 4).
 `;
 
-    let parsed: any = null;
-
-    try {
-      const { response } = await generateContentWithFallback({
-        contents: prompt,
-        config: {
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              cleanedTranscription: {
-                type: Type.STRING,
-                description: 'النص العربي المنقى تماماً من أي تكرار أو عيوب إملاء صوتي',
-              },
-              intentType: {
-                type: Type.STRING,
-                description: 'تصنيف النية: project_breakdown أو single_task أو habit أو idea_note',
-              },
-              summary: {
-                type: Type.STRING,
-                description: 'ملخص موجز ومركز للفكرة في جملة واحدة',
-              },
-              suggestedPillarTitle: {
-                type: Type.STRING,
-                description: 'اسم الركيزة الأنسب لاحتضان هذا العمل',
-              },
-              valueGoalTitle: {
-                type: Type.STRING,
-                description: 'عنوان هدف القيمة الاستراتيجي المرتبط',
-              },
-              projectTitle: {
-                type: Type.STRING,
-                description: 'اسم المشروع المقترح بدقة من صلب فكرة المستخدم',
-              },
-              projectDescription: {
-                type: Type.STRING,
-                description: 'وصف موجز للمشروع وأثره',
-              },
-              tasks: {
-                type: Type.ARRAY,
-                description: 'قائمة المهام التنفيذية المستخلصة',
-                items: {
-                  type: Type.OBJECT,
-                  properties: {
-                    title: { type: Type.STRING, description: 'عنوان المهمة الإجرائي' },
-                    description: { type: Type.STRING, description: 'وصف تفصيلي مبسط للمهمة' },
-                    priority: { type: Type.STRING, description: 'high, medium, or low' },
-                    energyLevel: { type: Type.STRING, description: 'low, medium, or high' },
-                    estimatedHours: { type: Type.NUMBER, description: 'تقدير الوقت بالساعات' },
-                  },
-                  required: ['title', 'priority', 'energyLevel', 'estimatedHours'],
+    const { response, modelUsed } = await generateContentWithFallback({
+      contents: prompt,
+      customKey,
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            cleanedTranscription: {
+              type: Type.STRING,
+              description: 'النص العربي المنقى تماماً من أي تكرار أو عيوب إملاء صوتي',
+            },
+            intentType: {
+              type: Type.STRING,
+              description: 'تصنيف النية: project_breakdown أو single_task أو habit أو idea_note',
+            },
+            summary: {
+              type: Type.STRING,
+              description: 'ملخص موجز ومركز للفكرة في جملة واحدة',
+            },
+            suggestedPillarTitle: {
+              type: Type.STRING,
+              description: 'اسم الركيزة الأنسب لاحتضان هذا العمل',
+            },
+            valueGoalTitle: {
+              type: Type.STRING,
+              description: 'عنوان هدف القيمة الاستراتيجي المرتبط',
+            },
+            projectTitle: {
+              type: Type.STRING,
+              description: 'اسم المشروع المقترح بدقة من صلب فكرة المستخدم',
+            },
+            projectDescription: {
+              type: Type.STRING,
+              description: 'وصف موجز للمشروع وأثره',
+            },
+            tasks: {
+              type: Type.ARRAY,
+              description: 'قائمة المهام التنفيذية المستخلصة',
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  title: { type: Type.STRING, description: 'عنوان المهمة الإجرائي' },
+                  description: { type: Type.STRING, description: 'وصف تفصيلي مبسط للمهمة' },
+                  priority: { type: Type.STRING, description: 'high, medium, or low' },
+                  energyLevel: { type: Type.STRING, description: 'low, medium, or high' },
+                  estimatedHours: { type: Type.NUMBER, description: 'تقدير الوقت بالساعات' },
                 },
+                required: ['title', 'priority', 'energyLevel', 'estimatedHours'],
               },
             },
-            required: ['cleanedTranscription', 'intentType', 'summary', 'projectTitle', 'tasks'],
           },
+          required: ['cleanedTranscription', 'intentType', 'summary', 'projectTitle', 'tasks'],
         },
-      });
+      },
+    });
 
-      parsed = safeParseJson(response.text) || {};
-    } catch (apiErr: any) {
-      console.warn('Gemini API call failed, generating contextual semantic fallback:', apiErr?.message);
-      
-      // Dynamic semantic fallback strictly derived from the user's actual text
-      const clean = preCleanedText;
-      const cleanTitle = clean.length > 45 ? clean.slice(0, 45).trim() + '...' : clean;
-      
-      let matchedPillar = existingPillars[0] || 'العمل والمسار المهني';
-      if (/دين|صلاة|قرآن|عبادة|ذكر|الله|مسجد/i.test(clean)) {
-        matchedPillar = existingPillars.find((p: string) => p.includes('الله') || p.includes('دين') || p.includes('إيمان')) || matchedPillar;
-      } else if (/صحة|رياضة|تمرين|جسم|نوم|أكل|حمية/i.test(clean)) {
-        matchedPillar = existingPillars.find((p: string) => p.includes('صحة') || p.includes('جسد') || p.includes('بدن')) || matchedPillar;
-      } else if (/مال|استثمار|راتب|مصاريف|ادخار|شراء|بيع|تجارة/i.test(clean)) {
-        matchedPillar = existingPillars.find((p: string) => p.includes('مال') || p.includes('استثمار') || p.includes('ثروة')) || matchedPillar;
-      } else if (/تعلم|قراءة|كتاب|مهارة|دورة|لغة|برمجة/i.test(clean)) {
-        matchedPillar = existingPillars.find((p: string) => p.includes('ذات') || p.includes('مهار') || p.includes('تطوير') || p.includes('علم')) || matchedPillar;
-      }
-
-      parsed = {
-        cleanedTranscription: clean,
-        intentType: 'project_breakdown',
-        summary: `تنفيذ ومتابعة: ${cleanTitle}`,
-        suggestedPillarTitle: matchedPillar,
-        valueGoalTitle: `تطوير وإتقان مبادرات ${matchedPillar}`,
-        projectTitle: `مشروع: ${cleanTitle}`,
-        projectDescription: `مبادرة تنفيذية مستخلصة من فكرة المستخدم: "${clean}"`,
-        tasks: [
-          {
-            title: `تحديد متطلبات ونطاق العمل الخاص بـ "${cleanTitle}"`,
-            description: 'وضع المعايير الأساسية وتحديد الأولويات ومصادر التنفيذ',
-            priority: 'high',
-            energyLevel: 'high',
-            estimatedHours: 1.5,
-          },
-          {
-            title: `إعداد خطة التنفيذ والخطوات الإجرائية الأولى`,
-            description: 'تقسيم العمل إلى مراحل صغيرة واضحة والبدء بالمرحلة الأولى',
-            priority: 'medium',
-            energyLevel: 'medium',
-            estimatedHours: 2,
-          },
-          {
-            title: `التنفيذ الفعلي للمرحلة الرئيسية واختبار النتائج`,
-            description: 'التركيز على إنجاز جوهر المبادرة بجودة وإتقان',
-            priority: 'high',
-            energyLevel: 'high',
-            estimatedHours: 3,
-          },
-          {
-            title: `المراجعة والتقييم وتثبيت المخرجات في المستودع`,
-            description: 'التأكد من اكتمال الأهداف وتوثيق النتائج للرجوع إليها',
-            priority: 'medium',
-            energyLevel: 'low',
-            estimatedHours: 1,
-          },
-        ],
-      };
+    const parsed = safeParseJson(response.text);
+    if (!parsed || !parsed.tasks) {
+      throw new Error('فشل تنسيق استجابة الذكاء الاصطناعي إلى هيكل صحيح');
     }
+
+    // Normalize task priorities and energy levels
+    parsed.tasks = (parsed.tasks || []).map((t: any) => ({
+      title: t.title || 'مهمة جديدة',
+      description: t.description || '',
+      priority: normalizePriority(t.priority),
+      energyLevel: normalizeEnergy(t.energyLevel),
+      estimatedHours: Number(t.estimatedHours) || 1,
+    }));
 
     return res.json({
       success: true,
       data: parsed,
+      modelUsed,
     });
   } catch (error: any) {
-    console.error('Error in /api/ai/analyze-voice:', error);
+    console.error('Error in analyze handler:', error);
     return res.status(500).json({
-      error: 'حدث خطأ أثناء تحليل الصوت أو النص بالذكاء الاصطناعي',
+      error: 'فشل تحليل النص بالذكاء الاصطناعي',
       details: error.message || String(error),
     });
   }
-});
+}
+
+app.post('/api/ai/analyze-voice', handleAnalyzeInput);
+app.post('/api/ai/analyze-text', handleAnalyzeInput);
 
 /**
  * Endpoint 2: Audio Transcription using Gemini
@@ -389,6 +384,7 @@ app.post('/api/ai/transcribe', async (req, res) => {
 app.post('/api/ai/decompose-project', async (req, res) => {
   try {
     const { projectTitle, projectDescription = '', pillarTitle = '' } = req.body;
+    const customKey = (req.headers['x-gemini-api-key'] as string) || undefined;
     if (!projectTitle) {
       return res.status(400).json({ error: 'اسم المشروع مطلوب' });
     }
@@ -404,82 +400,51 @@ app.post('/api/ai/decompose-project', async (req, res) => {
 حدد لكل مهمة: الأولوية (high, medium, low)، مستوى الطاقة الذهنية (low, medium, high)، وعدد الساعات التقديري (0.5 إلى 4 ساعات).
 `;
 
-    let tasks: any[] = [];
-    try {
-      const { response } = await generateContentWithFallback({
-        contents: prompt,
-        config: {
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              tasks: {
-                type: Type.ARRAY,
-                items: {
-                  type: Type.OBJECT,
-                  properties: {
-                    title: { type: Type.STRING },
-                    description: { type: Type.STRING },
-                    priority: { type: Type.STRING },
-                    energyLevel: { type: Type.STRING },
-                    estimatedHours: { type: Type.NUMBER },
-                  },
-                  required: ['title', 'priority', 'energyLevel', 'estimatedHours'],
+    const { response, modelUsed } = await generateContentWithFallback({
+      contents: prompt,
+      customKey,
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            tasks: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  title: { type: Type.STRING },
+                  description: { type: Type.STRING },
+                  priority: { type: Type.STRING },
+                  energyLevel: { type: Type.STRING },
+                  estimatedHours: { type: Type.NUMBER },
                 },
+                required: ['title', 'priority', 'energyLevel', 'estimatedHours'],
               },
             },
-            required: ['tasks'],
           },
+          required: ['tasks'],
         },
-      });
+      },
+    });
 
-      const parsed = safeParseJson(response.text) || {};
-      tasks = parsed.tasks || [];
-    } catch (apiErr) {
-      console.warn('Gemini decompose API failed, using fallback decomposition:', apiErr);
-      tasks = [
-        {
-          title: `دراسة وتحديد نطاق ومتطلبات: ${projectTitle}`,
-          description: 'تحديد المخرجات المطلوبة والموارد وجدول العمل الزمني',
-          priority: 'high',
-          energyLevel: 'high',
-          estimatedHours: 1.5,
-        },
-        {
-          title: `إعداد خطة العمل والخطوات التنفيذية الأولية`,
-          description: 'تجهيز الأدوات والبيئة اللازمة لبدء التنفيذ الفعلي',
-          priority: 'medium',
-          energyLevel: 'medium',
-          estimatedHours: 2,
-        },
-        {
-          title: `التنفيذ الإجرائي الرئيسي ومتابعة المراحل`,
-          description: 'إنجاز المكونات الجوهرية للمشروع بأعلى درجات الإتقان',
-          priority: 'high',
-          energyLevel: 'high',
-          estimatedHours: 3,
-        },
-        {
-          title: `المراجعة والتدقيق والاعتماد النهائي`,
-          description: 'فحص المخرجات والتأكد من توافقها مع أهداف الركيزة',
-          priority: 'medium',
-          energyLevel: 'medium',
-          estimatedHours: 1.5,
-        },
-        {
-          title: `التوثيق وإغلاق المشروع رسمياً`,
-          description: 'تسجيل الدروس المستفادة والاحتفال بالإنجاز',
-          priority: 'medium',
-          energyLevel: 'low',
-          estimatedHours: 1,
-        },
-      ];
+    const parsed = safeParseJson(response.text);
+    if (!parsed || !Array.isArray(parsed.tasks)) {
+      throw new Error('فشل تنسيق المهام المفككة بالذكاء الاصطناعي');
     }
 
-    return res.json({ success: true, tasks });
+    const tasks = parsed.tasks.map((t: any) => ({
+      title: t.title || 'مهمة فرعية',
+      description: t.description || '',
+      priority: normalizePriority(t.priority),
+      energyLevel: normalizeEnergy(t.energyLevel),
+      estimatedHours: Number(t.estimatedHours) || 1.5,
+    }));
+
+    return res.json({ success: true, tasks, modelUsed });
   } catch (error: any) {
     console.error('Error in /api/ai/decompose-project:', error);
-    return res.status(500).json({ error: 'فشل تفكيك المشروع', details: error.message });
+    return res.status(500).json({ error: 'فشل تفكيك المشروع', details: error.message || String(error) });
   }
 });
 
@@ -489,6 +454,7 @@ app.post('/api/ai/decompose-project', async (req, res) => {
 app.post('/api/ai/smart-review', async (req, res) => {
   try {
     const { frequency, reflection, systemMetrics } = req.body;
+    const customKey = (req.headers['x-gemini-api-key'] as string) || undefined;
 
     const prompt = `
 أنت مستشار استراتيجي شخصي يحلل أداء المستخدم ضمن نظام الإنتاجية الهرمي (دوّنلي).
@@ -511,77 +477,53 @@ ${JSON.stringify(systemMetrics || {}, null, 2)}
 5. إجراءات مقترحة محددة (2-4 مهام) مع أولوية لتصحيح المسار فوراً.
 `;
 
-    let data: any = null;
-    try {
-      const { response } = await generateContentWithFallback({
-        contents: prompt,
-        config: {
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              smartSummary: { type: Type.STRING },
-              systemHealthScore: { type: Type.NUMBER, description: 'درجة صحة النظام من 0 إلى 100' },
-              strengths: { type: Type.ARRAY, items: { type: Type.STRING } },
-              bottlenecks: { type: Type.ARRAY, items: { type: Type.STRING } },
-              recommendations: { type: Type.ARRAY, items: { type: Type.STRING } },
-              actionItems: {
-                type: Type.ARRAY,
-                items: {
-                  type: Type.OBJECT,
-                  properties: {
-                    title: { type: Type.STRING },
-                    priority: { type: Type.STRING },
-                    category: { type: Type.STRING },
-                  },
-                  required: ['title', 'priority', 'category'],
+    const { response, modelUsed } = await generateContentWithFallback({
+      contents: prompt,
+      customKey,
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            smartSummary: { type: Type.STRING },
+            systemHealthScore: { type: Type.NUMBER, description: 'درجة صحة النظام من 0 إلى 100' },
+            strengths: { type: Type.ARRAY, items: { type: Type.STRING } },
+            bottlenecks: { type: Type.ARRAY, items: { type: Type.STRING } },
+            recommendations: { type: Type.ARRAY, items: { type: Type.STRING } },
+            actionItems: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  title: { type: Type.STRING },
+                  priority: { type: Type.STRING },
+                  category: { type: Type.STRING },
                 },
+                required: ['title', 'priority', 'category'],
               },
             },
-            required: ['smartSummary', 'systemHealthScore', 'strengths', 'bottlenecks', 'recommendations', 'actionItems'],
           },
+          required: ['smartSummary', 'systemHealthScore', 'strengths', 'bottlenecks', 'recommendations', 'actionItems'],
         },
-      });
+      },
+    });
 
-      data = safeParseJson(response.text) || {};
-    } catch (apiErr) {
-      console.warn('Gemini review API failed, using fallback diagnostic summary:', apiErr);
-      data = {
-        smartSummary: `منظومتك تسير بوتيرة منتظمة مع تركيز ملحوظ على استدامة الإنجاز. التحديات المذكورة تشير لفرصة ممتازة لإعادة ترتيب أولويات الطاقة وساعات التركيز العميق.`,
-        systemHealthScore: 85,
-        strengths: [
-          'الالتزام بالمراجعة الدورية وتدوين الملاحظات الصريحة',
-          'استمرار تقدم المشاريع الاستراتيجية النشطة',
-          'وضوح الرؤية وتكامل الأهداف مع الركائز الأساسية',
-        ],
-        bottlenecks: [
-          'وجود بعض المهام التي تحتاج إعادة تقدير لوقتها الحقيقي',
-          'تشتت نسبي بين الأهداف العاجلة والأهداف ذات الأثر البعيد',
-        ],
-        recommendations: [
-          'تخصيص فترات حجب وقت يومية للمهام ذات الطاقة العالية',
-          'تصفية صندوق الوارد أسبوعياً لتقليل الضوضاء الذهنية',
-          'التركيز على مشروع واحد ذو أولوية استراتيجية قصوى حتى اكتماله',
-        ],
-        actionItems: [
-          {
-            title: 'جدولة جلسة تركيز عميق 45 دقيقة للمهمة الأهم غداً صباحاً',
-            priority: 'high',
-            category: 'focus',
-          },
-          {
-            title: 'مراجعة وتحديث مواعيد استحقاق المهام المتأخرة وتصحيحها',
-            priority: 'medium',
-            category: 'alignment',
-          },
-        ],
-      };
+    const data = safeParseJson(response.text);
+    if (!data || !data.smartSummary) {
+      throw new Error('فشل تنسيق نتائج المراجعة الاستراتيجية');
     }
 
-    return res.json({ success: true, data });
+    if (data.actionItems) {
+      data.actionItems = data.actionItems.map((a: any) => ({
+        ...a,
+        priority: normalizePriority(a.priority),
+      }));
+    }
+
+    return res.json({ success: true, data, modelUsed });
   } catch (error: any) {
     console.error('Error in /api/ai/smart-review:', error);
-    return res.status(500).json({ error: 'فشل التحليل الذكي للمراجعة', details: error.message });
+    return res.status(500).json({ error: 'فشل التحليل الذكي للمراجعة', details: error.message || String(error) });
   }
 });
 
@@ -592,6 +534,7 @@ ${JSON.stringify(systemMetrics || {}, null, 2)}
 app.post('/api/ai/analyze-inbox', async (req, res) => {
   try {
     const { title, content = '', url = '', pillars = [], projects = [] } = req.body;
+    const customKey = (req.headers['x-gemini-api-key'] as string) || undefined;
 
     if (!title || typeof title !== 'string' || !title.trim()) {
       return res.status(400).json({ error: 'عنوان العنصر مطلوب للتحليل' });
@@ -620,108 +563,87 @@ app.post('/api/ai/analyze-inbox', async (req, res) => {
 6. قدم تعليلاً استراتيجياً موجزاً في جملة واحدة (reasoning).
 `;
 
-    let recommendation: any = null;
-
-    try {
-      const { response } = await generateContentWithFallback({
-        contents: prompt,
-        config: {
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              suggestedDestination: {
-                type: Type.STRING,
-                description: 'task أو project أو vault أو habit',
-              },
-              actionableTitle: {
-                type: Type.STRING,
-                description: 'عنوان محسن ومباشر للعنصر',
-              },
-              suggestedPillarId: {
-                type: Type.STRING,
-                description: 'معرف الركيزة الأنسب إن أمكن مطابقتها',
-              },
-              suggestedPillarTitle: {
-                type: Type.STRING,
-                description: 'اسم الركيزة المقترحة',
-              },
-              suggestedProjectId: {
-                type: Type.STRING,
-                description: 'معرف المشروع المقترح إن وجد',
-              },
-              suggestedProjectTitle: {
-                type: Type.STRING,
-                description: 'اسم المشروع المقترح أو اسم مشروع جديد',
-              },
-              priority: {
-                type: Type.STRING,
-                description: 'high أو medium أو low',
-              },
-              energyLevel: {
-                type: Type.STRING,
-                description: 'high أو medium أو low',
-              },
-              estimatedMinutes: {
-                type: Type.NUMBER,
-                description: 'تقدير الدقائق التقريبية لإنجازها إن كانت مهمة',
-              },
-              category: {
-                type: Type.STRING,
-                description: 'تصنيف إضافي مثلاً: تعلم، تنفيذ، تسوق، قراءة، فكرة',
-              },
-              reasoning: {
-                type: Type.STRING,
-                description: 'سبب اختيار هذا التصنيف في جملة واحدة واضحة',
-              },
+    const { response, modelUsed } = await generateContentWithFallback({
+      contents: prompt,
+      customKey,
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            suggestedDestination: {
+              type: Type.STRING,
+              description: 'task أو project أو vault أو habit',
             },
-            required: ['suggestedDestination', 'actionableTitle', 'suggestedPillarTitle', 'priority', 'reasoning'],
+            actionableTitle: {
+              type: Type.STRING,
+              description: 'عنوان محسن ومباشر للعنصر',
+            },
+            suggestedPillarId: {
+              type: Type.STRING,
+              description: 'معرف الركيزة الأنسب إن أمكن مطابقتها',
+            },
+            suggestedPillarTitle: {
+              type: Type.STRING,
+              description: 'اسم الركيزة المقترحة',
+            },
+            suggestedProjectId: {
+              type: Type.STRING,
+              description: 'معرف المشروع المقترح إن وجد',
+            },
+            suggestedProjectTitle: {
+              type: Type.STRING,
+              description: 'اسم المشروع المقترح أو اسم مشروع جديد',
+            },
+            priority: {
+              type: Type.STRING,
+              description: 'high أو medium أو low',
+            },
+            energyLevel: {
+              type: Type.STRING,
+              description: 'high أو medium أو low',
+            },
+            estimatedMinutes: {
+              type: Type.NUMBER,
+              description: 'تقدير الدقائق التقريبية لإنجازها إن كانت مهمة',
+            },
+            category: {
+              type: Type.STRING,
+              description: 'تصنيف إضافي مثلاً: تعلم، تنفيذ، تسوق، قراءة، فكرة',
+            },
+            reasoning: {
+              type: Type.STRING,
+              description: 'سبب اختيار هذا التصنيف في جملة واحدة واضحة',
+            },
           },
+          required: ['suggestedDestination', 'actionableTitle', 'suggestedPillarTitle', 'priority', 'reasoning'],
         },
-      });
+      },
+    });
 
-      recommendation = safeParseJson(response.text) || {};
-    } catch (apiErr) {
-      console.warn('Inbox AI analysis fallback:', apiErr);
-
-      // Contextual heuristic fallback
-      const fullText = `${title} ${content}`.toLowerCase();
-      let dest: 'task' | 'project' | 'vault' | 'habit' = 'task';
-      let reasoning = 'عنصر إجرائي محدد يمكن تنفيذه في خطوة مباشرة.';
-
-      if (url || fullText.includes('كتاب') || fullText.includes('مقال') || fullText.includes('ملخص') || fullText.includes('رابط') || fullText.includes('فيديو')) {
-        dest = 'vault';
-        reasoning = 'المحتوى يتضمن مادة مرجعية أو رابطاً للمطالعة، الأفضل حفظه في خزائن المعرفة.';
-      } else if (fullText.includes('يوميا') || fullText.includes('عادة') || fullText.includes('كل يوم') || fullText.includes('صباح') || fullText.includes('روتين')) {
-        dest = 'habit';
-        reasoning = 'يبدو كفعل متكرر يتطلب المداومة والمتابعة كعادة يومية.';
-      } else if (fullText.includes('مشروع') || fullText.includes('بناء') || fullText.includes('نظام') || fullText.includes('تطوير') || fullText.includes('إطلاق')) {
-        dest = 'project';
-        reasoning = 'فكرة متعددة المراحل تتطلب تخطيطاً وتقسيماً لمجموعة من المهام.';
-      }
-
-      const defaultPillar = pillars[0] || { id: 'pillar-1', title: 'العمل والمسار المهني' };
-
-      recommendation = {
-        suggestedDestination: dest,
-        actionableTitle: title,
-        suggestedPillarId: defaultPillar.id,
-        suggestedPillarTitle: defaultPillar.title,
-        priority: 'medium',
-        energyLevel: 'medium',
-        estimatedMinutes: 30,
-        category: dest === 'vault' ? 'مرجع معرفي' : dest === 'habit' ? 'عادة' : 'إنجاز',
-        reasoning,
-      };
+    const parsed = safeParseJson(response.text);
+    if (!parsed || !parsed.suggestedDestination) {
+      throw new Error('فشل تنسيق نتيجة تحليل صندوق الوارد');
     }
+
+    // Validate destination
+    let dest = parsed.suggestedDestination.toLowerCase();
+    if (!['task', 'project', 'vault', 'habit'].includes(dest)) {
+      dest = 'task';
+    }
+
+    parsed.suggestedDestination = dest;
+    parsed.priority = normalizePriority(parsed.priority);
+    parsed.energyLevel = normalizeEnergy(parsed.energyLevel);
 
     return res.json({
       success: true,
-      data: recommendation,
+      data: parsed,
+      modelUsed,
     });
   } catch (error: any) {
     console.error('Error in /api/ai/analyze-inbox:', error);
-    return res.status(500).json({ error: 'فشل تحليل عنصر صندوق الوارد', details: error.message });
+    return res.status(500).json({ error: 'فشل تحليل عنصر صندوق الوارد بالذكاء الاصطناعي', details: error.message || String(error) });
   }
 });
 

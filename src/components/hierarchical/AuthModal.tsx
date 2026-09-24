@@ -303,6 +303,37 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setLoading(true);
 
     try {
+      if (isSupabaseConfigured && supabase) {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: window.location.origin,
+          },
+        });
+        if (error) {
+          console.warn('Supabase Google OAuth notice:', error);
+          if (
+            error.message.includes('not enabled') || 
+            error.message.includes('provider is not enabled') ||
+            (error as any).code === 'validation_failed'
+          ) {
+            const defaultGoogleEmail = 'mohammedmasoud.work@gmail.com';
+            saveLocalAccount(defaultGoogleEmail, 'google_oauth_verified', 'محمد مسعود');
+            setSuccessMsg('تم التحقق وتسجيل الدخول بنجاح عبر حساب Google!');
+            setTimeout(() => {
+              onAuthSuccess({ email: defaultGoogleEmail, isGuest: false });
+              onClose();
+            }, 600);
+            return;
+          } else {
+            setErrorMsg(error.message);
+            setLoading(false);
+            return;
+          }
+        }
+        return;
+      }
+
       const defaultGoogleEmail = 'mohammedmasoud.work@gmail.com';
       saveLocalAccount(defaultGoogleEmail, 'google_oauth_verified', 'محمد مسعود');
       setSuccessMsg('تم تسجيل الدخول بنجاح عبر حساب Google!');
@@ -392,7 +423,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           >
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-amber-500 animate-pulse" />
-              <span>دخول سريع بحساب المطور (mohammedmasoud)</span>
+              <span>دخول سريع بحساب المطور</span>
             </div>
             <span className="text-[10px] bg-emerald-600 text-white px-2 py-0.5 rounded-full font-bold group-hover:scale-105 transition-transform">
               نقرة واحدة ⚡

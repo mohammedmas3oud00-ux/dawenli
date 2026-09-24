@@ -322,7 +322,7 @@ export const INITIAL_TASKS: Task[] = [
   {
     id: 'task-7',
     project_id: 'proj-3',
-    title: 'كتابة محفزات PostgreSQL للحساب التلقائي الصاعد (Triggers)',
+    title: 'كتابة محفزات PostgreSQL للحساب التلقائي الصاعد',
     description: 'دوال plpgsql: recalculate_project_progress, recalculate_value_goal_progress, recalculate_pillar_progress',
     status: 'done',
     priority: 'high',

@@ -69,14 +69,14 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200">
             <span>🚀</span>
-            <span>تركيز عميق (High Energy)</span>
+            <span>تركيز عميق</span>
           </span>
         );
       case 'medium':
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
             <span>⚡</span>
-            <span>طاقة متوسطة (Medium Energy)</span>
+            <span>طاقة متوسطة</span>
           </span>
         );
       case 'low':
@@ -84,7 +84,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
             <span>🔋</span>
-            <span>طاقة خفيفة (Low Energy)</span>
+            <span>طاقة خفيفة</span>
           </span>
         );
     }

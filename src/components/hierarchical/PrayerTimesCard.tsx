@@ -3,7 +3,7 @@ import {
   fetchPrayerTimes, 
   PrayerTimesData 
 } from '../../utils/speechRecognition';
-import { playFocusSound } from '../../utils/audioChime';
+import { playFocusSound, stopAdhanSound } from '../../utils/audioChime';
 import { 
   Bell, 
   BellOff, 
@@ -143,7 +143,14 @@ export const PrayerTimesCard: React.FC<PrayerTimesCardProps> = ({
     setSoundEnabled(next);
     localStorage.setItem('dawenli_adhan_sound', String(next));
     if (next) {
+      if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
+        try {
+          Notification.requestPermission();
+        } catch {}
+      }
       playFocusSound('adhan');
+    } else {
+      stopAdhanSound();
     }
   };
 

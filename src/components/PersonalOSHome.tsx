@@ -125,7 +125,7 @@ export const PersonalOSHome: React.FC<PersonalOSHomeProps> = ({
               className="flex items-center gap-2 px-4 py-2.5 text-xs font-bold text-slate-950 bg-amber-400 hover:bg-amber-300 rounded-lg transition-all shadow-sm cursor-pointer"
             >
               <Zap className="w-4 h-4 fill-slate-950" />
-              <span>التقاط سريع (Quick Capture)</span>
+              <span>التقاط سريع</span>
             </button>
 
             <button
@@ -144,7 +144,7 @@ export const PersonalOSHome: React.FC<PersonalOSHomeProps> = ({
         <div className="flex items-center gap-3">
           <span className="text-xl">🏠</span>
           <div>
-            <span className="font-bold">الواجهة الرئيسية (Home):</span>
+            <span className="font-bold">الواجهة الرئيسية:</span>
             <span className="text-amber-800 mr-1.5">ابدأ منها يومك، راجع عباداتك، وحدد أولوياتك قبل الشروع في العمل.</span>
           </div>
         </div>
@@ -563,7 +563,7 @@ export const PersonalOSHome: React.FC<PersonalOSHomeProps> = ({
                   ⚡
                 </div>
                 <div>
-                  <h3 className="text-xs font-bold text-slate-900">أولويات اليوم (Top Focus Actions)</h3>
+                  <h3 className="text-xs font-bold text-slate-900">أولويات اليوم</h3>
                   <p className="text-[10px] text-slate-500">أعلى المهام أثراً وقيمة بحسب خوارزمية الترتيب</p>
                 </div>
               </div>
@@ -636,7 +636,7 @@ export const PersonalOSHome: React.FC<PersonalOSHomeProps> = ({
                   🔄
                 </div>
                 <div>
-                  <h3 className="text-xs font-bold text-slate-900">عادات اليوم (Habit Log)</h3>
+                  <h3 className="text-xs font-bold text-slate-900">عادات اليوم</h3>
                   <p className="text-[10px] text-slate-500">التكرار اليومي هو أساس صياغة الهوية</p>
                 </div>
               </div>
@@ -692,7 +692,7 @@ export const PersonalOSHome: React.FC<PersonalOSHomeProps> = ({
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-              <span>🏛️ الركائز الكبرى (Pillars — Structure)</span>
+              <span>🏛️ الركائز الكبرى</span>
             </h2>
             <p className="text-xs text-slate-500">
               الأساس البنيوي الذي تتفرع منه الرؤى والأهداف والمشاريع وعادات الحياة.
@@ -759,7 +759,7 @@ export const PersonalOSHome: React.FC<PersonalOSHomeProps> = ({
                   {pillar.valueGoals && pillar.valueGoals.length > 0 && (
                     <div className="space-y-1">
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                        أهداف القيم (Value Goals):
+                        أهداف القيم:
                       </span>
                       <div className="flex flex-wrap gap-1">
                         {pillar.valueGoals.map((vg, i) => (

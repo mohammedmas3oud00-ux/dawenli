@@ -92,7 +92,7 @@ export const PillarModal: React.FC<PillarModalProps> = ({
 
           <div>
             <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">
-              الغاية الكبرى للركيزة (Purpose — The Big Why): *
+              الغاية الكبرى للركيزة: *
             </label>
             <textarea
               rows={3}

@@ -229,7 +229,7 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
   const totalFocusMinutesToday = Math.round(totalFocusSecondsToday / 60);
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
+    <div className="space-y-6 max-w-5xl mx-auto w-full">
       
       {/* 1. Header & Navigation */}
       <div className="bg-white dark:bg-slate-900 border border-[#e8e5de] dark:border-slate-800 rounded-2xl p-4 sm:p-6 shadow-2xs">
@@ -390,14 +390,14 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
 
         {/* Mode Specific Controls & Display */}
         {mode === 'pomodoro' ? (
-          <div className="mt-8 space-y-6 relative z-10">
+          <div className="mt-6 sm:mt-8 space-y-6 relative z-10">
             
             {/* Pomodoro Phase Selector */}
-            <div className="inline-flex flex-wrap items-center justify-center bg-[#f4f2ed] dark:bg-slate-800 p-1 rounded-2xl border border-[#e4e0d6] dark:border-slate-700 gap-1">
+            <div className="inline-flex flex-wrap items-center justify-center bg-[#f4f2ed] dark:bg-slate-800 p-1.5 rounded-2xl border border-[#e4e0d6] dark:border-slate-700 gap-1.5 max-w-full">
               <button
                 type="button"
                 onClick={() => switchPomodoroPhase('work')}
-                className={`px-3 sm:px-4 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                className={`px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                   pomodoroPhase === 'work'
                     ? 'bg-[#174235] dark:bg-emerald-700 text-white shadow-2xs'
                     : 'text-[#637269] dark:text-slate-400 hover:text-[#174235]'
@@ -410,7 +410,7 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
               <button
                 type="button"
                 onClick={() => switchPomodoroPhase('short_break')}
-                className={`px-3 sm:px-4 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                className={`px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                   pomodoroPhase === 'short_break'
                     ? 'bg-amber-700 text-white shadow-2xs'
                     : 'text-[#637269] dark:text-slate-400 hover:text-amber-800'
@@ -423,7 +423,7 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
               <button
                 type="button"
                 onClick={() => switchPomodoroPhase('long_break')}
-                className={`px-3 sm:px-4 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                className={`px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                   pomodoroPhase === 'long_break'
                     ? 'bg-sky-700 text-white shadow-2xs'
                     : 'text-[#637269] dark:text-slate-400 hover:text-sky-800'
@@ -435,11 +435,11 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
             </div>
 
             {/* Digital Countdown Display */}
-            <div className="py-2 select-none">
-              <div className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tight text-[#1a2420] dark:text-slate-100 font-mono tabular-nums">
+            <div className="py-4 sm:py-6 select-none">
+              <div className="text-6xl sm:text-7xl md:text-8xl font-black tracking-tight text-[#1a2420] dark:text-slate-100 font-mono tabular-nums leading-none">
                 {formatTime(secondsRemaining)}
               </div>
-              <p className="text-xs text-[#718278] dark:text-slate-400 font-bold mt-2">
+              <p className="text-xs text-[#718278] dark:text-slate-400 font-bold mt-3">
                 {pomodoroPhase === 'work' 
                   ? 'جلسة تركيز قيد التشغيل' 
                   : pomodoroPhase === 'short_break' 
@@ -449,7 +449,7 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
             </div>
 
             {/* Tomato completed counters */}
-            <div className="flex items-center justify-center gap-2">
+            <div className="flex items-center justify-center gap-2 pt-1">
               <span className="text-xs text-[#718278] dark:text-slate-400 font-bold">جلسات اليوم:</span>
               <div className="flex items-center gap-1">
                 {Array.from({ length: Math.max(4, completedPomodorosCount) }).map((_, idx) => (
@@ -503,13 +503,13 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
         )}
 
         {/* Primary Controls Row - Wrap cleanly without overlapping */}
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5 sm:gap-3 relative z-10">
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-2.5 sm:gap-3.5 relative z-10 w-full">
           
           {/* Start / Pause Button */}
           <button
             type="button"
             onClick={handleToggleTimer}
-            className={`flex items-center gap-2 px-6 sm:px-8 py-3 rounded-2xl text-xs sm:text-sm font-black transition-all shadow-md hover:shadow-lg cursor-pointer ${
+            className={`flex items-center justify-center gap-2 px-6 sm:px-8 py-3 rounded-2xl text-xs sm:text-sm font-black transition-all shadow-md hover:shadow-lg cursor-pointer min-h-[46px] ${
               isActive
                 ? 'bg-amber-600 hover:bg-amber-700 text-white'
                 : 'bg-[#174235] dark:bg-emerald-700 hover:bg-[#12362b] text-white'
@@ -533,7 +533,7 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
             <button
               type="button"
               onClick={handleFlowtimeBreak}
-              className="flex items-center gap-1.5 px-4 sm:px-5 py-3 bg-emerald-700 hover:bg-emerald-800 text-white rounded-2xl text-xs font-black shadow-xs cursor-pointer transition-all"
+              className="flex items-center justify-center gap-1.5 px-4 sm:px-5 py-3 bg-emerald-700 hover:bg-emerald-800 text-white rounded-2xl text-xs font-black shadow-xs cursor-pointer transition-all min-h-[46px]"
             >
               <Coffee className="w-4 h-4" />
               <span>أخذ استراحة وتدوين التدفق</span>
@@ -544,7 +544,7 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
           <button
             type="button"
             onClick={handleResetTimer}
-            className="p-3 bg-[#f4f2ed] dark:bg-slate-800 hover:bg-[#eae6dd] dark:hover:bg-slate-700 text-[#4d5c52] dark:text-slate-300 rounded-2xl border border-[#dedad0] dark:border-slate-700 transition-colors cursor-pointer"
+            className="p-3 bg-[#f4f2ed] dark:bg-slate-800 hover:bg-[#eae6dd] dark:hover:bg-slate-700 text-[#4d5c52] dark:text-slate-300 rounded-2xl border border-[#dedad0] dark:border-slate-700 transition-colors cursor-pointer min-h-[46px] min-w-[46px] flex items-center justify-center"
             title="إعادة ضبط المؤقت"
           >
             <RotateCcw className="w-4 h-4" />
@@ -555,7 +555,7 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
             <button
               type="button"
               onClick={() => setDistractionsCount(prev => prev + 1)}
-              className="flex items-center gap-1.5 px-3.5 sm:px-4 py-3 bg-[#fdf8f4] dark:bg-amber-950/60 hover:bg-[#fbede1] text-[#b45309] dark:text-amber-300 border border-[#fed7aa] dark:border-amber-800 rounded-2xl text-xs font-bold transition-all cursor-pointer"
+              className="flex items-center justify-center gap-1.5 px-3.5 sm:px-4 py-3 bg-[#fdf8f4] dark:bg-amber-950/60 hover:bg-[#fbede1] text-[#b45309] dark:text-amber-300 border border-[#fed7aa] dark:border-amber-800 rounded-2xl text-xs font-bold transition-all cursor-pointer min-h-[46px]"
               title="سجل التشتت الذهني لملاحظته دون الاستسلام له"
             >
               <Zap className="w-3.5 h-3.5 text-amber-500" />
@@ -568,7 +568,7 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
             <button
               type="button"
               onClick={handleCompleteCurrentTask}
-              className="flex items-center gap-1.5 px-4 sm:px-5 py-3 bg-emerald-50 dark:bg-emerald-950/70 hover:bg-emerald-100 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 rounded-2xl text-xs font-bold transition-all cursor-pointer"
+              className="flex items-center justify-center gap-1.5 px-4 sm:px-5 py-3 bg-emerald-50 dark:bg-emerald-950/70 hover:bg-emerald-100 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 rounded-2xl text-xs font-bold transition-all cursor-pointer min-h-[46px]"
             >
               <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               <span>تم إنجاز المهمة بنجاح 🎉</span>
@@ -580,7 +580,7 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
       </div>
 
       {/* 3. Today's Productivity & Focus Analytics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5 sm:gap-4 w-full">
         
         {/* Metric 1 */}
         <div className="bg-white dark:bg-slate-900 border border-[#e8e5de] dark:border-slate-800 rounded-2xl p-4 shadow-2xs flex items-center gap-3.5">

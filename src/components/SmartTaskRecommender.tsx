@@ -323,7 +323,7 @@ export const SmartTaskRecommender: React.FC<SmartTaskRecommenderProps> = ({
               <div className="flex items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white text-indigo-900 shadow-xs">
                   <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-                  <span>الخيار الأفضل لك الآن (Top Pick)</span>
+                  <span>الخيار الأفضل لك الآن</span>
                 </span>
                 <span className="text-xs font-mono text-indigo-200 bg-indigo-800/60 px-2.5 py-0.5 rounded-full border border-indigo-700/50">
                   درجة التوافق: {bestTaskResult.fitScore}%
@@ -414,7 +414,7 @@ export const SmartTaskRecommender: React.FC<SmartTaskRecommenderProps> = ({
                 className="flex items-center gap-2 px-4 py-2 bg-white text-indigo-900 hover:bg-indigo-50 rounded-md font-bold text-xs shadow-xs transition-colors cursor-pointer"
               >
                 <Play className="w-3.5 h-3.5 fill-current" />
-                <span>بدء جلسة تركيز (Focus Timer)</span>
+                <span>بدء جلسة تركيز</span>
               </button>
 
               <button
@@ -448,7 +448,7 @@ export const SmartTaskRecommender: React.FC<SmartTaskRecommenderProps> = ({
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
               <Layers className="w-4 h-4 text-indigo-600" />
-              <span>قائمة المهام التالية بالترتيب الاستراتيجي (Alternative Queue)</span>
+              <span>قائمة المهام التالية بالترتيب الاستراتيجي</span>
             </h3>
             <span className="text-xs text-slate-500">
               مرتبة حسب ناتج (الأثر + القيمة + الاستعجال + التوافق مع الهدف الأكبر)

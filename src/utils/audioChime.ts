@@ -2,7 +2,43 @@
  * Clean Web Audio API Chime Synthesizer
  * Produces soothing acoustic sounds (Zen Bell / Tibetan singing bowl / Adhan alert)
  */
+let activeAdhanAudio: HTMLAudioElement | null = null;
+
+export function stopAdhanSound() {
+  if (activeAdhanAudio) {
+    try {
+      activeAdhanAudio.pause();
+      activeAdhanAudio.currentTime = 0;
+    } catch {}
+    activeAdhanAudio = null;
+  }
+}
+
 export function playFocusSound(type: 'complete' | 'break' | 'start' | 'adhan' = 'complete') {
+  if (type === 'adhan') {
+    // Attempt playing authentic full audible Adhan Takbeer audio file
+    try {
+      stopAdhanSound();
+      const audio = new Audio('/audio/adhan.mp3');
+      audio.volume = 0.85;
+      activeAdhanAudio = audio;
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((err) => {
+          console.debug('HTML5 audio play blocked, falling back to WebAudio synth', err);
+          synthesizeSound('adhan');
+        });
+      }
+      return;
+    } catch (e) {
+      console.debug('Audio file play error, using WebAudio synth fallback', e);
+    }
+  }
+
+  synthesizeSound(type);
+}
+
+function synthesizeSound(type: 'complete' | 'break' | 'start' | 'adhan') {
   try {
     const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
     if (!AudioContextClass) return;

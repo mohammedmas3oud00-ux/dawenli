@@ -50,7 +50,7 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
               <Zap className="w-4 h-4 fill-slate-950" />
             </div>
             <div>
-              <h3 className="font-bold text-sm">التقاط سريع (Quick Capture)</h3>
+              <h3 className="font-bold text-sm">التقاط سريع</h3>
               <p className="text-[11px] text-slate-300">أفرغ ذهنك فوراً من أي فكرة أو مهمة أو خاطر</p>
             </div>
           </div>
@@ -63,9 +63,9 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
           {/* Type Selector */}
           <div className="grid grid-cols-3 gap-2">
             {[
-              { id: 'task' as const, label: 'مهمة عمل (Task)', icon: <CheckSquare className="w-3.5 h-3.5" /> },
-              { id: 'idea' as const, label: 'فكرة ملهمة (Idea)', icon: <Sparkles className="w-3.5 h-3.5" /> },
-              { id: 'note' as const, label: 'ملاحظة عامة (Note)', icon: <FileText className="w-3.5 h-3.5" /> },
+              { id: 'task' as const, label: 'مهمة عمل', icon: <CheckSquare className="w-3.5 h-3.5" /> },
+              { id: 'idea' as const, label: 'فكرة ملهمة', icon: <Sparkles className="w-3.5 h-3.5" /> },
+              { id: 'note' as const, label: 'ملاحظة عامة', icon: <FileText className="w-3.5 h-3.5" /> },
             ].map((t) => (
               <button
                 type="button"

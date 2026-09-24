@@ -78,7 +78,7 @@ export const CyclesReviewsView: React.FC<CyclesReviewsViewProps> = ({
             </h1>
             
             <p className="text-sm text-amber-200 max-w-xl leading-relaxed">
-              «التأمل والمراجعة الدورية يحولان الخبرات اليومية إلى حكمة راسخة». احتفل بإنجازاتك (Accomplishments)، وتعلم من عثراتك (Lessons).
+              «التأمل والمراجعة الدورية يحولان الخبرات اليومية إلى حكمة راسخة». احتفل بإنجازاتك، وتعلم من عثراتك.
             </p>
           </div>
 
@@ -102,7 +102,7 @@ export const CyclesReviewsView: React.FC<CyclesReviewsViewProps> = ({
               : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
           }`}
         >
-          <span>📆 المراجعات الأسبوعية (Weekly Reviews)</span>
+          <span>📆 المراجعات الأسبوعية</span>
         </button>
 
         <button
@@ -113,7 +113,7 @@ export const CyclesReviewsView: React.FC<CyclesReviewsViewProps> = ({
               : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
           }`}
         >
-          <span>☀️ التأمل اليومي (Daily Tracking)</span>
+          <span>☀️ التأمل اليومي</span>
         </button>
 
         <button
@@ -166,7 +166,7 @@ export const CyclesReviewsView: React.FC<CyclesReviewsViewProps> = ({
           <div>
             <label className="font-bold text-emerald-800 flex items-center gap-1.5 mb-1">
               <Trophy className="w-3.5 h-3.5 text-emerald-600" />
-              <span>ما أنجزته بنجاح (Accomplishments) — سطر لكل إنجاز:</span>
+              <span>ما أنجزته بنجاح — سطر لكل إنجاز:</span>
             </label>
             <textarea
               rows={3}
@@ -181,7 +181,7 @@ export const CyclesReviewsView: React.FC<CyclesReviewsViewProps> = ({
           <div>
             <label className="font-bold text-amber-800 flex items-center gap-1.5 mb-1">
               <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
-              <span>العثرات والدروس المستفادة (Disappointments & Lessons) — سطر لكل درس:</span>
+              <span>العثرات والدروس المستفادة — سطر لكل درس:</span>
             </label>
             <textarea
               rows={3}
@@ -196,7 +196,7 @@ export const CyclesReviewsView: React.FC<CyclesReviewsViewProps> = ({
           <div>
             <label className="font-bold text-indigo-800 flex items-center gap-1.5 mb-1">
               <Heart className="w-3.5 h-3.5 text-indigo-600" />
-              <span>سجل الامتنان والحمد (Gratitude):</span>
+              <span>سجل الامتنان والحمد:</span>
             </label>
             <textarea
               rows={2}
@@ -244,7 +244,7 @@ export const CyclesReviewsView: React.FC<CyclesReviewsViewProps> = ({
                 <div className="space-y-2">
                   <h4 className="text-xs font-bold text-emerald-800 flex items-center gap-1.5">
                     <Trophy className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>سجل الإنجازات (Accomplishments):</span>
+                    <span>سجل الإنجازات:</span>
                   </h4>
                   <ul className="space-y-1 pr-4 list-disc text-xs text-slate-700">
                     {rev.accomplishments.map((item, i) => (
@@ -259,7 +259,7 @@ export const CyclesReviewsView: React.FC<CyclesReviewsViewProps> = ({
                 <div className="space-y-2 pt-2 border-t border-slate-100">
                   <h4 className="text-xs font-bold text-amber-800 flex items-center gap-1.5">
                     <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
-                    <span>الدروس والعثرات المستفادة (Lessons):</span>
+                    <span>الدروس والعثرات المستفادة:</span>
                   </h4>
                   <ul className="space-y-1 pr-4 list-disc text-xs text-slate-700">
                     {rev.disappointmentsAndLessons.map((item, i) => (
@@ -274,7 +274,7 @@ export const CyclesReviewsView: React.FC<CyclesReviewsViewProps> = ({
                 <div className="space-y-1.5 pt-2 border-t border-slate-100">
                   <h4 className="text-xs font-bold text-indigo-800 flex items-center gap-1.5">
                     <Heart className="w-3.5 h-3.5 text-indigo-600" />
-                    <span>الامتنان والحمد (Gratitude):</span>
+                    <span>الامتنان والحمد:</span>
                   </h4>
                   <ul className="space-y-0.5 pr-4 list-disc text-xs text-slate-600">
                     {rev.gratitude.map((item, i) => (

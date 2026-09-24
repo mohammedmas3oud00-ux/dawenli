@@ -144,10 +144,10 @@ export const KnowledgeVaultView: React.FC<KnowledgeVaultViewProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-3 rounded-xl border border-slate-200 text-xs">
         <div className="flex items-center gap-1.5 overflow-x-auto">
           {[
-            { id: 'books', label: 'مستودع الكتب (Books)', icon: <BookOpen className="w-4 h-4" /> },
-            { id: 'courses', label: 'الدورات والتدريب (Courses)', icon: <GraduationCap className="w-4 h-4" /> },
-            { id: 'media', label: 'الوسائط والمقالات (Media)', icon: <Video className="w-4 h-4" /> },
-            { id: 'notes', label: 'الملاحظات والأفكار (Notes & Ideas)', icon: <FileText className="w-4 h-4" /> },
+            { id: 'books', label: 'مستودع الكتب', icon: <BookOpen className="w-4 h-4" /> },
+            { id: 'courses', label: 'الدورات والتدريب', icon: <GraduationCap className="w-4 h-4" /> },
+            { id: 'media', label: 'الوسائط والمقالات', icon: <Video className="w-4 h-4" /> },
+            { id: 'notes', label: 'الملاحظات والأفكار', icon: <FileText className="w-4 h-4" /> },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -274,7 +274,7 @@ export const KnowledgeVaultView: React.FC<KnowledgeVaultViewProps> = ({
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">أبرز فائدة / الخلاصة (Key Takeaway):</label>
+                <label className="font-semibold text-slate-700 block mb-1">أبرز فائدة / الخلاصة:</label>
                 <textarea
                   rows={2}
                   value={keyTakeaway}

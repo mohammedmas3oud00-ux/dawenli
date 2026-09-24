@@ -81,6 +81,15 @@ export interface AiVoiceAnalysisResult {
   }>;
 }
 
+function getAiHeaders(): Record<string, string> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const customKey = typeof window !== 'undefined' ? localStorage.getItem('dawenli_gemini_key') : null;
+  if (customKey) {
+    headers['x-gemini-api-key'] = customKey.trim();
+  }
+  return headers;
+}
+
 /**
  * Call Server-Side Gemini to analyze and decompose spoken or typed text
  */
@@ -90,7 +99,7 @@ export async function analyzeVoiceInput(
 ): Promise<AiVoiceAnalysisResult> {
   const res = await fetch('/api/ai/analyze-voice', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAiHeaders(),
     body: JSON.stringify({
       speechText,
       existingPillars: context?.existingPillars || [],
@@ -100,12 +109,14 @@ export async function analyzeVoiceInput(
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || 'فشل الاتصال بخدمة التحليل الذكي');
+    throw new Error(err.error || err.details || 'فشل الاتصال بخدمة التحليل الذكي');
   }
 
   const json = await res.json();
   return json.data;
 }
+
+export const analyzeTextInput = analyzeVoiceInput;
 
 /**
  * Transcribe recorded audio with server-side Gemini
@@ -124,7 +135,7 @@ export async function transcribeAudioBlob(blob: Blob): Promise<string> {
 
   const res = await fetch('/api/ai/transcribe', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAiHeaders(),
     body: JSON.stringify({
       audioData: base64,
       mimeType: blob.type || 'audio/webm',
@@ -133,7 +144,7 @@ export async function transcribeAudioBlob(blob: Blob): Promise<string> {
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || 'فشل تفريغ الصوت بالذكاء الاصطناعي');
+    throw new Error(err.error || err.details || 'فشل تفريغ الصوت بالذكاء الاصطناعي');
   }
 
   const json = await res.json();
@@ -150,13 +161,13 @@ export async function decomposeProjectWithAi(
 ): Promise<Array<{ title: string; description?: string; priority: string; energyLevel: string; estimatedHours: number }>> {
   const res = await fetch('/api/ai/decompose-project', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAiHeaders(),
     body: JSON.stringify({ projectTitle, projectDescription, pillarTitle }),
   });
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || 'فشل تفكيك المشروع');
+    throw new Error(err.error || err.details || 'فشل تفكيك المشروع');
   }
 
   const json = await res.json();
@@ -173,13 +184,13 @@ export async function performAiSmartReview(
 ) {
   const res = await fetch('/api/ai/smart-review', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAiHeaders(),
     body: JSON.stringify({ frequency, reflection, systemMetrics }),
   });
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || 'فشل التحليل الذكي للمراجعة');
+    throw new Error(err.error || err.details || 'فشل التحليل الذكي للمراجعة');
   }
 
   const json = await res.json();
@@ -209,7 +220,7 @@ export async function analyzeInboxItemWithAi(
 ): Promise<AiInboxAnalysisResult> {
   const res = await fetch('/api/ai/analyze-inbox', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAiHeaders(),
     body: JSON.stringify({
       title: item.title,
       content: item.content || '',
@@ -221,7 +232,7 @@ export async function analyzeInboxItemWithAi(
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || 'فشل تحليل عنصر صندوق الوارد بالذكاء الاصطناعي');
+    throw new Error(err.error || err.details || 'فشل تحليل عنصر صندوق الوارد بالذكاء الاصطناعي');
   }
 
   const json = await res.json();

@@ -68,6 +68,7 @@ import { VoiceAiCaptureModal } from './VoiceAiCaptureModal';
 import { AuthModal } from './AuthModal';
 import { ToastContainer, ToastMessage } from './ToastNotification';
 import { Database, RotateCcw, Plus, Menu, Mic, Sparkles, Sun, Moon, User, LogIn, LogOut } from 'lucide-react';
+import { supabase, isSupabaseConfigured } from '../../utils/supabaseClient';
 
 export const HierarchicalApp: React.FC = () => {
   // Core Entities State
@@ -116,6 +117,31 @@ export const HierarchicalApp: React.FC = () => {
     return { email: 'mohammedmasoud.work@gmail.com', isGuest: false };
   });
 
+  // Supabase Auth Session Synchronization
+  useEffect(() => {
+    if (isSupabaseConfigured && supabase) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user?.email) {
+          const authUser = { email: session.user.email, isGuest: false };
+          setCurrentUser(authUser);
+          localStorage.setItem('dawenli_user', JSON.stringify(authUser));
+        }
+      });
+
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (session?.user?.email) {
+          const authUser = { email: session.user.email, isGuest: false };
+          setCurrentUser(authUser);
+          localStorage.setItem('dawenli_user', JSON.stringify(authUser));
+        }
+      });
+
+      return () => {
+        subscription.unsubscribe();
+      };
+    }
+  }, []);
+
   // Dark Mode Theme State
   const [isDark, setIsDark] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
@@ -155,31 +181,54 @@ export const HierarchicalApp: React.FC = () => {
     ]);
   };
 
-  const handleSignOut = () => {
-    const guestUser = { email: 'ضيف المنظومة', isGuest: true };
-    setCurrentUser(guestUser);
-    localStorage.setItem('dawenli_user', JSON.stringify(guestUser));
+  const handleSignOut = async () => {
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.auth.signOut();
+      } catch (e) {
+        console.warn('Supabase sign out error:', e);
+      }
+    }
+    setCurrentUser(null);
+    localStorage.removeItem('dawenli_user');
+    setIsAuthModalOpen(true);
     setToasts((prev) => [
       ...prev,
       {
         id: `toast-${Date.now()}`,
         type: 'info',
         title: 'تسجيل الخروج',
-        description: 'تم التبديل إلى وضع ضيف المنظومة المحلي',
+        description: 'تم تسجيل الخروج بنجاح. يرجى تسجيل الدخول للوصول إلى المنظومة.',
       },
     ]);
   };
 
   const handleAdhanNotify = (prayerName: string) => {
+    // 1. In-app Toast Notification
     setToasts((prev) => [
       ...prev,
       {
         id: `toast-${Date.now()}`,
         type: 'info',
-        title: 'حان الآن موعد الأذان',
-        description: `حان الآن موعد أذان ${prayerName} وفق توقيتك المحلي.`,
+        title: 'حان الآن موعد الأذان 🕌',
+        description: `حان الآن موعد أذان ${prayerName} وفق توقيتك المحلي. حيّ على الصلاة، حيّ على الفلاح.`,
       },
     ]);
+
+    // 2. Browser System Notification
+    try {
+      if (typeof window !== 'undefined' && 'Notification' in window) {
+        if (Notification.permission === 'granted') {
+          new Notification('حان الآن موعد الأذان 🕌', {
+            body: `حان الآن موعد أذان ${prayerName} وفق توقيتك المحلي. حيّ على الصلاة، حيّ على الفلاح.`,
+            dir: 'rtl',
+            lang: 'ar',
+          });
+        } else if (Notification.permission === 'default') {
+          Notification.requestPermission();
+        }
+      }
+    } catch {}
   };
 
   // Review Modals State
@@ -540,7 +589,7 @@ export const HierarchicalApp: React.FC = () => {
   const handleSaveTask = (taskData: Partial<Task>) => {
     if (editingTask) {
       const updated = tasks.map((t) =>
-        t.id === editingTask.id ? { ...t, ...taskData, updated_at: new Date().toISOString() } : t
+        t.id === editingTask.id ? { ...t, ...taskData, custom_fields: taskData.custom_fields || t.custom_fields, updated_at: new Date().toISOString() } : t
       );
       applyStateUpdate(pillars, visions, goals, projects, updated);
     } else {
@@ -554,6 +603,7 @@ export const HierarchicalApp: React.FC = () => {
         priority: taskData.priority || 'medium',
         due_date: taskData.due_date || null,
         completed_at: taskData.status === 'done' ? new Date().toISOString() : null,
+        custom_fields: taskData.custom_fields || {},
         created_at: new Date().toISOString(),
       };
       applyStateUpdate(pillars, visions, goals, projects, [...tasks, newTask]);
@@ -575,6 +625,63 @@ export const HierarchicalApp: React.FC = () => {
       return t;
     });
     applyStateUpdate(pillars, visions, goals, projects, updated);
+  };
+
+  const handleUpdateTaskStatus = (taskId: string, targetStatus: Task['status']) => {
+    const updated = tasks.map((t) => {
+      if (t.id === taskId) {
+        return {
+          ...t,
+          status: targetStatus,
+          completed_at: targetStatus === 'done' ? new Date().toISOString() : null,
+          updated_at: new Date().toISOString(),
+        };
+      }
+      return t;
+    });
+    applyStateUpdate(pillars, visions, goals, projects, updated);
+  };
+
+  const handleUpdateTaskCustomFields = (taskId: string, customFields: Record<string, any>) => {
+    const updated = tasks.map((t) => {
+      if (t.id === taskId) {
+        return {
+          ...t,
+          custom_fields: customFields,
+          updated_at: new Date().toISOString(),
+        };
+      }
+      return t;
+    });
+    applyStateUpdate(pillars, visions, goals, projects, updated);
+  };
+
+  const handleUpdateProjectStatus = (projectId: string, targetStatus: Project['status']) => {
+    const updated = projects.map((p) => {
+      if (p.id === projectId) {
+        return {
+          ...p,
+          status: targetStatus,
+          updated_at: new Date().toISOString(),
+        };
+      }
+      return p;
+    });
+    applyStateUpdate(pillars, visions, goals, updated, tasks);
+  };
+
+  const handleUpdateProjectCustomFields = (projectId: string, customFields: Record<string, any>) => {
+    const updated = projects.map((p) => {
+      if (p.id === projectId) {
+        return {
+          ...p,
+          custom_fields: customFields,
+          updated_at: new Date().toISOString(),
+        };
+      }
+      return p;
+    });
+    applyStateUpdate(pillars, visions, goals, updated, tasks);
   };
 
   const handleDeleteTask = (taskId: string) => {
@@ -1068,8 +1175,23 @@ export const HierarchicalApp: React.FC = () => {
     }
   };
 
+  if (!currentUser) {
+    return (
+      <div className="h-full w-full min-h-screen bg-[#f8f7f4] dark:bg-slate-950 text-[#1a2420] dark:text-slate-100 flex items-center justify-center p-4 selection:bg-[#174235] selection:text-white" dir="rtl">
+        <AuthModal
+          isOpen={true}
+          canDismiss={false}
+          onClose={() => {}}
+          onAuthSuccess={handleAuthSuccess}
+          currentUser={null}
+        />
+        <ToastContainer toasts={toasts} onDismiss={(id) => setToasts((prev) => prev.filter((t) => t.id !== id))} />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-[#f8f7f4] dark:bg-slate-950 text-[#1a2420] dark:text-slate-100 flex font-sans antialiased selection:bg-[#174235] selection:text-white" dir="rtl">
+    <div className="h-full w-full overflow-hidden bg-[#f8f7f4] dark:bg-slate-950 text-[#1a2420] dark:text-slate-100 flex font-sans antialiased selection:bg-[#174235] selection:text-white" dir="rtl">
       
       {/* 1. SIDEBAR NAVIGATION styled like Dawenli OS */}
       <Sidebar
@@ -1214,7 +1336,7 @@ export const HierarchicalApp: React.FC = () => {
 
         {/* Main Body View Container */}
         <main className="flex-1 overflow-y-auto p-3 sm:p-5 md:p-6 lg:p-8">
-          <div className="max-w-7xl mx-auto">
+          <div className="max-w-7xl mx-auto w-full space-y-6">
             
             {/* TAB 1: DRILL-DOWN HIERARCHY */}
             {currentTab === 'hierarchy' && (
@@ -1411,6 +1533,8 @@ export const HierarchicalApp: React.FC = () => {
                   setIsProjectModalOpen(true);
                 }}
                 onDeleteProject={handleDeleteProject}
+                onUpdateStatus={handleUpdateProjectStatus}
+                onUpdateCustomFields={handleUpdateProjectCustomFields}
               />
             )}
 
@@ -1420,8 +1544,13 @@ export const HierarchicalApp: React.FC = () => {
                 tasks={tasks}
                 projects={projects}
                 onToggleStatus={handleToggleTaskStatus}
-                onNewTask={() => {
+                onUpdateStatus={handleUpdateTaskStatus}
+                onUpdateCustomFields={handleUpdateTaskCustomFields}
+                onNewTask={(defaultDate) => {
                   setEditingTask(null);
+                  if (defaultDate) {
+                    setEditingTask({ due_date: defaultDate } as any);
+                  }
                   setIsTaskModalOpen(true);
                 }}
                 onEditTask={(task) => {

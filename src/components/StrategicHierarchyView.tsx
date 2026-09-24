@@ -178,7 +178,7 @@ export const StrategicHierarchyView: React.FC<StrategicHierarchyViewProps> = ({
             <div className="flex items-center gap-2 text-indigo-600 mb-1">
               <Layers className="w-5 h-5" />
               <h2 className="text-base font-bold text-slate-900">
-                الهيكل الاستراتيجي وسريان التقدم التصاعدي (Strategic Cascade)
+                الهيكل الاستراتيجي وسريان التقدم التصاعدي
               </h2>
             </div>
             <p className="text-xs text-slate-600 leading-relaxed">
@@ -214,27 +214,27 @@ export const StrategicHierarchyView: React.FC<StrategicHierarchyViewProps> = ({
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center text-xs">
             <div className="p-2.5 rounded-md bg-indigo-50 border border-indigo-200 text-indigo-900 font-bold flex flex-col items-center">
               <span className="text-[10px] text-indigo-600 uppercase font-mono">Tier 1</span>
-              <span>🏛️ الركائز (Pillars)</span>
+              <span>🏛️ الركائز</span>
               <span className="text-[10px] text-indigo-500 font-normal mt-0.5">{pillars.length} ركائز</span>
             </div>
             <div className="p-2.5 rounded-md bg-purple-50 border border-purple-200 text-purple-900 font-bold flex flex-col items-center">
               <span className="text-[10px] text-purple-600 uppercase font-mono">Tier 2</span>
-              <span>🔭 الرؤية (Vision)</span>
+              <span>🔭 الرؤية</span>
               <span className="text-[10px] text-purple-500 font-normal mt-0.5">{visions.length} رؤى</span>
             </div>
             <div className="p-2.5 rounded-md bg-blue-50 border border-blue-200 text-blue-900 font-bold flex flex-col items-center">
               <span className="text-[10px] text-blue-600 uppercase font-mono">Tier 3</span>
-              <span>🎯 الأهداف (Goals)</span>
+              <span>🎯 الأهداف</span>
               <span className="text-[10px] text-blue-500 font-normal mt-0.5">{goals.length} أهداف</span>
             </div>
             <div className="p-2.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-900 font-bold flex flex-col items-center">
               <span className="text-[10px] text-emerald-600 uppercase font-mono">Tier 4</span>
-              <span>📁 المشاريع (Projects)</span>
+              <span>📁 المشاريع</span>
               <span className="text-[10px] text-emerald-500 font-normal mt-0.5">{projects.length} مشاريع</span>
             </div>
             <div className="p-2.5 rounded-md bg-amber-50 border border-amber-200 text-amber-900 font-bold flex flex-col items-center">
               <span className="text-[10px] text-amber-600 uppercase font-mono">Tier 5</span>
-              <span>✅ المهام (Tasks)</span>
+              <span>✅ المهام</span>
               <span className="text-[10px] text-amber-500 font-normal mt-0.5">{tasks.length} مهمة</span>
             </div>
           </div>
@@ -299,7 +299,7 @@ export const StrategicHierarchyView: React.FC<StrategicHierarchyViewProps> = ({
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
-                        الركيزة الاستراتيجية (Pillar)
+                        الركيزة الاستراتيجية
                       </span>
                       <span className="text-sm font-bold text-slate-900">
                         {pillar.title}
@@ -359,7 +359,7 @@ export const StrategicHierarchyView: React.FC<StrategicHierarchyViewProps> = ({
                               <div>
                                 <div className="flex items-center gap-2">
                                   <span className="text-[10px] font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200">
-                                    الرؤية (Vision {vision.timeHorizon})
+                                    الرؤية ({vision.timeHorizon})
                                   </span>
                                   <span className="text-xs font-bold text-slate-800">
                                     {vision.title}

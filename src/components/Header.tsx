@@ -66,17 +66,17 @@ export const Header: React.FC<HeaderProps> = ({
   unprocessedInboxCount = 0,
 }) => {
   const primaryNavItems: { id: ActiveView; label: string; icon: string; badge?: string }[] = [
-    { id: 'home', label: 'الرئيسية (Home)', icon: '🏠' },
+    { id: 'home', label: 'الرئيسية', icon: '🏠' },
     { id: 'day_muslim', label: 'يوم المسلم', icon: '🕌' },
     { id: 'recommender', label: 'أفضل مهمة الآن', icon: '⚡' },
-    { id: 'tasks', label: 'المهام (Action)', icon: '📋' },
+    { id: 'tasks', label: 'المهام', icon: '📋' },
     { id: 'kanban', label: 'لوحة كانبان', icon: '📊' },
     { id: 'projects', label: 'المشاريع', icon: '📁' },
     { id: 'alignment_zone', label: 'الهيكل الاستراتيجي', icon: '🧭', badge: '5 طبقات' },
     { id: 'habits', label: 'العادات والروتين', icon: '🔄' },
-    { id: 'vaults', label: 'المستودع (Vaults)', icon: '📚' },
-    { id: 'reviews', label: 'المراجعات (Reviews)', icon: '⏳' },
-    { id: 'inbox', label: 'الوارد (Inbox)', icon: '📥', badge: unprocessedInboxCount > 0 ? `${unprocessedInboxCount}` : undefined },
+    { id: 'vaults', label: 'المستودع', icon: '📚' },
+    { id: 'reviews', label: 'المراجعات', icon: '⏳' },
+    { id: 'inbox', label: 'صندوق الوارد', icon: '📥', badge: unprocessedInboxCount > 0 ? `${unprocessedInboxCount}` : undefined },
   ];
 
   return (

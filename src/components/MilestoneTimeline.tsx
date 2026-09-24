@@ -65,7 +65,7 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
             <div className="flex items-center gap-2 text-indigo-600 mb-1">
               <Flag className="w-5 h-5" />
               <h2 className="text-base font-bold text-slate-900">
-                المعالم والمحطات الرئيسية (Milestones)
+                المعالم والمحطات الرئيسية
               </h2>
             </div>
             <p className="text-xs text-slate-600">

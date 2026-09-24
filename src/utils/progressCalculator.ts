@@ -531,7 +531,7 @@ export function recommendBestTask(
     if (depCheck.isBlocked) {
       reason = `معلقة بانتظار إنجاز: ${depCheck.blockingTasks.map((b) => b.title).join('، ')}`;
     } else if (task.energyLevel === 'low' && task.impactScore >= 7) {
-      reason = 'فرصة فوز سريع (Quick Win): تتطلب جهداً منخفضاً وتقدم تأثيراً استراتيجياً كبيراً.';
+      reason = 'فرصة فوز سريع: تتطلب جهداً منخفضاً وتقدم تأثيراً استراتيجياً كبيراً.';
     } else if (task.priority === 'urgent') {
       reason = 'أولوية عاجلة مع اقتراب الموعد النهائي لارتباطها المباشر بتسليم المشروع.';
     } else if (task.impactScore >= 8 && goal) {

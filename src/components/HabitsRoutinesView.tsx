@@ -127,7 +127,7 @@ export const HabitsRoutinesView: React.FC<HabitsRoutinesViewProps> = ({
             </div>
 
             <div>
-              <label className="font-semibold text-slate-700 block mb-1">الركيزة المرتبطة (Pillar):</label>
+              <label className="font-semibold text-slate-700 block mb-1">الركيزة المرتبطة:</label>
               <select
                 value={newPillarId}
                 onChange={(e) => setNewPillarId(e.target.value)}
@@ -140,16 +140,16 @@ export const HabitsRoutinesView: React.FC<HabitsRoutinesViewProps> = ({
             </div>
 
             <div>
-              <label className="font-semibold text-slate-700 block mb-1">وقت الروتين (Time of Day):</label>
+              <label className="font-semibold text-slate-700 block mb-1">وقت الروتين:</label>
               <select
                 value={newTimeOfDay}
                 onChange={(e) => setNewTimeOfDay(e.target.value as any)}
                 className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 cursor-pointer"
               >
-                <option value="morning">🌅 روتين الصباح (Morning)</option>
-                <option value="afternoon">☀️ وسط اليوم / العمل (Afternoon)</option>
-                <option value="evening">🌙 روتين المساء (Evening)</option>
-                <option value="anytime">⚡ في أي وقت (Anytime)</option>
+                <option value="morning">🌅 روتين الصباح</option>
+                <option value="afternoon">☀️ وسط اليوم / العمل</option>
+                <option value="evening">🌙 روتين المساء</option>
+                <option value="anytime">⚡ في أي وقت</option>
               </select>
             </div>
 
@@ -189,7 +189,7 @@ export const HabitsRoutinesView: React.FC<HabitsRoutinesViewProps> = ({
         <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
           <div>
             <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <span>مصفوفة الالتزام الأسبوعية (Habit Log)</span>
+              <span>مصفوفة الالتزام الأسبوعية</span>
             </h2>
             <p className="text-[11px] text-slate-500">انقر على الخانة لتسجيل الإنجاز لكل يوم</p>
           </div>

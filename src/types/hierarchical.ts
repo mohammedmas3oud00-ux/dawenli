@@ -53,6 +53,18 @@ export interface ValueGoal {
   updated_at?: string;
 }
 
+export type CustomFieldType = 'text' | 'number' | 'select' | 'date' | 'checkbox';
+
+export interface CustomFieldDefinition {
+  id: string;
+  name: string;
+  type: CustomFieldType;
+  options?: string[]; // For select type
+  entityType: 'task' | 'project';
+}
+
+export type CustomFieldValues = Record<string, string | number | boolean>;
+
 export interface Project {
   id: string;
   user_id?: string;
@@ -63,6 +75,7 @@ export interface Project {
   progress: number;     // Numeric 0 - 100 (auto-calculated from Tasks)
   start_date: string;
   due_date: string;
+  custom_fields?: CustomFieldValues;
   created_at: string;
   updated_at?: string;
 }
@@ -79,6 +92,7 @@ export interface Task {
   completed_at: string | null;
   estimated_hours?: number;
   energy_level?: EnergyLevel;
+  custom_fields?: CustomFieldValues;
   created_at: string;
   updated_at?: string;
 }

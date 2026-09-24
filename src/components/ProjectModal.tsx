@@ -145,7 +145,7 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
             <div className="p-3 bg-indigo-50/70 border border-indigo-200 rounded-md">
               <label className="block font-bold text-indigo-950 mb-1 flex items-center gap-1.5">
                 <Target className="w-3.5 h-3.5 text-indigo-600" />
-                <span>الهدف الاستراتيجي الأكبر (Goal Linkage):</span>
+                <span>الهدف الاستراتيجي الأكبر:</span>
               </label>
               <select
                 value={goalId}
@@ -207,10 +207,10 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
                 onChange={(e) => setPriority(e.target.value as Priority)}
                 className="w-full px-3 py-2 border border-slate-300 rounded-md text-slate-800 cursor-pointer"
               >
-                <option value="urgent">عاجلة جداً (Urgent)</option>
-                <option value="high">مرتفعة (High)</option>
-                <option value="medium">متوسطة (Medium)</option>
-                <option value="low">منخفضة (Low)</option>
+                <option value="urgent">عاجلة جداً</option>
+                <option value="high">مرتفعة</option>
+                <option value="medium">متوسطة</option>
+                <option value="low">منخفضة</option>
               </select>
             </div>
           </div>
@@ -252,10 +252,10 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
                 onChange={(e) => setStatus(e.target.value as ProjectStatus)}
                 className="w-full px-3 py-2 border border-slate-300 rounded-md text-slate-800 cursor-pointer"
               >
-                <option value="active">نشط (Active)</option>
-                <option value="planning">قيد التخطيط (Planning)</option>
-                <option value="on_hold">معلق مؤقتاً (On Hold)</option>
-                <option value="completed">مكتمل (Completed)</option>
+                <option value="active">نشط</option>
+                <option value="planning">قيد التخطيط</option>
+                <option value="on_hold">معلق مؤقتاً</option>
+                <option value="completed">مكتمل</option>
               </select>
             </div>
           </div>
