@@ -48,7 +48,7 @@ export const PillarsListView: React.FC<PillarsListViewProps> = ({
   return (
     <div className="space-y-6">
       
-      {/* 0. HERO SPOTLIGHT: أفضل مهمة للقيام بها الآن (Next Best Action) */}
+      {/* 0. HERO SPOTLIGHT: أفضل مهمة للقيام بها الآن */}
       {tasks && projects && goals && onStartFocus && onCompleteTask && (
         <NextBestTaskSpotlight
           tasks={tasks}
@@ -62,58 +62,61 @@ export const PillarsListView: React.FC<PillarsListViewProps> = ({
         />
       )}
 
-      {/* Clean Light Header (replacing the old dark banner) */}
-      <div className="bg-white border border-[#e8e5de] rounded-2xl p-5 sm:p-6 shadow-2xs">
+      {/* Main Header */}
+      <div className="bg-white dark:bg-[#16201b] border border-[#e8e5de] dark:border-[#223028] rounded-2xl p-5 sm:p-6 shadow-2xs transition-colors">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="text-sm">🏛️</span>
-              <h1 className="text-lg sm:text-xl font-black text-[#1a2420]">
-                الركائز الأساسية (Pillars)
+              <span className="text-sm select-none" aria-hidden="true">🌱</span>
+              <h1 className="text-lg sm:text-xl font-black text-[#1a2420] dark:text-white">
+                مجالات الحياة (الركائز)
               </h1>
-              <span className="text-[11px] px-2.5 py-0.5 rounded-md font-bold bg-[#ebf4f0] text-[#174235] border border-[#cfe3d9]">
-                {pillars.length} ركائز
+              <span className="text-[11px] px-2 py-0.5 rounded-md font-bold bg-[#ebf4f0] dark:bg-[#192b22] text-[#174235] dark:text-emerald-300">
+                {pillars.length} مجالات
               </span>
             </div>
-            <p className="text-xs text-[#636e67]">
-              المجالات الكبرى للحياة. يتم حساب نسب الإنجاز تصاعدياً تلقائياً من المهام حتى الركائز.
+            <p className="text-xs text-[#636e67] dark:text-[#9bb0a3]">
+              المجالات الكبرى لحياتك (العمل، الصحة، الأسرة، التطوير الذاتي). يتم حساب الإنجاز تلقائياً تصاعدياً من المهام اليومية.
             </p>
           </div>
 
           <div className="flex items-center gap-2.5 shrink-0">
             <button
+              type="button"
               onClick={onOpenSqlModal}
-              className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-[#f6f5f1] text-[#3a443f] border border-[#e3dfd7] rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs"
+              className="flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-[#1a2620] hover:bg-[#f6f5f1] dark:hover:bg-[#22332a] text-[#3a443f] dark:text-[#c4d6cb] border border-[#e3dfd7] dark:border-[#283830] rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs"
               title="عرض كود SQL التأسيسي لـ Supabase والتريجرات"
             >
-              <Database className="w-3.5 h-3.5 text-[#174235]" />
+              <Database className="w-3.5 h-3.5 text-[#174235] dark:text-emerald-400" />
               <span>مخطط SQL</span>
             </button>
 
             <button
+              type="button"
               onClick={onNewPillar}
-              className="flex items-center gap-1.5 px-4 py-2 bg-[#174235] hover:bg-[#12352a] text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+              className="flex items-center gap-1.5 px-4 py-2 bg-[#174235] dark:bg-emerald-600 hover:bg-[#12352a] dark:hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#174235] dark:focus-visible:ring-emerald-400 focus-visible:outline-hidden"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>ركيزة جديدة</span>
+              <span>مجال جديد</span>
             </button>
           </div>
         </div>
 
-        {/* Group Filter Tabs in soft beige / green accent */}
-        <div className="flex items-center gap-1.5 mt-4 pt-4 border-t border-[#f0eee9] overflow-x-auto text-xs">
-          <span className="text-[#838d86] font-medium pl-1 text-[11px]">المجموعة:</span>
+        {/* Group Filter Tabs */}
+        <div className="flex items-center gap-1.5 mt-4 pt-4 border-t border-[#f0eee9] dark:border-[#223028] overflow-x-auto text-xs scrollbar-none">
+          <span className="text-[#838d86] dark:text-[#788c80] font-medium pl-1 text-[11px] shrink-0">التصنيف:</span>
           {groups.map((group) => (
             <button
               key={group}
+              type="button"
               onClick={() => setSelectedGroup(group)}
-              className={`px-3 py-1.5 rounded-lg font-bold transition-all text-xs cursor-pointer whitespace-nowrap ${
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all text-xs cursor-pointer whitespace-nowrap focus-visible:ring-2 focus-visible:ring-[#174235] dark:focus-visible:ring-emerald-400 focus-visible:outline-hidden ${
                 selectedGroup === group
-                  ? 'bg-[#174235] text-white shadow-2xs'
-                  : 'text-[#5b6660] hover:text-[#174235] hover:bg-[#f2efe9]'
+                  ? 'bg-[#174235] dark:bg-emerald-600 text-white shadow-2xs'
+                  : 'text-[#5b6660] dark:text-[#9bb0a3] hover:text-[#174235] dark:hover:text-white hover:bg-[#f2efe9] dark:hover:bg-[#1d2b23]'
               }`}
             >
-              {group === 'all' ? 'جميع الركائز' : group}
+              {group === 'all' ? 'جميع المجالات' : group}
             </button>
           ))}
         </div>
@@ -124,32 +127,36 @@ export const PillarsListView: React.FC<PillarsListViewProps> = ({
         {filteredPillars.map((pillar) => (
           <div
             key={pillar.id}
-            className="bg-white border border-[#e8e5de] hover:border-[#174235]/40 rounded-2xl p-5 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between space-y-4 group"
+            className="bg-white dark:bg-[#16201b] border border-[#e8e5de] dark:border-[#223028] hover:border-[#174235]/40 dark:hover:border-emerald-500/40 rounded-2xl p-5 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between space-y-4 group"
           >
             {/* Header info */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] px-2 py-0.5 rounded font-mono font-bold bg-[#f3f0e8] text-[#555047]">
+                {/* Clean unboxed metadata with dot separator */}
+                <div className="flex items-center gap-2 text-xs text-[#636e67] dark:text-[#9bb0a3]">
+                  <span className="font-mono tabular-nums font-bold text-[#174235] dark:text-emerald-400">
                     أولوية #{pillar.priority}
                   </span>
-                  <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-[#ebf4f0] text-[#174235] border border-[#d6e9df]">
+                  <span aria-hidden="true">·</span>
+                  <span className="font-medium">
                     {pillar.pillar_group}
                   </span>
                 </div>
 
                 <div className="flex items-center gap-1">
                   <button
+                    type="button"
                     onClick={() => onEditPillar(pillar)}
-                    className="p-1 text-[#838d86] hover:text-[#1a2420] rounded transition-colors cursor-pointer"
-                    title="تعديل الركيزة"
+                    aria-label={`تعديل مجال ${pillar.title}`}
+                    className="p-1 text-[#838d86] dark:text-[#788c80] hover:text-[#1a2420] dark:hover:text-white rounded-lg hover:bg-[#f2efe8] dark:hover:bg-[#1f2e26] transition-colors cursor-pointer"
                   >
                     <Edit2 className="w-3.5 h-3.5" />
                   </button>
                   <button
+                    type="button"
                     onClick={() => onDeletePillar(pillar.id)}
-                    className="p-1 text-[#838d86] hover:text-rose-600 rounded transition-colors cursor-pointer"
-                    title="حذف الركيزة"
+                    aria-label={`حذف مجال ${pillar.title}`}
+                    className="p-1 text-[#838d86] dark:text-[#788c80] hover:text-rose-600 dark:hover:text-rose-400 rounded-lg hover:bg-[#f2efe8] dark:hover:bg-[#1f2e26] transition-colors cursor-pointer"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -158,14 +165,15 @@ export const PillarsListView: React.FC<PillarsListViewProps> = ({
 
               {/* Title & Description */}
               <div>
-                <h3
+                <button
+                  type="button"
                   onClick={() => onSelectPillar(pillar.id)}
-                  className="font-black text-base text-[#1a2420] group-hover:text-[#174235] transition-colors cursor-pointer flex items-center gap-2"
+                  className="text-right font-black text-base text-[#1a2420] dark:text-white group-hover:text-[#174235] dark:group-hover:text-emerald-400 transition-colors cursor-pointer block w-full"
                 >
-                  <span>{pillar.title}</span>
-                </h3>
+                  {pillar.title}
+                </button>
                 {pillar.description && (
-                  <p className="text-xs text-[#636e67] mt-1 line-clamp-2 leading-relaxed">
+                  <p className="text-xs text-[#636e67] dark:text-[#9bb0a3] mt-1 line-clamp-2 leading-relaxed">
                     {pillar.description}
                   </p>
                 )}
@@ -173,9 +181,9 @@ export const PillarsListView: React.FC<PillarsListViewProps> = ({
 
               {/* The Purpose (The Big Why) */}
               {pillar.purpose && (
-                <div className="bg-[#faf8f4] border border-[#ede7dc] rounded-xl p-3 text-[11px] text-[#4b4335] leading-relaxed">
-                  <span className="font-bold block text-[10px] text-[#916b1e] mb-0.5 uppercase tracking-wide">
-                    الغاية التوجيهية (Purpose):
+                <div className="bg-[#faf8f4] dark:bg-[#1a2520] border border-[#ede7dc] dark:border-[#26372d] rounded-xl p-3 text-[11px] text-[#4b4335] dark:text-[#d3e0d8] leading-relaxed">
+                  <span className="font-bold block text-[10px] text-amber-700 dark:text-amber-400 mb-0.5">
+                    الغاية والرسالة (Purpose):
                   </span>
                   <p className="line-clamp-2 italic font-medium">«{pillar.purpose}»</p>
                 </div>
@@ -183,11 +191,11 @@ export const PillarsListView: React.FC<PillarsListViewProps> = ({
             </div>
 
             {/* Bottom Progress and Navigation */}
-            <div className="pt-3 border-t border-[#f0eee9] space-y-3">
+            <div className="pt-3 border-t border-[#f0eee9] dark:border-[#223028] space-y-3">
               <div className="space-y-1">
-                <div className="flex items-center justify-between text-xs font-bold text-[#3a443f]">
-                  <span className="text-[11px] font-semibold text-[#838d86]">نسبة التقدم الكلي:</span>
-                  <span className="font-mono text-[#174235] text-xs font-bold">{pillar.progress}%</span>
+                <div className="flex items-center justify-between text-xs font-bold text-[#3a443f] dark:text-[#c4d6cb]">
+                  <span className="text-[11px] font-semibold text-[#838d86] dark:text-[#9bb0a3]">نسبة الإنجاز المحسوبة:</span>
+                  <span className="font-mono tabular-nums text-[#174235] dark:text-emerald-400 text-xs font-bold">{pillar.progress}%</span>
                 </div>
                 <ProgressBar
                   progress={pillar.progress}
@@ -195,15 +203,17 @@ export const PillarsListView: React.FC<PillarsListViewProps> = ({
                   maxStars={5}
                   size="sm"
                   showPercentage={false}
+                  label={pillar.title}
                 />
               </div>
 
               {/* Drill-down button */}
               <button
+                type="button"
                 onClick={() => onSelectPillar(pillar.id)}
-                className="w-full py-2 px-3 bg-[#f8f7f4] hover:bg-[#ebf4f0] text-[#174235] rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-[#e7e3db] group-hover:border-[#cfe3d9] cursor-pointer"
+                className="w-full py-2.5 px-3 bg-[#f8f7f4] dark:bg-[#1a2520] hover:bg-[#ebf4f0] dark:hover:bg-[#203328] text-[#174235] dark:text-emerald-300 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-[#e7e3db] dark:border-[#283830] group-hover:border-[#cfe3d9] dark:group-hover:border-emerald-600/40 cursor-pointer"
               >
-                <span>الدخول واستعراض الرؤى والأهداف</span>
+                <span>استعراض الرؤى والأهداف التابعة</span>
                 <ChevronLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5" />
               </button>
             </div>

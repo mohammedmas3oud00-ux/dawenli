@@ -21,6 +21,7 @@ interface CustomSelectProps<T = string | number> {
   disabled?: boolean;
   prefixIcon?: React.ReactNode;
   title?: string;
+  ariaLabel?: string;
 }
 
 export function CustomSelect<T extends string | number>({
@@ -36,6 +37,7 @@ export function CustomSelect<T extends string | number>({
   disabled = false,
   prefixIcon,
   title,
+  ariaLabel,
 }: CustomSelectProps<T>) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -90,37 +92,42 @@ export function CustomSelect<T extends string | number>({
       <button
         type="button"
         disabled={disabled}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        aria-label={ariaLabel || title || placeholder}
         onClick={() => !disabled && setIsOpen(!isOpen)}
-        className={`w-full flex items-center justify-between border bg-white text-[#1a2420] transition-all cursor-pointer select-none font-medium ${
+        className={`w-full flex items-center justify-between border bg-white dark:bg-[#16201b] text-[#1a2420] dark:text-[#e5ede8] transition-all cursor-pointer select-none font-medium focus-visible:ring-2 focus-visible:ring-[#174235] dark:focus-visible:ring-emerald-400 focus-visible:outline-hidden ${
           isOpen
-            ? 'border-[#174235] ring-2 ring-[#174235]/15 shadow-xs'
-            : 'border-[#d8d4cc] hover:border-[#174235]/60 hover:bg-[#faf9f6]'
-        } ${disabled ? 'opacity-50 cursor-not-allowed bg-[#f3f2ee]' : ''} ${sizeClasses} ${buttonClassName}`}
+            ? 'border-[#174235] dark:border-emerald-500 ring-2 ring-[#174235]/15 dark:ring-emerald-500/20 shadow-xs'
+            : 'border-[#d8d4cc] dark:border-[#283830] hover:border-[#174235]/60 dark:hover:border-emerald-500/50 hover:bg-[#faf9f6] dark:hover:bg-[#1c2a22]'
+        } ${disabled ? 'opacity-50 cursor-not-allowed bg-[#f3f2ee] dark:bg-[#121815]' : ''} ${sizeClasses} ${buttonClassName}`}
       >
         <div className="flex items-center gap-1.5 truncate min-w-0">
-          {prefixIcon && <span className="shrink-0 text-[#78857e]">{prefixIcon}</span>}
+          {prefixIcon && <span className="shrink-0 text-[#78857e] dark:text-[#8e9f95]">{prefixIcon}</span>}
           {selectedOption?.icon && <span className="shrink-0">{selectedOption.icon}</span>}
           <span className="truncate">{selectedOption ? selectedOption.label : placeholder}</span>
         </div>
 
         <ChevronDown
-          className={`w-3.5 h-3.5 text-[#78857e] shrink-0 transition-transform duration-150 mr-1.5 ${
-            isOpen ? 'rotate-180 text-[#174235]' : ''
+          className={`w-3.5 h-3.5 text-[#78857e] dark:text-[#8e9f95] shrink-0 transition-transform duration-150 mr-1.5 ${
+            isOpen ? 'rotate-180 text-[#174235] dark:text-emerald-400' : ''
           }`}
+          aria-hidden="true"
         />
       </button>
 
       {/* Floating Popover Menu */}
       {isOpen && (
         <div
-          className={`absolute top-full mt-1.5 z-50 min-w-full w-max max-w-xs bg-white border border-[#e2ddd3] rounded-xl shadow-lg py-1 animate-in fade-in zoom-in-95 duration-100 overflow-hidden ${
+          role="listbox"
+          className={`absolute top-full mt-1.5 z-50 min-w-full w-max max-w-xs bg-white dark:bg-[#16201b] border border-[#e2ddd3] dark:border-[#283830] rounded-xl shadow-xl py-1 animate-in fade-in zoom-in-95 duration-100 overflow-hidden ${
             align === 'right' ? 'right-0' : 'left-0'
           } ${dropdownClassName}`}
           style={{ maxHeight: '280px' }}
         >
-          <div className="max-h-64 overflow-y-auto divide-y divide-[#f5f3ee]/80 overscroll-contain">
+          <div className="max-h-64 overflow-y-auto divide-y divide-[#f5f3ee]/80 dark:divide-[#203027] overscroll-contain">
             {options.length === 0 ? (
-              <div className="px-3 py-2 text-xs text-[#85928a] text-center">لا توجد خيارات</div>
+              <div className="px-3 py-2 text-xs text-[#85928a] dark:text-[#8e9f95] text-center">لا توجد خيارات</div>
             ) : (
               options.map((option) => {
                 const isSelected = option.value === value;
@@ -128,11 +135,13 @@ export function CustomSelect<T extends string | number>({
                   <button
                     key={String(option.value)}
                     type="button"
+                    role="option"
+                    aria-selected={isSelected}
                     onClick={() => handleSelect(option.value)}
                     className={`w-full flex items-center justify-between px-3 py-2 text-right text-xs transition-colors cursor-pointer group ${
                       isSelected
-                        ? 'bg-[#ebf4f0] text-[#174235] font-semibold'
-                        : 'text-[#35403a] hover:bg-[#f8f7f3] hover:text-[#1a2420]'
+                        ? 'bg-[#ebf4f0] dark:bg-[#1d3327] text-[#174235] dark:text-emerald-300 font-semibold'
+                        : 'text-[#35403a] dark:text-[#c4d4ca] hover:bg-[#f8f7f3] dark:hover:bg-[#1c2a22] hover:text-[#1a2420] dark:hover:text-white'
                     }`}
                   >
                     <div className="flex items-center gap-2 min-w-0">
@@ -140,7 +149,7 @@ export function CustomSelect<T extends string | number>({
                       <div className="truncate">
                         <div className="truncate">{option.label}</div>
                         {option.description && (
-                          <div className="text-[10px] text-[#7d8982] font-normal truncate mt-0.5">
+                          <div className="text-[10px] text-[#7d8982] dark:text-[#8e9f95] font-normal truncate mt-0.5">
                             {option.description}
                           </div>
                         )}
@@ -148,7 +157,7 @@ export function CustomSelect<T extends string | number>({
                     </div>
 
                     {isSelected && (
-                      <Check className="w-3.5 h-3.5 text-[#174235] shrink-0 mr-2 stroke-2" />
+                      <Check className="w-3.5 h-3.5 text-[#174235] dark:text-emerald-400 shrink-0 mr-2 stroke-2" />
                     )}
                   </button>
                 );
