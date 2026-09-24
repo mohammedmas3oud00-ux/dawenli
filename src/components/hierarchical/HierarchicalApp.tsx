@@ -14,8 +14,7 @@ import {
   Habit,
   VaultItem,
   FocusSessionRecord,
-  TimeBlock,
-  JournalEntry
+  TimeBlock
 } from '../../types/hierarchical';
 import { 
   loadHierarchicalState, 
@@ -65,43 +64,11 @@ import {
 } from './EntityFormModals';
 import { QuickAddModal } from './QuickAddModal';
 import { SqlSchemaModal } from './SqlSchemaModal';
-import { JournalTabView } from './JournalTabView';
-import { VoiceJournalModal } from './VoiceJournalModal';
-import { loadJournalEntries, saveJournalEntries } from '../../utils/journalStore';
-import { ConfirmModal } from '../ConfirmModal';
+import { VoiceAiCaptureModal } from './VoiceAiCaptureModal';
 import { ToastContainer, ToastMessage } from './ToastNotification';
-import { MobileBottomNav } from './MobileBottomNav';
-import { useTheme } from '../../utils/theme';
-import { Database, RotateCcw, Plus, Menu, Sun, Moon, Mic, PenLine } from 'lucide-react';
+import { Database, RotateCcw, Plus, Menu, Mic, Sparkles } from 'lucide-react';
 
 export const HierarchicalApp: React.FC = () => {
-  const { toggleTheme, isDark } = useTheme();
-
-  // Toast notifications state
-  const [toasts, setToasts] = useState<ToastMessage[]>([]);
-  const showToast = (type: 'success' | 'info' | 'warning', title: string, description?: string) => {
-    const id = `toast-${Date.now()}-${Math.random()}`;
-    setToasts((prev) => [...prev, { id, type, title, description }]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 4000);
-  };
-
-  // Confirm modal state
-  const [confirmDialog, setConfirmDialog] = useState<{
-    isOpen: boolean;
-    title: string;
-    message: string;
-    confirmText?: string;
-    cancelText?: string;
-    variant?: 'danger' | 'warning' | 'primary';
-    onConfirm: () => void;
-  }>({
-    isOpen: false,
-    title: '',
-    message: '',
-    onConfirm: () => {},
-  });
   // Core Entities State
   const [pillars, setPillars] = useState<Pillar[]>([]);
   const [visions, setVisions] = useState<Vision[]>([]);
@@ -133,10 +100,8 @@ export const HierarchicalApp: React.FC = () => {
   // Modals state
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [isSqlModalOpen, setIsSqlModalOpen] = useState(false);
-  const [isVoiceJournalModalOpen, setIsVoiceJournalModalOpen] = useState(false);
-
-  // Journal Entries state
-  const [journalEntries, setJournalEntries] = useState<JournalEntry[]>(() => loadJournalEntries());
+  const [isVoiceAiModalOpen, setIsVoiceAiModalOpen] = useState(false);
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   // Review Modals State
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
@@ -346,37 +311,27 @@ export const HierarchicalApp: React.FC = () => {
   };
 
   const handleDeletePillar = (pillarId: string) => {
-    setConfirmDialog({
-      isOpen: true,
-      title: 'حذف الركيزة',
-      message: 'هل أنت متأكد من حذف هذه الركيزة؟ سيتم حذف جميع الرؤى والأهداف والمشاريع والمهام التابعة لها.',
-      confirmText: 'حذف نهائي',
-      variant: 'danger',
-      onConfirm: () => {
-        const targetVisions = visions.filter((v) => v.pillar_id === pillarId);
-        const targetVisionIds = targetVisions.map((v) => v.id);
-        const targetGoals = goals.filter((g) => g.pillar_id === pillarId || (g.vision_id && targetVisionIds.includes(g.vision_id)));
-        const targetGoalIds = targetGoals.map((g) => g.id);
-        const targetProjects = projects.filter((p) => targetGoalIds.includes(p.goal_id));
-        const targetProjectIds = targetProjects.map((p) => p.id);
+    if (!confirm('هل أنت متأكد من حذف هذه الركيزة؟ سيتم حذف جميع الرؤى والأهداف والمشاريع والمهام التابعة لها.')) return;
+    const targetVisions = visions.filter((v) => v.pillar_id === pillarId);
+    const targetVisionIds = targetVisions.map((v) => v.id);
+    const targetGoals = goals.filter((g) => g.pillar_id === pillarId || (g.vision_id && targetVisionIds.includes(g.vision_id)));
+    const targetGoalIds = targetGoals.map((g) => g.id);
+    const targetProjects = projects.filter((p) => targetGoalIds.includes(p.goal_id));
+    const targetProjectIds = targetProjects.map((p) => p.id);
 
-        const remainingTasks = tasks.filter((t) => !targetProjectIds.includes(t.project_id));
-        const remainingProjects = projects.filter((p) => !targetProjectIds.includes(p.id));
-        const remainingGoals = goals.filter((g) => !targetGoalIds.includes(g.id));
-        const remainingVisions = visions.filter((v) => v.pillar_id !== pillarId);
-        const remainingPillars = pillars.filter((p) => p.id !== pillarId);
+    const remainingTasks = tasks.filter((t) => !targetProjectIds.includes(t.project_id));
+    const remainingProjects = projects.filter((p) => !targetProjectIds.includes(p.id));
+    const remainingGoals = goals.filter((g) => !targetGoalIds.includes(g.id));
+    const remainingVisions = visions.filter((v) => v.pillar_id !== pillarId);
+    const remainingPillars = pillars.filter((p) => p.id !== pillarId);
 
-        applyStateUpdate(remainingPillars, remainingVisions, remainingGoals, remainingProjects, remainingTasks);
-        if (selectedPillarId === pillarId) {
-          setSelectedPillarId(null);
-          setSelectedVisionId(null);
-          setSelectedGoalId(null);
-          setSelectedProjectId(null);
-        }
-        setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
-        showToast('info', 'تم حذف الركيزة بنجاح');
-      },
-    });
+    applyStateUpdate(remainingPillars, remainingVisions, remainingGoals, remainingProjects, remainingTasks);
+    if (selectedPillarId === pillarId) {
+      setSelectedPillarId(null);
+      setSelectedVisionId(null);
+      setSelectedGoalId(null);
+      setSelectedProjectId(null);
+    }
   };
 
   // 2. Visions
@@ -404,33 +359,23 @@ export const HierarchicalApp: React.FC = () => {
   };
 
   const handleDeleteVision = (visionId: string) => {
-    setConfirmDialog({
-      isOpen: true,
-      title: 'حذف الرؤية',
-      message: 'هل أنت متأكد من حذف هذه الرؤية وجميع الأهداف والمشاريع والمهام المرتبطة بها؟',
-      confirmText: 'حذف نهائي',
-      variant: 'danger',
-      onConfirm: () => {
-        const targetGoals = goals.filter((g) => g.vision_id === visionId);
-        const targetGoalIds = targetGoals.map((g) => g.id);
-        const targetProjects = projects.filter((p) => targetGoalIds.includes(p.goal_id));
-        const targetProjectIds = targetProjects.map((p) => p.id);
+    if (!confirm('هل أنت متأكد من حذف هذه الرؤية وجميع الأهداف والمشاريع والمهام المرتبطة بها؟')) return;
+    const targetGoals = goals.filter((g) => g.vision_id === visionId);
+    const targetGoalIds = targetGoals.map((g) => g.id);
+    const targetProjects = projects.filter((p) => targetGoalIds.includes(p.goal_id));
+    const targetProjectIds = targetProjects.map((p) => p.id);
 
-        const remainingTasks = tasks.filter((t) => !targetProjectIds.includes(t.project_id));
-        const remainingProjects = projects.filter((p) => !targetProjectIds.includes(p.id));
-        const remainingGoals = goals.filter((g) => g.vision_id !== visionId);
-        const remainingVisions = visions.filter((v) => v.id !== visionId);
+    const remainingTasks = tasks.filter((t) => !targetProjectIds.includes(t.project_id));
+    const remainingProjects = projects.filter((p) => !targetProjectIds.includes(p.id));
+    const remainingGoals = goals.filter((g) => g.vision_id !== visionId);
+    const remainingVisions = visions.filter((v) => v.id !== visionId);
 
-        applyStateUpdate(pillars, remainingVisions, remainingGoals, remainingProjects, remainingTasks);
-        if (selectedVisionId === visionId) {
-          setSelectedVisionId(null);
-          setSelectedGoalId(null);
-          setSelectedProjectId(null);
-        }
-        setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
-        showToast('info', 'تم حذف الرؤية بنجاح');
-      },
-    });
+    applyStateUpdate(pillars, remainingVisions, remainingGoals, remainingProjects, remainingTasks);
+    if (selectedVisionId === visionId) {
+      setSelectedVisionId(null);
+      setSelectedGoalId(null);
+      setSelectedProjectId(null);
+    }
   };
 
   // 3. Goals
@@ -460,29 +405,19 @@ export const HierarchicalApp: React.FC = () => {
   };
 
   const handleDeleteGoal = (goalId: string) => {
-    setConfirmDialog({
-      isOpen: true,
-      title: 'حذف الهدف',
-      message: 'هل أنت متأكد من حذف هذا الهدف وجميع المشاريع والمهام التابعة له؟',
-      confirmText: 'حذف نهائي',
-      variant: 'danger',
-      onConfirm: () => {
-        const targetProjects = projects.filter((p) => p.goal_id === goalId);
-        const targetProjectIds = targetProjects.map((p) => p.id);
+    if (!confirm('هل أنت متأكد من حذف هذا الهدف وجميع المشاريع والمهام التابعة له؟')) return;
+    const targetProjects = projects.filter((p) => p.goal_id === goalId);
+    const targetProjectIds = targetProjects.map((p) => p.id);
 
-        const remainingTasks = tasks.filter((t) => !targetProjectIds.includes(t.project_id));
-        const remainingProjects = projects.filter((p) => p.goal_id !== goalId);
-        const remainingGoals = goals.filter((g) => g.id !== goalId);
+    const remainingTasks = tasks.filter((t) => !targetProjectIds.includes(t.project_id));
+    const remainingProjects = projects.filter((p) => p.goal_id !== goalId);
+    const remainingGoals = goals.filter((g) => g.id !== goalId);
 
-        applyStateUpdate(pillars, visions, remainingGoals, remainingProjects, remainingTasks);
-        if (selectedGoalId === goalId) {
-          setSelectedGoalId(null);
-          setSelectedProjectId(null);
-        }
-        setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
-        showToast('info', 'تم حذف الهدف بنجاح');
-      },
-    });
+    applyStateUpdate(pillars, visions, remainingGoals, remainingProjects, remainingTasks);
+    if (selectedGoalId === goalId) {
+      setSelectedGoalId(null);
+      setSelectedProjectId(null);
+    }
   };
 
   // 4. Projects
@@ -506,121 +441,20 @@ export const HierarchicalApp: React.FC = () => {
         due_date: projectData.due_date || today,
         created_at: new Date().toISOString(),
       };
-
-      const generatedSubtasks = (projectData as any).generatedTasks;
-      let newTasksToAdd: Task[] = [];
-      if (Array.isArray(generatedSubtasks) && generatedSubtasks.length > 0) {
-        newTasksToAdd = generatedSubtasks.map((st: any, idx: number) => ({
-          id: `task-${Date.now()}-${idx}`,
-          project_id: newP.id,
-          title: st.title || 'مهمة فرعية',
-          description: st.description || '',
-          priority: (st.priority as any) || 'medium',
-          status: 'todo',
-          due_date: newP.due_date || null,
-          completed_at: null,
-          created_at: new Date().toISOString(),
-        }));
-      }
-
-      applyStateUpdate(pillars, visions, goals, [...projects, newP], [...tasks, ...newTasksToAdd]);
-      if (newTasksToAdd.length > 0) {
-        showToast('success', 'تم إنشاء المشروع وتفكيكه لمهام بنجاح', `تمت إضافة ${newTasksToAdd.length} مهام`);
-      }
+      applyStateUpdate(pillars, visions, goals, [...projects, newP], tasks);
     }
     setEditingProject(null);
   };
 
   const handleDeleteProject = (projectId: string) => {
-    setConfirmDialog({
-      isOpen: true,
-      title: 'حذف المشروع',
-      message: 'هل أنت متأكد من حذف هذا المشروع وجميع مهامه؟',
-      confirmText: 'حذف نهائي',
-      variant: 'danger',
-      onConfirm: () => {
-        const remainingTasks = tasks.filter((t) => t.project_id !== projectId);
-        const remainingProjects = projects.filter((p) => p.id !== projectId);
+    if (!confirm('هل أنت متأكد من حذف هذا المشروع وجميع مهامه؟')) return;
+    const remainingTasks = tasks.filter((t) => t.project_id !== projectId);
+    const remainingProjects = projects.filter((p) => p.id !== projectId);
 
-        applyStateUpdate(pillars, visions, goals, remainingProjects, remainingTasks);
-        if (selectedProjectId === projectId) {
-          setSelectedProjectId(null);
-        }
-        setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
-        showToast('info', 'تم حذف المشروع بنجاح');
-      },
-    });
-  };
-
-  // Journal Handlers
-  const handleSaveJournalEntry = (
-    entryData: Partial<JournalEntry>,
-    createTasks?: { title: string; priority?: 'high' | 'medium' | 'low'; estimated_hours?: number; projectId?: string }[]
-  ) => {
-    let updated: JournalEntry[];
-    if (entryData.id) {
-      updated = journalEntries.map((e) =>
-        e.id === entryData.id ? ({ ...e, ...entryData } as JournalEntry) : e
-      );
-      showToast('success', 'تم تحديث التدوينة بنجاح');
-    } else {
-      const newEntry: JournalEntry = {
-        id: `journal-${Date.now()}`,
-        date: entryData.date || new Date().toISOString().split('T')[0],
-        title: entryData.title || `خاطرة ${new Date().toLocaleDateString('ar-SA')}`,
-        content: entryData.content || '',
-        mood: entryData.mood || 'good',
-        energy_level: entryData.energy_level || 'medium',
-        gratitude: entryData.gratitude || [],
-        wins: entryData.wins || [],
-        ai_summary: entryData.ai_summary,
-        ai_insights: entryData.ai_insights,
-        extracted_tasks: entryData.extracted_tasks || [],
-        voice_recorded: !!entryData.voice_recorded,
-        tags: entryData.tags || ['يوميات'],
-        created_at: new Date().toISOString(),
-      };
-      updated = [newEntry, ...journalEntries];
-      showToast('success', 'تم حفظ التدوينة في اليوميات');
+    applyStateUpdate(pillars, visions, goals, remainingProjects, remainingTasks);
+    if (selectedProjectId === projectId) {
+      setSelectedProjectId(null);
     }
-
-    setJournalEntries(updated);
-    saveJournalEntries(updated);
-
-    // If there are tasks to create from the voice journal
-    if (createTasks && createTasks.length > 0) {
-      const targetProjId = createTasks[0].projectId || projects[0]?.id || 'proj-1';
-      const newTasksToAdd: Task[] = createTasks.map((t, idx) => ({
-        id: `task-${Date.now()}-${idx}`,
-        project_id: t.projectId || targetProjId,
-        title: t.title,
-        description: 'مستخلصة تلقائياً من تدوين اليوميات الصوتي بالذكاء الاصطناعي',
-        priority: (t.priority as any) || 'medium',
-        status: 'todo',
-        due_date: new Date().toISOString().split('T')[0],
-        completed_at: null,
-        created_at: new Date().toISOString(),
-      }));
-      applyStateUpdate(pillars, visions, goals, projects, [...tasks, ...newTasksToAdd]);
-      showToast('info', 'تمت إضافة المهام المستخلصة', `تم إدراج ${newTasksToAdd.length} مهام في مشروعك`);
-    }
-  };
-
-  const handleDeleteJournalEntry = (entryId: string) => {
-    setConfirmDialog({
-      isOpen: true,
-      title: 'حذف التدوينة',
-      message: 'هل أنت متأكد من حذف هذه الخاطرة من سجل يومياتك؟',
-      confirmText: 'حذف',
-      variant: 'danger',
-      onConfirm: () => {
-        const updated = journalEntries.filter((e) => e.id !== entryId);
-        setJournalEntries(updated);
-        saveJournalEntries(updated);
-        setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
-        showToast('info', 'تم حذف التدوينة بنجاح');
-      },
-    });
   };
 
   // 5. Tasks
@@ -748,26 +582,16 @@ export const HierarchicalApp: React.FC = () => {
   };
 
   const handleDeleteReview = (reviewId: string) => {
-    setConfirmDialog({
-      isOpen: true,
-      title: 'حذف المراجعة',
-      message: 'هل أنت متأكد من حذف جلسة المراجعة هذه؟ لن تتمكن من استعادتها.',
-      confirmText: 'حذف',
-      variant: 'danger',
-      onConfirm: () => {
-        const updated = reviews.filter((r) => r.id !== reviewId);
-        setReviews(updated);
-        saveReviewsState(updated);
-        setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
-        showToast('info', 'تم حذف المراجعة بنجاح');
-      },
-    });
+    if (!confirm('هل أنت متأكد من حذف هذه المراجعة؟')) return;
+    const updated = reviews.filter((r) => r.id !== reviewId);
+    setReviews(updated);
+    saveReviewsState(updated);
   };
 
   const handleConvertActionToTask = (actionItem: ReviewActionItem, reviewId: string) => {
     const targetProjectId = actionItem.project_id || projects[0]?.id;
     if (!targetProjectId) {
-      showToast('warning', 'يرجى إنشاء مشروع أولاً لإسناد المهمة إليه');
+      alert('يرجى إنشاء مشروع أولاً لإسناد المهمة إليه.');
       return;
     }
 
@@ -801,6 +625,121 @@ export const HierarchicalApp: React.FC = () => {
     });
     setReviews(updatedReviews);
     saveReviewsState(updatedReviews);
+  };
+
+  const handleVoiceAiCommit = (data: {
+    pillarId: string;
+    goalId?: string;
+    projectTitle: string;
+    projectDescription?: string;
+    tasks: Array<{
+      title: string;
+      description?: string;
+      priority: 'high' | 'medium' | 'low';
+      energyLevel?: 'high' | 'medium' | 'low';
+      estimatedHours?: number;
+    }>;
+  }) => {
+    const today = new Date().toISOString().split('T')[0];
+    const newProjectId = `proj-${Date.now()}`;
+
+    // Target goal under chosen pillar
+    let targetGoalId = data.goalId;
+    let updatedGoals = [...goals];
+    if (!targetGoalId) {
+      const existingGoal = goals.find((g) => g.pillar_id === data.pillarId);
+      if (existingGoal) {
+        targetGoalId = existingGoal.id;
+      } else {
+        const newGoal: ValueGoal = {
+          id: `goal-${Date.now()}`,
+          pillar_id: data.pillarId,
+          title: `هدف: ${data.projectTitle}`,
+          description: 'هدف قيمة استراتيجي مستخلص ومولد آلياً بالذكاء الاصطناعي',
+          status: 'in_progress',
+          progress: 0,
+          target_date: null,
+          created_at: today,
+        };
+        updatedGoals.push(newGoal);
+        targetGoalId = newGoal.id;
+      }
+    }
+
+    const newProject: Project = {
+      id: newProjectId,
+      goal_id: targetGoalId,
+      title: data.projectTitle,
+      description: data.projectDescription || '',
+      status: 'in_progress',
+      progress: 0,
+      start_date: today,
+      due_date: today,
+      created_at: today,
+    };
+
+    const newTasks: Task[] = data.tasks.map((t, idx) => ({
+      id: `task-${Date.now()}-${idx}`,
+      project_id: newProjectId,
+      title: t.title,
+      description: t.description || '',
+      status: 'todo',
+      priority: t.priority,
+      due_date: today,
+      estimated_hours: t.estimatedHours || 1,
+      energy_level: t.energyLevel || 'medium',
+      completed_at: null,
+      created_at: today,
+    }));
+
+    const updatedProjects = [...projects, newProject];
+    const updatedTasks = [...tasks, ...newTasks];
+
+    applyStateUpdate(pillars, visions, updatedGoals, updatedProjects, updatedTasks);
+
+    // Drill down to show the created project & tasks immediately
+    setSelectedPillarId(data.pillarId);
+    setSelectedGoalId(targetGoalId);
+    setSelectedProjectId(newProjectId);
+    setCurrentTab('hierarchy');
+
+    setToasts((prev) => [
+      ...prev,
+      {
+        id: `toast-${Date.now()}`,
+        type: 'success',
+        title: 'تم تفكيك وإضافة المشروع بالذكاء الاصطناعي!',
+        description: `تم إدراج المشروع "${data.projectTitle}" مع ${newTasks.length} مهام تنفيذية.`,
+      },
+    ]);
+  };
+
+  const handleBatchAddTasks = (newTasksData: Partial<Task>[]) => {
+    const today = new Date().toISOString().split('T')[0];
+    const created: Task[] = newTasksData.map((t, idx) => ({
+      id: `task-${Date.now()}-${idx}`,
+      project_id: t.project_id || selectedProjectId || '',
+      title: t.title || 'مهمة جديدة',
+      description: t.description || '',
+      status: t.status || 'todo',
+      priority: t.priority || 'medium',
+      due_date: t.due_date || today,
+      estimated_hours: t.estimated_hours || 1,
+      energy_level: t.energy_level || 'medium',
+      completed_at: null,
+      created_at: today,
+    }));
+    const updatedTasks = [...tasks, ...created];
+    applyStateUpdate(pillars, visions, goals, projects, updatedTasks);
+    setToasts((prev) => [
+      ...prev,
+      {
+        id: `toast-${Date.now()}`,
+        type: 'success',
+        title: 'تم التفكيك الذكي بنجاح',
+        description: `تمت إضافة ${created.length} مهام تنفيذية إلى المشروع!`,
+      },
+    ]);
   };
 
   const handleStartPillarReview = (pillarId: string) => {
@@ -1020,49 +959,40 @@ export const HierarchicalApp: React.FC = () => {
 
   // Reset to initial seed
   const handleResetData = () => {
-    setConfirmDialog({
-      isOpen: true,
-      title: 'استعادة البيانات النموذجية',
-      message: 'هل تريد إعادة تعيين البيانات إلى الحالة النموذجية؟ سيتم مسح التعديلات المحلية والعودة للهيكل الافتراضي.',
-      confirmText: 'استعادة',
-      variant: 'warning',
-      onConfirm: () => {
-        localStorage.clear();
-        const loaded = loadHierarchicalState();
-        setPillars(loaded.pillars);
-        setVisions(loaded.visions);
-        setGoals(loaded.goals);
-        setProjects(loaded.projects);
-        setTasks(loaded.tasks);
-        const revs = loadReviewsState(
-          loaded.pillars,
-          loaded.visions,
-          loaded.goals,
-          loaded.projects,
-          loaded.tasks
-        );
-        setReviews(revs);
+    if (confirm('هل تريد استعادة البيانات الافتراضية؟')) {
+      localStorage.clear();
+      const loaded = loadHierarchicalState();
+      setPillars(loaded.pillars);
+      setVisions(loaded.visions);
+      setGoals(loaded.goals);
+      setProjects(loaded.projects);
+      setTasks(loaded.tasks);
+      const revs = loadReviewsState(
+        loaded.pillars,
+        loaded.visions,
+        loaded.goals,
+        loaded.projects,
+        loaded.tasks
+      );
+      setReviews(revs);
 
-        const { inbox, habits: loadedHabits, vaults: loadedVaults } = loadPPVState(loaded.pillars);
-        setInboxItems(inbox);
-        setHabits(loadedHabits);
-        setVaults(loadedVaults);
+      const { inbox, habits: loadedHabits, vaults: loadedVaults } = loadPPVState(loaded.pillars);
+      setInboxItems(inbox);
+      setHabits(loadedHabits);
+      setVaults(loadedVaults);
 
-        setSelectedPillarId(null);
-        setSelectedVisionId(null);
-        setSelectedGoalId(null);
-        setSelectedProjectId(null);
-        setCurrentTab('hierarchy');
-        setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
-        showToast('success', 'تمت استعادة البيانات النموذجية بنجاح');
-      },
-    });
+      setSelectedPillarId(null);
+      setSelectedVisionId(null);
+      setSelectedGoalId(null);
+      setSelectedProjectId(null);
+      setCurrentTab('hierarchy');
+    }
   };
 
   return (
-    <div className="min-h-screen bg-[#f8f7f4] dark:bg-[#0f1512] text-[#1a2420] dark:text-[#e5ede8] flex font-sans antialiased selection:bg-[#174235] selection:text-white dark:selection:bg-emerald-600 transition-colors" dir="rtl">
+    <div className="min-h-screen bg-[#f8f7f4] text-[#1a2420] flex font-sans antialiased selection:bg-[#174235] selection:text-white" dir="rtl">
       
-      {/* 1. SIDEBAR NAVIGATION */}
+      {/* 1. SIDEBAR NAVIGATION styled like Dawenli OS */}
       <Sidebar
         currentTab={currentTab}
         onSelectTab={(tab) => setCurrentTab(tab)}
@@ -1078,27 +1008,25 @@ export const HierarchicalApp: React.FC = () => {
           vaults: vaults.length,
           focus: focusSessions.length,
           timeBlocks: timeBlocks.filter(b => b.date === new Date().toISOString().split('T')[0]).length,
-          journal: journalEntries.length,
         }}
         isOpenMobile={isMobileSidebarOpen}
         onCloseMobile={() => setIsMobileSidebarOpen(false)}
         onOpenQuickAdd={() => setIsQuickAddOpen(true)}
+        onOpenVoiceAi={() => setIsVoiceAiModalOpen(true)}
       />
 
       {/* 2. MAIN CONTENT AREA */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         
-        {/* Top App Header */}
-        <header className="bg-white dark:bg-[#131c17] border-b border-[#e8e5de] dark:border-[#223028] px-4 sm:px-6 py-3 sticky top-0 z-30 shadow-2xs transition-colors">
+        {/* Top App Header matching the clean header of screenshot 2 */}
+        <header className="bg-white border-b border-[#e8e5de] px-4 sm:px-6 py-3 sticky top-0 z-30 shadow-2xs">
           <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
             
             {/* Left section: mobile hamburger & breadcrumbs */}
             <div className="flex items-center gap-3 min-w-0">
               <button
-                type="button"
                 onClick={() => setIsMobileSidebarOpen(true)}
-                className="md:hidden p-2 text-[#65736b] dark:text-[#8ea095] hover:text-[#1a2420] dark:hover:text-white rounded-xl hover:bg-[#f2efe8] dark:hover:bg-[#1a2620] cursor-pointer"
-                aria-label="فتح القائمة الجانبية"
+                className="md:hidden p-2 text-[#65736b] hover:text-[#1a2420] rounded-xl hover:bg-[#f2efe8] cursor-pointer"
                 title="القائمة الجانبية"
               >
                 <Menu className="w-5 h-5" />
@@ -1109,46 +1037,44 @@ export const HierarchicalApp: React.FC = () => {
                   <Breadcrumbs items={breadcrumbItems} onNavigate={handleBreadcrumbClick} />
                 </div>
               ) : (
-                <div className="flex items-center gap-1.5 text-xs text-[#6e7b74] dark:text-[#8ea095]">
-                  <span className="font-normal text-[#85928a] dark:text-[#708076]">دَوّنـلي</span>
-                  <span className="text-[#c2bcaf] dark:text-[#38483f]">/</span>
-                  <span className="font-bold text-[#1a2420] dark:text-white">
-                    {currentTab === 'inbox' && 'صندوق الأفكار والمهام'}
-                    {currentTab === 'focus' && 'مؤقت التركيز والعمل العميق'}
-                    {currentTab === 'timeblocking' && 'الجدول اليومي وتنظيم الساعات'}
-                    {currentTab === 'habits' && 'متتبع العادات اليومية'}
-                    {currentTab === 'vaults' && 'الملاحظات والمراجع'}
-                    {currentTab === 'pillars' && 'مجالات الحياة'}
-                    {currentTab === 'visions' && 'الرؤية والاتجاه'}
-                    {currentTab === 'goals' && 'الأهداف الكبرى'}
-                    {currentTab === 'projects' && 'المشاريع الحالية'}
-                    {currentTab === 'tasks' && 'قائمة المهام'}
-                    {currentTab === 'reviews' && 'المراجعة والتقييم'}
-                    {currentTab === 'journal' && 'اليوميات والمذكرات (Daily Journal)'}
+                <div className="flex items-center gap-1.5 text-xs text-[#6e7b74]">
+                  <span className="font-normal text-[#85928a]">دَوّنـلي</span>
+                  <span className="text-[#c2bcaf]">/</span>
+                  <span className="font-semibold text-[#1a2420]">
+                    {currentTab === 'inbox' && 'صندوق الوارد (GTD Inbox)'}
+                    {currentTab === 'focus' && 'جلسات التركيز (Pomodoro & Flowtime)'}
+                    {currentTab === 'timeblocking' && 'حجب الوقت اليومي (Time Blocking)'}
+                    {currentTab === 'habits' && 'متتبع العادات (Habits)'}
+                    {currentTab === 'vaults' && 'خزائن المعرفة (Vaults)'}
+                    {currentTab === 'pillars' && 'الركائز الأساسية'}
+                    {currentTab === 'visions' && 'الرؤى المستقبلية'}
+                    {currentTab === 'goals' && 'أهداف القيمة'}
+                    {currentTab === 'projects' && 'المشروعات التنفيذية'}
+                    {currentTab === 'tasks' && 'المهام اليومية'}
+                    {currentTab === 'reviews' && 'المراجعات الدورية'}
                   </span>
                 </div>
               )}
             </div>
 
-            {/* Right section: Quick Add button, theme toggle, and utility actions */}
+            {/* Right section: Quick Add button and utility actions */}
             <div className="flex items-center gap-2 shrink-0">
               
-              {/* VOICE JOURNAL BUTTON - Next to Quick Add as requested */}
+              {/* VOICE & AI ACTION BUTTON: Amber gradient with microphone and Gemini AI */}
               <button
-                type="button"
-                onClick={() => setIsVoiceJournalModalOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-2 bg-[#ebf5ef] dark:bg-[#192b22] hover:bg-[#dfeee5] dark:hover:bg-[#20362b] text-[#174235] dark:text-emerald-300 font-bold rounded-xl text-xs shadow-2xs transition-all cursor-pointer border border-[#b9dbcb] dark:border-[#274534]"
-                title="تدوين صوتي ويوميات بالذكاء الاصطناعي (Voice Journal)"
+                onClick={() => setIsVoiceAiModalOpen(true)}
+                className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold rounded-xl text-xs shadow-xs transition-all cursor-pointer group"
+                title="تحدث بصوتك والتحليل والتفكيك الذكي بالذكاء الاصطناعي (Gemini)"
               >
-                <Mic className="w-4 h-4 text-emerald-600 dark:text-emerald-400 animate-pulse" />
-                <span className="hidden sm:inline whitespace-nowrap">يوميات صوتية (AI)</span>
+                <Mic className="w-4 h-4 animate-pulse text-amber-100" />
+                <Sparkles className="w-3.5 h-3.5 text-amber-200 hidden sm:inline" />
+                <span className="whitespace-nowrap">تحدث بصوتك (AI)</span>
               </button>
 
-              {/* PRIMARY ACTION BUTTON */}
+              {/* PRIMARY ACTION BUTTON: Deep Forest Green matching Dawenli */}
               <button
-                type="button"
                 onClick={() => setIsQuickAddOpen(true)}
-                className="flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-4 py-2 bg-[#174235] dark:bg-emerald-600 hover:bg-[#12352a] dark:hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-xs transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#174235] dark:focus-visible:ring-emerald-400 focus-visible:outline-hidden"
+                className="flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-4 py-2 bg-[#174235] hover:bg-[#12352a] text-white font-bold rounded-xl text-xs shadow-xs transition-all cursor-pointer"
                 title="إضافة سريعة موحدة (مهمة، مشروع، هدف، رؤية، ركيزة)"
               >
                 <Plus className="w-4 h-4" />
@@ -1157,33 +1083,19 @@ export const HierarchicalApp: React.FC = () => {
 
               {/* SQL Schema button */}
               <button
-                type="button"
                 onClick={() => setIsSqlModalOpen(true)}
-                className="hidden sm:flex items-center gap-1.5 px-3 py-2 bg-[#f8f7f4] dark:bg-[#1a2620] hover:bg-[#edeae2] dark:hover:bg-[#22332a] text-[#404c45] dark:text-[#c4d6cb] rounded-xl text-xs font-bold transition-colors cursor-pointer border border-[#e2ddd5] dark:border-[#283830]"
+                className="hidden sm:flex items-center gap-1.5 px-3 py-2 bg-[#f8f7f4] hover:bg-[#edeae2] text-[#404c45] rounded-xl text-xs font-bold transition-colors cursor-pointer border border-[#e2ddd5]"
                 title="عرض مخطط SQL وتريجرات الحساب التلقائي لـ Supabase"
               >
-                <Database className="w-3.5 h-3.5 text-[#174235] dark:text-emerald-400" />
+                <Database className="w-3.5 h-3.5 text-[#174235]" />
                 <span>مخطط SQL</span>
-              </button>
-
-              {/* Theme toggle in header */}
-              <button
-                type="button"
-                onClick={toggleTheme}
-                aria-label={isDark ? 'التحويل إلى الوضع النهاري' : 'التحويل إلى الوضع الليلي'}
-                title={isDark ? 'الوضع النهاري' : 'الوضع الليلي'}
-                className="p-2 text-[#7d8982] dark:text-[#8ea095] hover:text-[#1a2420] dark:hover:text-white hover:bg-[#f2efe8] dark:hover:bg-[#1a2620] rounded-xl transition-colors cursor-pointer"
-              >
-                {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
               </button>
 
               {/* Reset seed data button */}
               <button
-                type="button"
                 onClick={handleResetData}
-                className="p-2 text-[#7d8982] dark:text-[#8ea095] hover:text-[#1a2420] dark:hover:text-white hover:bg-[#f2efe8] dark:hover:bg-[#1a2620] rounded-xl transition-colors cursor-pointer"
+                className="p-2 text-[#7d8982] hover:text-[#1a2420] hover:bg-[#f2efe8] rounded-xl transition-colors cursor-pointer"
                 title="استعادة البيانات الأولية"
-                aria-label="استعادة البيانات الأولية"
               >
                 <RotateCcw className="w-4 h-4" />
               </button>
@@ -1193,8 +1105,8 @@ export const HierarchicalApp: React.FC = () => {
           </div>
         </header>
 
-        {/* Main Body View Container with bottom padding for mobile bar */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 pb-24 md:pb-8">
+        {/* Main Body View Container */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
           <div className="max-w-7xl mx-auto">
             
             {/* TAB 1: DRILL-DOWN HIERARCHY */}
@@ -1221,6 +1133,7 @@ export const HierarchicalApp: React.FC = () => {
                       setEditingProject(proj);
                       setIsProjectModalOpen(true);
                     }}
+                    onBatchAddTasks={handleBatchAddTasks}
                   />
                 ) : selectedGoalId && currentGoal ? (
                   /* 2. Level 4: Project View inside ValueGoal */
@@ -1448,6 +1361,7 @@ export const HierarchicalApp: React.FC = () => {
                 onConvertToTask={handleConvertInboxToTask}
                 onConvertToVault={handleConvertInboxToVault}
                 onConvertToHabit={handleConvertInboxToHabit}
+                onOpenVoiceAi={() => setIsVoiceAiModalOpen(true)}
               />
             )}
 
@@ -1502,17 +1416,6 @@ export const HierarchicalApp: React.FC = () => {
               />
             )}
 
-            {/* TAB 13: DAILY JOURNAL TAB (اليوميات والمذكرات والتأملات الصوتية) */}
-            {currentTab === 'journal' && (
-              <JournalTabView
-                entries={journalEntries}
-                projects={projects}
-                onSaveEntry={handleSaveJournalEntry}
-                onDeleteEntry={handleDeleteJournalEntry}
-                onOpenVoiceModal={() => setIsVoiceJournalModalOpen(true)}
-              />
-            )}
-
           </div>
         </main>
       </div>
@@ -1550,14 +1453,7 @@ export const HierarchicalApp: React.FC = () => {
         onAddVision={handleSaveVision}
         onAddPillar={handleSavePillar}
         onAddInboxItem={handleAddInboxItem}
-      />
-
-      {/* Voice Journal AI Modal */}
-      <VoiceJournalModal
-        isOpen={isVoiceJournalModalOpen}
-        onClose={() => setIsVoiceJournalModalOpen(false)}
-        onSaveJournal={handleSaveJournalEntry}
-        projects={projects}
+        onOpenVoiceAi={() => setIsVoiceAiModalOpen(true)}
       />
 
       {/* Pillar Modal */}
@@ -1630,31 +1526,21 @@ export const HierarchicalApp: React.FC = () => {
         onClose={() => setIsSqlModalOpen(false)}
       />
 
-      {/* Mobile Bottom Navigation Bar */}
-      <MobileBottomNav
-        currentTab={currentTab}
-        onSelectTab={(tab) => setCurrentTab(tab)}
-        onOpenQuickAdd={() => setIsQuickAddOpen(true)}
-        onOpenMobileMenu={() => setIsMobileSidebarOpen(true)}
-        tasksCount={tasks.filter((t) => t.status !== 'done').length}
+      {/* Voice & Gemini AI Intelligent Capture & Decomposition Modal */}
+      <VoiceAiCaptureModal
+        isOpen={isVoiceAiModalOpen}
+        onClose={() => setIsVoiceAiModalOpen(false)}
+        pillars={pillars}
+        projects={projects}
+        goals={goals}
+        onCommitHierarchy={handleVoiceAiCommit}
+        onCommitSingleTask={handleSaveTask}
       />
 
-      {/* Confirmation Modal */}
-      <ConfirmModal
-        isOpen={confirmDialog.isOpen}
-        title={confirmDialog.title}
-        message={confirmDialog.message}
-        confirmText={confirmDialog.confirmText}
-        cancelText={confirmDialog.cancelText}
-        variant={confirmDialog.variant}
-        onConfirm={confirmDialog.onConfirm}
-        onClose={() => setConfirmDialog((prev) => ({ ...prev, isOpen: false }))}
-      />
-
-      {/* Toast Notification Container */}
+      {/* Real-time Toast Notifications */}
       <ToastContainer
         toasts={toasts}
-        onClose={(id) => setToasts((prev) => prev.filter((t) => t.id !== id))}
+        onDismiss={(id) => setToasts((prev) => prev.filter((t) => t.id !== id))}
       />
 
     </div>

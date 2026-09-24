@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Habit, Pillar, HabitTimeOfDay, HabitFrequency } from '../../types/hierarchical';
 import { 
   Repeat, 
@@ -7,10 +7,10 @@ import {
   Check, 
   Trash2, 
   Edit2, 
-  Sun, 
-  Sunset, 
-  Moon, 
-  Clock3 
+  Sun,
+  Sunset,
+  Moon,
+  Clock3
 } from 'lucide-react';
 import { CustomSelect } from './CustomSelect';
 
@@ -53,16 +53,6 @@ export const HabitsTabView: React.FC<HabitsTabViewProps> = ({
   });
 
   const todayStr = today.toISOString().split('T')[0];
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isModalOpen) {
-        setIsModalOpen(false);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isModalOpen]);
 
   const filteredHabits = habits.filter(h => {
     if (selectedPillarFilter === 'all') return true;
@@ -118,9 +108,9 @@ export const HabitsTabView: React.FC<HabitsTabViewProps> = ({
 
   const getTimeIcon = (time: HabitTimeOfDay) => {
     switch (time) {
-      case 'morning': return <Sun className="w-3 h-3 text-amber-500" />;
+      case 'morning': return <Sun className="w-3 h-3 text-amber-600" />;
       case 'afternoon': return <Clock3 className="w-3 h-3 text-stone-500" />;
-      case 'evening': return <Sunset className="w-3 h-3 text-indigo-400" />;
+      case 'evening': return <Sunset className="w-3 h-3 text-indigo-500" />;
       default: return <Moon className="w-3 h-3 text-stone-500" />;
     }
   };
@@ -137,46 +127,45 @@ export const HabitsTabView: React.FC<HabitsTabViewProps> = ({
   return (
     <div className="space-y-4 max-w-5xl mx-auto">
       
-      {/* 1. Header & Metrics Strip */}
-      <div className="bg-white dark:bg-[#131d18] rounded-2xl border border-[#e8e4db] dark:border-[#26372d] p-4 sm:p-5 shadow-2xs space-y-3.5 transition-colors">
+      {/* 1. Lean, Compact Header & Metrics Strip */}
+      <div className="bg-white rounded-2xl border border-[#e8e4db] p-4 sm:p-5 shadow-2xs space-y-3.5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#ebf4f0] dark:bg-[#192b22] text-[#174235] dark:text-emerald-400 flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-[#ebf4f0] text-[#174235] flex items-center justify-center shrink-0">
               <Repeat className="w-4 h-4" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-base font-bold text-[#1a2420] dark:text-white">
-                  متتبع العادات (Habits)
+                <h1 className="text-base font-semibold text-[#1a2420]">
+                  متتبع العادات (Habits Tracker)
                 </h1>
-                <span className="text-xs font-mono text-[#78857e] dark:text-[#8ea095] tabular-nums">
+                <span className="text-xs font-mono text-[#78857e] tabular-nums">
                   ({completedTodayCount} من {totalHabits} منجزة اليوم)
                 </span>
               </div>
-              <p className="text-xs text-[#6e7b74] dark:text-[#9bb0a3]">
-                العادات تغذي مجالات الحياة يومياً بالتكرار الهادئ والمستمر.
+              <p className="text-xs text-[#6e7b74]">
+                العادات تحمي الهوية وتغذي الركائز يومياً بالتكرار الهادئ المستمر.
               </p>
             </div>
           </div>
 
           <button
-            type="button"
             onClick={handleOpenNew}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-[#174235] dark:bg-emerald-600 hover:bg-[#12352a] dark:hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer shrink-0 self-start sm:self-auto"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-[#174235] hover:bg-[#12352a] text-white rounded-xl text-xs font-medium transition-all shadow-xs cursor-pointer shrink-0 self-start sm:self-auto"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>إضافة عادة</span>
           </button>
         </div>
 
-        {/* Streamlined Horizontal Summary Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-[#f0ede6] dark:border-[#223028] text-xs text-[#525f58] dark:text-[#9bb0a3]">
+        {/* Streamlined Horizontal Summary Bar - Replaces 4 bulky cards */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-[#f0ede6] text-xs text-[#525f58]">
           <div className="flex items-center gap-2">
-            <span className="text-[#78857e] dark:text-[#8ea095]">التزام اليوم:</span>
-            <span className="font-mono font-bold text-[#174235] dark:text-emerald-400 tabular-nums">{todayPercentage}%</span>
-            <div className="w-20 bg-[#e8e4dc] dark:bg-[#203026] h-1.5 rounded-full overflow-hidden">
+            <span className="text-[#78857e]">التزام اليوم:</span>
+            <span className="font-mono font-bold text-[#174235] tabular-nums">{todayPercentage}%</span>
+            <div className="w-20 bg-[#e8e4dc] h-1.5 rounded-full overflow-hidden">
               <div 
-                className="bg-[#174235] dark:bg-emerald-500 h-full transition-all duration-300"
+                className="bg-[#174235] h-full transition-all duration-300"
                 style={{ width: `${todayPercentage}%` }}
               />
             </div>
@@ -184,54 +173,52 @@ export const HabitsTabView: React.FC<HabitsTabViewProps> = ({
 
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1.5">
-              <span className="text-[#78857e] dark:text-[#8ea095]">العادات:</span>
-              <span className="font-mono font-semibold text-[#1a2420] dark:text-white tabular-nums">{totalHabits}</span>
+              <span className="text-[#78857e]">العادات:</span>
+              <span className="font-mono font-semibold text-[#1a2420] tabular-nums">{totalHabits}</span>
             </div>
 
-            <span className="text-[#d8d4cc] dark:text-[#33463a]">·</span>
+            <span className="text-[#d8d4cc]">·</span>
 
             <div className="flex items-center gap-1">
               <Flame className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-              <span className="text-[#78857e] dark:text-[#8ea095]">أعلى سلسلة:</span>
-              <span className="font-mono font-semibold text-[#1a2420] dark:text-white tabular-nums">{highestStreak} يوماً</span>
+              <span className="text-[#78857e]">أعلى سلسلة:</span>
+              <span className="font-mono font-semibold text-[#1a2420] tabular-nums">{highestStreak} يوماً</span>
             </div>
 
-            <span className="text-[#d8d4cc] dark:text-[#33463a]">·</span>
+            <span className="text-[#d8d4cc]">·</span>
 
             <div className="flex items-center gap-1.5">
-              <span className="text-[#78857e] dark:text-[#8ea095]">المجالات المغطاة:</span>
-              <span className="font-mono font-semibold text-[#1a2420] dark:text-white tabular-nums">{coveredPillarsCount} من {pillars.length}</span>
+              <span className="text-[#78857e]">الركائز المغطاة:</span>
+              <span className="font-mono font-semibold text-[#1a2420] tabular-nums">{coveredPillarsCount} من {pillars.length}</span>
             </div>
           </div>
         </div>
 
         {/* Pillar Filter Tabs */}
-        <div className="flex items-center gap-1.5 text-xs overflow-x-auto py-2.5 border-t border-[#f0ede6] dark:border-[#223028] scrollbar-none relative z-10">
+        <div className="flex items-center gap-1 text-xs overflow-x-auto pt-2 border-t border-[#f0ede6]">
           <button
-            type="button"
             onClick={() => setSelectedPillarFilter('all')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shadow-2xs ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
               selectedPillarFilter === 'all'
-                ? 'bg-[#174235] dark:bg-emerald-600 text-white'
-                : 'text-[#637068] dark:text-[#9bb0a3] hover:text-[#1a2420] dark:hover:text-white hover:bg-[#f4f2ec] dark:hover:bg-[#1a2620] border border-[#e5e1d7] dark:border-[#27382e]'
+                ? 'bg-[#174235] text-white'
+                : 'text-[#637068] hover:text-[#1a2420] hover:bg-[#f4f2ec]'
             }`}
           >
-            كافة المجالات <span className="font-mono tabular-nums text-[11px] opacity-90">({habits.length})</span>
+            كافة الركائز <span className="font-mono tabular-nums text-[11px]">({habits.length})</span>
           </button>
           {pillars.map((pillar) => {
             const count = habits.filter(h => h.pillar_id === pillar.id).length;
             return (
               <button
                 key={pillar.id}
-                type="button"
                 onClick={() => setSelectedPillarFilter(pillar.id)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer whitespace-nowrap shadow-2xs ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
                   selectedPillarFilter === pillar.id
-                    ? 'bg-[#174235] dark:bg-emerald-600 text-white font-bold'
-                    : 'text-[#637068] dark:text-[#9bb0a3] hover:text-[#1a2420] dark:hover:text-white hover:bg-[#f4f2ec] dark:hover:bg-[#1a2620] border border-[#e5e1d7] dark:border-[#27382e]'
+                    ? 'bg-[#174235] text-white'
+                    : 'text-[#637068] hover:text-[#1a2420] hover:bg-[#f4f2ec]'
                 }`}
               >
-                {pillar.title} <span className="font-mono tabular-nums text-[11px] opacity-90">({count})</span>
+                {pillar.title} <span className="font-mono tabular-nums text-[11px]">({count})</span>
               </button>
             );
           })}
@@ -239,16 +226,16 @@ export const HabitsTabView: React.FC<HabitsTabViewProps> = ({
       </div>
 
       {/* 2. Habits Weekly Matrix Table */}
-      <div className="bg-white dark:bg-[#131d18] border border-[#e8e4db] dark:border-[#26372d] rounded-2xl overflow-hidden shadow-2xs transition-colors">
+      <div className="bg-white border border-[#e8e4db] rounded-2xl overflow-hidden shadow-2xs">
         
         {/* Table Header */}
-        <div className="bg-[#faf9f6] dark:bg-[#16211a] border-b border-[#e8e4db] dark:border-[#26372d] px-4 py-3 flex items-center justify-between text-xs font-semibold text-[#6e7b74] dark:text-[#8ea095]">
-          <div className="w-1/2 sm:w-2/5">العادة والمجال</div>
+        <div className="bg-[#faf9f6] border-b border-[#e8e4db] px-4 py-3 flex items-center justify-between text-xs font-medium text-[#6e7b74]">
+          <div className="w-1/2 sm:w-2/5">العادة والركيزة</div>
           <div className="flex items-center gap-1.5 sm:gap-3 text-center">
             {weekDays.map((d) => (
               <div 
                 key={d.isoDate} 
-                className={`w-7 sm:w-9 text-center ${d.isToday ? 'text-[#174235] dark:text-emerald-400 font-bold' : 'text-[#85928a] dark:text-[#708075]'}`}
+                className={`w-7 sm:w-9 text-center ${d.isToday ? 'text-[#174235] font-bold' : 'text-[#85928a]'}`}
               >
                 <div className="text-[10px]">{d.dayName}</div>
                 <div className="text-xs font-mono tabular-nums">{d.dayNumber}</div>
@@ -260,11 +247,11 @@ export const HabitsTabView: React.FC<HabitsTabViewProps> = ({
 
         {/* Habit Rows */}
         {filteredHabits.length === 0 ? (
-          <div className="p-10 text-center text-xs text-[#7d8982] dark:text-[#9bb0a3]">
+          <div className="p-10 text-center text-xs text-[#7d8982]">
             لا توجد عادات مسجلة تحت هذا التصنيف حالياً.
           </div>
         ) : (
-          <div className="divide-y divide-[#f0ede6] dark:divide-[#223028]">
+          <div className="divide-y divide-[#f0ede6]">
             {filteredHabits.map((habit) => {
               const pillar = pillars.find(p => p.id === habit.pillar_id);
               const isDoneToday = habit.completed_dates.includes(todayStr);
@@ -272,22 +259,22 @@ export const HabitsTabView: React.FC<HabitsTabViewProps> = ({
               return (
                 <div 
                   key={habit.id}
-                  className="px-4 py-3.5 hover:bg-[#faf9f6] dark:hover:bg-[#18261e] transition-colors flex items-center justify-between gap-3 group"
+                  className="px-4 py-3.5 hover:bg-[#faf9f6] transition-colors flex items-center justify-between gap-3 group"
                 >
                   {/* Left: Habit Info */}
                   <div className="w-1/2 sm:w-2/5 min-w-0">
                     <div className="flex items-center gap-2">
-                      <h3 className="text-xs sm:text-sm font-semibold text-[#1a2420] dark:text-white truncate">
+                      <h3 className="text-xs sm:text-sm font-medium text-[#1a2420] truncate">
                         {habit.title}
                       </h3>
                       {isDoneToday && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#174235] dark:bg-emerald-400" title="أُنجزت اليوم" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#174235]" title="أُنجزت اليوم" />
                       )}
                     </div>
 
-                    <div className="flex items-center gap-1.5 text-[11px] text-[#78857e] dark:text-[#8ea095] mt-0.5">
+                    <div className="flex items-center gap-1.5 text-[11px] text-[#78857e] mt-0.5">
                       {pillar && <span>{pillar.title}</span>}
-                      <span className="text-[#d8d4cc] dark:text-[#384a3e]">·</span>
+                      <span className="text-[#d8d4cc]">·</span>
                       <span className="flex items-center gap-1">
                         {getTimeIcon(habit.time_of_day)}
                         <span>{getTimeLabel(habit.time_of_day)}</span>
@@ -302,17 +289,15 @@ export const HabitsTabView: React.FC<HabitsTabViewProps> = ({
                       return (
                         <button
                           key={d.isoDate}
-                          type="button"
                           onClick={() => onToggleHabitDate(habit.id, d.isoDate)}
                           className={`w-7 h-7 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center transition-all cursor-pointer ${
                             isCompleted
-                              ? 'bg-[#174235] dark:bg-emerald-600 text-white shadow-2xs'
+                              ? 'bg-[#174235] text-white shadow-2xs'
                               : d.isToday
-                              ? 'bg-white dark:bg-[#121c17] border-2 border-dashed border-[#174235]/40 dark:border-emerald-500/40 hover:border-[#174235] text-[#85928a]'
-                              : 'bg-[#f4f2ec] dark:bg-[#1c2921] hover:bg-[#eae6dc] dark:hover:bg-[#25362c] text-transparent'
+                              ? 'bg-white border-2 border-dashed border-[#174235]/40 hover:border-[#174235] text-[#85928a]'
+                              : 'bg-[#f4f2ec] hover:bg-[#eae6dc] text-transparent'
                           }`}
                           title={`${habit.title} - ${d.isoDate}`}
-                          aria-label={`${habit.title} ليوم ${d.isoDate} - ${isCompleted ? 'مكتمل' : 'غير مكتمل'}`}
                         >
                           {isCompleted ? (
                             <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-2" />
@@ -326,27 +311,23 @@ export const HabitsTabView: React.FC<HabitsTabViewProps> = ({
 
                   {/* Right: Streak & Actions */}
                   <div className="flex items-center justify-end gap-2 w-auto sm:w-20 shrink-0">
-                    <div className="flex items-center gap-1 text-xs font-mono tabular-nums font-bold text-[#1a2420] dark:text-white">
-                      <Flame className={`w-3.5 h-3.5 ${habit.current_streak > 0 ? 'text-amber-500 fill-amber-500' : 'text-[#c7c2b6] dark:text-[#3d5043]'}`} />
+                    <div className="flex items-center gap-1 text-xs font-mono tabular-nums font-semibold text-[#1a2420]">
+                      <Flame className={`w-3.5 h-3.5 ${habit.current_streak > 0 ? 'text-amber-500 fill-amber-500' : 'text-[#c7c2b6]'}`} />
                       <span>{habit.current_streak}</span>
                     </div>
 
-                    <div className="opacity-80 sm:opacity-0 group-hover:opacity-100 transition-opacity flex items-center">
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center">
                       <button
-                        type="button"
                         onClick={() => handleOpenEdit(habit)}
-                        className="p-1 text-[#85928a] dark:text-[#8ea095] hover:text-[#1a2420] dark:hover:text-white rounded cursor-pointer"
+                        className="p-1 text-[#85928a] hover:text-[#1a2420] rounded"
                         title="تعديل"
-                        aria-label="تعديل العادة"
                       >
                         <Edit2 className="w-3 h-3" />
                       </button>
                       <button
-                        type="button"
                         onClick={() => onDeleteHabit(habit.id)}
-                        className="p-1 text-[#85928a] dark:text-[#8ea095] hover:text-rose-600 dark:hover:text-rose-400 rounded cursor-pointer"
+                        className="p-1 text-[#85928a] hover:text-rose-600 rounded"
                         title="حذف"
-                        aria-label="حذف العادة"
                       >
                         <Trash2 className="w-3 h-3" />
                       </button>
@@ -361,22 +342,15 @@ export const HabitsTabView: React.FC<HabitsTabViewProps> = ({
 
       {/* Habit Create/Edit Modal */}
       {isModalOpen && (
-        <div 
-          className="fixed inset-0 z-50 bg-slate-900/40 dark:bg-black/60 backdrop-blur-2xs flex items-center justify-center p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="habit-modal-title"
-        >
-          <div className="bg-white dark:bg-[#131d18] rounded-2xl max-w-md w-full p-5 shadow-xl border border-[#e8e4db] dark:border-[#26372d] space-y-4 animate-in fade-in text-xs transition-colors">
-            <div className="flex items-center justify-between border-b border-[#f0ede6] dark:border-[#223028] pb-3">
-              <h3 id="habit-modal-title" className="font-bold text-sm text-[#1a2420] dark:text-white">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-2xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-5 shadow-xl border border-[#e8e4db] space-y-4 animate-in fade-in text-xs">
+            <div className="flex items-center justify-between border-b border-[#f0ede6] pb-3">
+              <h3 className="font-semibold text-sm text-[#1a2420]">
                 {editingHabit ? 'تعديل العادة' : 'إضافة عادة يومية جديدة'}
               </h3>
               <button
-                type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="text-[#85928a] dark:text-[#8ea095] hover:text-[#1a2420] dark:hover:text-white p-1 rounded cursor-pointer"
-                aria-label="إغلاق النافذة"
+                className="text-[#85928a] hover:text-[#1a2420] p-1"
               >
                 ✕
               </button>
@@ -384,32 +358,32 @@ export const HabitsTabView: React.FC<HabitsTabViewProps> = ({
 
             <form onSubmit={handleSubmitModal} className="space-y-3">
               <div>
-                <label className="block font-semibold text-[#35403a] dark:text-[#c4d6cb] mb-1">اسم العادة أو الممارسة:</label>
+                <label className="block font-medium text-[#35403a] mb-1">اسم العادة أو الممارسة:</label>
                 <input
                   type="text"
                   required
                   value={modalTitle}
                   onChange={(e) => setModalTitle(e.target.value)}
                   placeholder="مثال: قراءة 20 صفحة يومياً، ورد الذكر..."
-                  className="w-full p-2.5 bg-white dark:bg-[#121c17] border border-[#d8d4cc] dark:border-[#2d4034] rounded-xl text-xs text-[#1a2420] dark:text-white outline-hidden focus:border-[#174235] dark:focus:border-emerald-500"
+                  className="w-full p-2.5 bg-white border border-[#d8d4cc] rounded-xl text-xs text-[#1a2420] outline-hidden focus:border-[#174235]"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-[#35403a] dark:text-[#c4d6cb] mb-1">المجال الحاضن:</label>
+                <label className="block font-medium text-[#35403a] mb-1">الركيزة الحاضنة:</label>
                 <CustomSelect
                   value={modalPillarId}
                   onChange={(val) => setModalPillarId(val)}
                   options={pillars.map((p) => ({ value: p.id, label: `${p.title} (${p.pillar_group})` }))}
                   className="w-full"
-                  buttonClassName="w-full rounded-xl py-2 px-3 text-xs bg-white dark:bg-[#121c17] border-[#d8d4cc] dark:border-[#2d4034]"
+                  buttonClassName="w-full rounded-xl py-2 px-3 text-xs"
                   dropdownClassName="w-full"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block font-semibold text-[#35403a] dark:text-[#c4d6cb] mb-1">وقت الممارسة:</label>
+                  <label className="block font-medium text-[#35403a] mb-1">وقت الممارسة:</label>
                   <CustomSelect<HabitTimeOfDay>
                     value={modalTimeOfDay}
                     onChange={(val) => setModalTimeOfDay(val)}
@@ -420,46 +394,46 @@ export const HabitsTabView: React.FC<HabitsTabViewProps> = ({
                       { value: 'anytime', label: 'أي وقت', icon: '🕒' },
                     ]}
                     className="w-full"
-                    buttonClassName="w-full rounded-xl py-2 px-3 text-xs bg-white dark:bg-[#121c17] border-[#d8d4cc] dark:border-[#2d4034]"
+                    buttonClassName="w-full rounded-xl py-2 px-3 text-xs"
                     dropdownClassName="w-full"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-[#35403a] dark:text-[#c4d6cb] mb-1">أيام الالتزام / الأسبوع:</label>
+                  <label className="block font-medium text-[#35403a] mb-1">أيام الالتزام / الأسبوع:</label>
                   <input
                     type="number"
                     min={1}
                     max={7}
                     value={modalTargetDays}
                     onChange={(e) => setModalTargetDays(Number(e.target.value))}
-                    className="w-full p-2 bg-white dark:bg-[#121c17] border border-[#d8d4cc] dark:border-[#2d4034] rounded-xl text-xs text-[#1a2420] dark:text-white outline-hidden focus:border-[#174235] dark:focus:border-emerald-500 font-mono"
+                    className="w-full p-2 bg-white border border-[#d8d4cc] rounded-xl text-xs text-[#1a2420] outline-hidden"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-semibold text-[#35403a] dark:text-[#c4d6cb] mb-1">ملاحظة أو نية (اختياري):</label>
+                <label className="block font-medium text-[#35403a] mb-1">ملاحظة أو نية (اختياري):</label>
                 <textarea
                   rows={2}
                   value={modalDescription}
                   onChange={(e) => setModalDescription(e.target.value)}
                   placeholder="لماذا هذه العادة مهمة لهويتك؟"
-                  className="w-full p-2 bg-white dark:bg-[#121c17] border border-[#d8d4cc] dark:border-[#2d4034] rounded-xl text-xs text-[#1a2420] dark:text-white outline-hidden focus:border-[#174235] dark:focus:border-emerald-500"
+                  className="w-full p-2 bg-white border border-[#d8d4cc] rounded-xl text-xs text-[#1a2420] outline-hidden focus:border-[#174235]"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#f0ede6] dark:border-[#223028]">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#f0ede6]">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-3.5 py-1.5 bg-[#f4f2ec] dark:bg-[#192620] hover:bg-[#ece8de] dark:hover:bg-[#203026] text-[#4a554f] dark:text-[#c4d6cb] rounded-xl font-semibold cursor-pointer transition-colors"
+                  className="px-3.5 py-1.5 bg-[#f4f2ec] hover:bg-[#ece8de] text-[#4a554f] rounded-xl font-medium cursor-pointer"
                 >
                   إلغاء
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 bg-[#174235] dark:bg-emerald-600 hover:bg-[#12352a] dark:hover:bg-emerald-700 text-white rounded-xl font-bold shadow-xs cursor-pointer transition-all"
+                  className="px-4 py-1.5 bg-[#174235] hover:bg-[#12352a] text-white rounded-xl font-medium shadow-xs cursor-pointer"
                 >
                   حفظ العادة
                 </button>

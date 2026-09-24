@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Pillar, Vision, ValueGoal, Project, Task } from '../../types/hierarchical';
 import { CustomSelect } from './CustomSelect';
-import { Sparkles, Loader2, CheckSquare } from 'lucide-react';
-import { generateAiTaskBreakdown, AiTaskSuggestion } from '../../services/aiService';
 
 // ---------------------------------------------------------
 // 1. PILLAR MODAL
@@ -22,7 +20,7 @@ export const PillarModal: React.FC<PillarModalProps> = ({
 }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [pillarGroup, setPillarGroup] = useState('شخصي');
+  const [pillarGroup, setPillarGroup] = useState('Growth');
   const [purpose, setPurpose] = useState('');
   const [priority, setPriority] = useState(1);
   const [showOnHome, setShowOnHome] = useState(true);
@@ -40,21 +38,13 @@ export const PillarModal: React.FC<PillarModalProps> = ({
     } else {
       setTitle('');
       setDescription('');
-      setPillarGroup('شخصي');
+      setPillarGroup('Growth');
       setPurpose('');
       setPriority(1);
       setShowOnHome(true);
       setStatus('active');
     }
   }, [initialPillar, isOpen]);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) onClose();
-    };
-    if (isOpen) window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -65,7 +55,7 @@ export const PillarModal: React.FC<PillarModalProps> = ({
     onSave({
       title: title.trim(),
       description: description.trim(),
-      pillar_group: pillarGroup.trim() || 'شخصي',
+      pillar_group: pillarGroup.trim() || 'Growth',
       purpose: purpose.trim(),
       priority: Number(priority) || 1,
       show_on_home: showOnHome,
@@ -75,47 +65,34 @@ export const PillarModal: React.FC<PillarModalProps> = ({
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="pillar-modal-title"
-      className="fixed inset-0 z-50 bg-black/50 dark:bg-black/70 backdrop-blur-xs flex items-center justify-center p-4"
-    >
-      <div className="bg-white dark:bg-[#16201b] rounded-2xl max-w-lg w-full shadow-2xl border border-[#e8e5de] dark:border-[#26372d] overflow-hidden text-xs transition-colors">
-        <div className="p-4 sm:p-5 border-b border-[#f0eee9] dark:border-[#223028] flex items-center justify-between bg-[#fbfbfa] dark:bg-[#1b2620]">
+    <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-2xs flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl max-w-lg w-full shadow-xl border border-[#e8e5de] overflow-hidden text-xs animate-in fade-in">
+        <div className="p-4 sm:p-5 border-b border-[#f0eee9] flex items-center justify-between bg-[#fbfbfa]">
           <div>
-            <h3 id="pillar-modal-title" className="font-bold text-sm text-[#1a2420] dark:text-white">
-              {initialPillar ? 'تعديل مجال الحياة (الركيزة)' : 'إضافة مجال حياة جديد'}
+            <h3 className="font-bold text-sm text-[#1a2420]">
+              {initialPillar ? 'تعديل الركيزة (Pillar)' : 'إضافة ركيزة حياة جديدة (New Pillar)'}
             </h3>
-            <p className="text-[11px] text-[#6d7972] dark:text-[#9bb0a3]">يمثل مجالك الحياتي الأكبر وبوصلتك الأساسية</p>
+            <p className="text-[11px] text-[#6d7972]">الركيزة تمثل مجالك الحياتي الأكبر وغايتك الأساسية</p>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="إغلاق"
-            className="text-[#85918a] dark:text-[#8ea095] hover:text-[#1a2420] dark:hover:text-white text-sm p-1.5 rounded-lg hover:bg-[#f2efe8] dark:hover:bg-[#22332a] cursor-pointer"
-          >
-            ✕
-          </button>
+          <button onClick={onClose} className="text-[#85918a] hover:text-[#1a2420] text-sm p-1">✕</button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           <div>
-            <label className="font-bold text-[#3a453f] dark:text-[#c4d6cb] block mb-1">اسم المجال أو الركيزة: *</label>
+            <label className="font-bold text-[#3a453f] block mb-1">اسم الركيزة: *</label>
             <input
               type="text"
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="مثال: الصحة واللياقة، التطوير المهني، الأسرة..."
-              className="w-full p-2.5 bg-[#faf8f5] dark:bg-[#121c17] border border-[#d8d4cc] dark:border-[#283d31] rounded-xl text-[#1a2420] dark:text-white focus:border-[#174235] dark:focus:border-emerald-500 focus-visible:outline-hidden"
-              autoFocus
+              placeholder="مثال: العلاقة مع الله، بناء الذات، الصحة والجسد..."
+              className="w-full p-2.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] focus:border-[#174235] outline-hidden"
             />
           </div>
 
           <div>
-            <label className="font-bold text-[#3a453f] dark:text-[#c4d6cb] block mb-1">
-              الغاية والرسالة (The Big Why): *
+            <label className="font-bold text-[#3a453f] block mb-1">
+              الغاية الكبرى للركيزة (Purpose — The Big Why): *
             </label>
             <textarea
               rows={3}
@@ -123,72 +100,73 @@ export const PillarModal: React.FC<PillarModalProps> = ({
               value={purpose}
               onChange={(e) => setPurpose(e.target.value)}
               placeholder="اكتب العبارة التوجيهية الكبرى التي تمثل بوصلتك في هذا المجال الحياتي..."
-              className="w-full p-2.5 bg-[#faf8f5] dark:bg-[#121c17] border border-[#d8d4cc] dark:border-[#283d31] rounded-xl text-[#1a2420] dark:text-white focus:border-[#174235] dark:focus:border-emerald-500 focus-visible:outline-hidden"
+              className="w-full p-2.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] focus:border-[#174235] outline-hidden"
             />
+            <span className="text-[10px] text-[#78857e]">ستظهر هذه الغاية بشكل بارز كبوصلة توجيهية كبرى</span>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="font-bold text-[#3a453f] dark:text-[#c4d6cb] block mb-1">التصنيف العام:</label>
+              <label className="font-bold text-[#3a453f] block mb-1">المجموعة (Pillar Group):</label>
               <input
                 type="text"
                 value={pillarGroup}
                 onChange={(e) => setPillarGroup(e.target.value)}
-                placeholder="تطوير، صحة، أعمال، روحانيات..."
-                className="w-full p-2.5 bg-[#faf8f5] dark:bg-[#121c17] border border-[#d8d4cc] dark:border-[#283d31] rounded-xl text-[#1a2420] dark:text-white focus:border-[#174235] dark:focus:border-emerald-500 focus-visible:outline-hidden"
+                placeholder="Growth, Vitality, Impact, Wealth..."
+                className="w-full p-2.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] focus:border-[#174235] outline-hidden"
               />
             </div>
 
             <div>
-              <label className="font-bold text-[#3a453f] dark:text-[#c4d6cb] block mb-1">ترتيب الأولوية:</label>
+              <label className="font-bold text-[#3a453f] block mb-1">ترتيب الأولوية (Priority):</label>
               <input
                 type="number"
                 min={1}
                 max={20}
                 value={priority}
                 onChange={(e) => setPriority(parseInt(e.target.value) || 1)}
-                className="w-full p-2.5 bg-[#faf8f5] dark:bg-[#121c17] border border-[#d8d4cc] dark:border-[#283d31] rounded-xl text-[#1a2420] dark:text-white focus:border-[#174235] dark:focus:border-emerald-500 focus-visible:outline-hidden font-mono"
+                className="w-full p-2.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] focus:border-[#174235] outline-hidden font-mono"
               />
             </div>
           </div>
 
           <div>
-            <label className="font-bold text-[#3a453f] dark:text-[#c4d6cb] block mb-1">الوصف المختصر:</label>
+            <label className="font-bold text-[#3a453f] block mb-1">الوصف المختصر:</label>
             <input
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="وصف توضيحي لطبيعة هذا المجال..."
-              className="w-full p-2.5 bg-[#faf8f5] dark:bg-[#121c17] border border-[#d8d4cc] dark:border-[#283d31] rounded-xl text-[#1a2420] dark:text-white focus:border-[#174235] dark:focus:border-emerald-500 focus-visible:outline-hidden"
+              placeholder="وصف إضافي لطبيعة الركيزة..."
+              className="w-full p-2.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] focus:border-[#174235] outline-hidden"
             />
           </div>
 
-          <div className="flex items-center justify-between p-3 bg-[#f8f7f4] dark:bg-[#192620] rounded-xl border border-[#ece8e0] dark:border-[#24372d]">
+          <div className="flex items-center justify-between p-3 bg-[#f8f7f4] rounded-xl border border-[#ece8e0]">
             <div>
-              <span className="font-bold text-[#1a2420] dark:text-white block">عرض في الصفحة الرئيسية</span>
-              <span className="text-[11px] text-[#78857e] dark:text-[#9bb0a3]">تثبيت هذا المجال في لوحة المتابعة السريعة</span>
+              <span className="font-bold text-[#1a2420] block">عرض في الصفحة الرئيسية (Show on Home)</span>
+              <span className="text-[11px] text-[#78857e]">تثبيت الركيزة في لوحة المتابعة السريعة</span>
             </div>
             <input
               type="checkbox"
               checked={showOnHome}
               onChange={(e) => setShowOnHome(e.target.checked)}
-              className="w-4 h-4 text-[#174235] dark:text-emerald-500 rounded cursor-pointer accent-[#174235] dark:accent-emerald-500"
+              className="w-4 h-4 text-[#174235] rounded cursor-pointer accent-[#174235]"
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-[#f0eee9] dark:border-[#223028]">
+          <div className="flex justify-end gap-2 pt-2 border-t border-[#f0eee9]">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-[#56625b] dark:text-[#a2b3aa] hover:bg-[#f2efe9] dark:hover:bg-[#203027] rounded-xl font-bold cursor-pointer"
+              className="px-4 py-2 text-[#56625b] hover:bg-[#f2efe9] rounded-xl font-bold cursor-pointer"
             >
               إلغاء
             </button>
             <button
               type="submit"
-              className="px-5 py-2 bg-[#174235] dark:bg-emerald-600 hover:bg-[#12352a] dark:hover:bg-emerald-700 text-white font-bold rounded-xl shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-[#174235] dark:focus-visible:ring-emerald-400 focus-visible:outline-hidden"
+              className="px-5 py-2 bg-[#174235] hover:bg-[#12352a] text-white font-bold rounded-xl shadow-xs cursor-pointer"
             >
-              حفظ المجال
+              حفظ الركيزة
             </button>
           </div>
         </form>
@@ -239,14 +217,6 @@ export const VisionModal: React.FC<VisionModalProps> = ({
     }
   }, [initialVision, isOpen, pillars]);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) onClose();
-    };
-    if (isOpen) window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
-
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -264,38 +234,26 @@ export const VisionModal: React.FC<VisionModalProps> = ({
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="vision-modal-title"
-      className="fixed inset-0 z-50 bg-black/50 dark:bg-black/70 backdrop-blur-xs flex items-center justify-center p-4"
-    >
-      <div className="bg-white dark:bg-[#16201b] rounded-2xl max-w-lg w-full shadow-2xl border border-[#e8e5de] dark:border-[#26372d] overflow-hidden text-xs transition-colors">
-        <div className="p-4 sm:p-5 border-b border-[#f0eee9] dark:border-[#223028] flex items-center justify-between bg-[#fbfbfa] dark:bg-[#1b2620]">
+    <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-2xs flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl max-w-lg w-full shadow-xl border border-[#e8e5de] overflow-hidden text-xs animate-in fade-in">
+        <div className="p-4 sm:p-5 border-b border-[#f0eee9] flex items-center justify-between bg-[#fbfbfa]">
           <div>
-            <h3 id="vision-modal-title" className="font-bold text-sm text-[#1a2420] dark:text-white">
-              {initialVision ? 'تعديل الرؤية المستقبلية' : 'صياغة رؤية مستقبلية جديدة'}
+            <h3 className="font-bold text-sm text-[#1a2420]">
+              {initialVision ? 'تعديل الرؤية (Edit Vision)' : 'صياغة رؤية مستقبلية جديدة (New Vision)'}
             </h3>
             {pillarTitle && (
-              <p className="text-[11px] text-[#174235] dark:text-emerald-400 font-semibold mt-0.5">
-                المجال التابع له: {pillarTitle}
+              <p className="text-[11px] text-[#174235] font-semibold mt-0.5">
+                تابع للركيزة: {pillarTitle}
               </p>
             )}
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="إغلاق"
-            className="text-[#85918a] dark:text-[#8ea095] hover:text-[#1a2420] dark:hover:text-white text-sm p-1.5 rounded-lg hover:bg-[#f2efe8] dark:hover:bg-[#22332a] cursor-pointer"
-          >
-            ✕
-          </button>
+          <button onClick={onClose} className="text-[#85918a] hover:text-[#1a2420] text-sm p-1">✕</button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           {pillars && pillars.length > 0 && !pillarTitle && (
             <div>
-              <label className="font-bold text-[#3a453f] dark:text-[#c4d6cb] block mb-1">المجال التابع له: *</label>
+              <label className="font-bold text-[#3a453f] block mb-1">الركيزة التابعة لها: *</label>
               <CustomSelect
                 value={pillarId}
                 onChange={(val) => setPillarId(val)}
@@ -311,51 +269,50 @@ export const VisionModal: React.FC<VisionModalProps> = ({
           )}
 
           <div>
-            <label className="font-bold text-[#3a453f] dark:text-[#c4d6cb] block mb-1">عنوان الرؤية: *</label>
+            <label className="font-bold text-[#3a453f] block mb-1">عنوان الرؤية: *</label>
             <input
               type="text"
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="مثال: التمكن المهني والريادة، الاستقلال المالي..."
-              className="w-full p-2.5 bg-[#faf8f5] dark:bg-[#121c17] border border-[#d8d4cc] dark:border-[#283d31] rounded-xl text-[#1a2420] dark:text-white focus:border-[#174235] dark:focus:border-emerald-500 focus-visible:outline-hidden"
-              autoFocus
+              placeholder="مثال: الرسوخ المعرفي، الاستقلال المالي..."
+              className="w-full p-2.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] focus:border-[#174235] outline-hidden"
             />
           </div>
 
           <div>
-            <label className="font-bold text-[#3a453f] dark:text-[#c4d6cb] block mb-1">بيان الرؤية والأفق المنشود:</label>
+            <label className="font-bold text-[#3a453f] block mb-1">بيان الرؤية والأفق المستقبلي:</label>
             <textarea
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="اكتب وصفاً للصورة التي تطمح لتحقيقها مستقبلاً..."
-              className="w-full p-2.5 bg-[#faf8f5] dark:bg-[#121c17] border border-[#d8d4cc] dark:border-[#283d31] rounded-xl text-[#1a2420] dark:text-white focus:border-[#174235] dark:focus:border-emerald-500 focus-visible:outline-hidden"
+              placeholder="اكتب وصفاً مفصلاً للصورة التي تطمح إليها مستقبلاً..."
+              className="w-full p-2.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] focus:border-[#174235] outline-hidden"
             />
           </div>
 
           <div>
-            <label className="font-bold text-[#3a453f] dark:text-[#c4d6cb] block mb-1">الأفق الزمني (Timeframe):</label>
+            <label className="font-bold text-[#3a453f] block mb-1">الأفق الزمني (Timeframe):</label>
             <input
               type="text"
               value={timeframe}
               onChange={(e) => setTimeframe(e.target.value)}
-              placeholder="مثال: 3-5 سنوات، 2026-2030..."
-              className="w-full p-2.5 bg-[#faf8f5] dark:bg-[#121c17] border border-[#d8d4cc] dark:border-[#283d31] rounded-xl text-[#1a2420] dark:text-white focus:border-[#174235] dark:focus:border-emerald-500 focus-visible:outline-hidden"
+              placeholder="مثال: 3-5 سنوات، 2026-2030، مستمر..."
+              className="w-full p-2.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] outline-hidden"
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-[#f0eee9] dark:border-[#223028]">
+          <div className="flex justify-end gap-2 pt-2 border-t border-[#f0eee9]">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-[#56625b] dark:text-[#a2b3aa] hover:bg-[#f2efe9] dark:hover:bg-[#203027] rounded-xl font-bold cursor-pointer"
+              className="px-4 py-2 text-[#56625b] hover:bg-[#f2efe9] rounded-xl font-bold cursor-pointer"
             >
               إلغاء
             </button>
             <button
               type="submit"
-              className="px-5 py-2 bg-[#174235] dark:bg-emerald-600 hover:bg-[#12352a] dark:hover:bg-emerald-700 text-white font-bold rounded-xl shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-[#174235] dark:focus-visible:ring-emerald-400 focus-visible:outline-hidden"
+              className="px-5 py-2 bg-[#174235] hover:bg-[#12352a] text-white font-bold rounded-xl shadow-xs cursor-pointer"
             >
               حفظ الرؤية
             </button>
@@ -386,6 +343,7 @@ export const ValueGoalModal: React.FC<ValueGoalModalProps> = ({
   initialGoal,
   parentTitle,
   visions = [],
+  pillars = [],
 }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -409,14 +367,6 @@ export const ValueGoalModal: React.FC<ValueGoalModalProps> = ({
     }
   }, [initialGoal, isOpen, visions]);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) onClose();
-    };
-    if (isOpen) window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
-
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -434,56 +384,43 @@ export const ValueGoalModal: React.FC<ValueGoalModalProps> = ({
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="goal-modal-title"
-      className="fixed inset-0 z-50 bg-black/50 dark:bg-black/70 backdrop-blur-xs flex items-center justify-center p-4"
-    >
-      <div className="bg-white dark:bg-[#16201b] rounded-2xl max-w-lg w-full shadow-2xl border border-[#e8e5de] dark:border-[#26372d] overflow-hidden text-xs transition-colors">
-        <div className="p-4 sm:p-5 border-b border-[#f0eee9] dark:border-[#223028] flex items-center justify-between bg-[#fbfbfa] dark:bg-[#1b2620]">
+    <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-2xs flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl max-w-lg w-full shadow-xl border border-[#e8e5de] overflow-hidden text-xs animate-in fade-in">
+        <div className="p-4 sm:p-5 border-b border-[#f0eee9] flex items-center justify-between bg-[#fbfbfa]">
           <div>
-            <h3 id="goal-modal-title" className="font-bold text-sm text-[#1a2420] dark:text-white">
-              {initialGoal ? 'تعديل الهدف الاستراتيجي' : 'إضافة هدف قيمة استراتيجي'}
+            <h3 className="font-bold text-sm text-[#1a2420]">
+              {initialGoal ? 'تعديل هدف القيمة (Edit Goal)' : 'إضافة هدف قيمة استراتيجي (New Goal)'}
             </h3>
             {parentTitle && (
-              <p className="text-[11px] text-[#174235] dark:text-emerald-400 font-semibold mt-0.5">
-                المرجع الحالي: {parentTitle}
+              <p className="text-[11px] text-[#174235] font-semibold mt-0.5">
+                الأب الحالي: {parentTitle}
               </p>
             )}
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="إغلاق"
-            className="text-[#85918a] dark:text-[#8ea095] hover:text-[#1a2420] dark:hover:text-white text-sm p-1.5 rounded-lg hover:bg-[#f2efe8] dark:hover:bg-[#22332a] cursor-pointer"
-          >
-            ✕
-          </button>
+          <button onClick={onClose} className="text-[#85918a] hover:text-[#1a2420] text-sm p-1">✕</button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           <div>
-            <label className="font-bold text-[#3a453f] dark:text-[#c4d6cb] block mb-1">عنوان الهدف: *</label>
+            <label className="font-bold text-[#3a453f] block mb-1">عنوان الهدف: *</label>
             <input
               type="text"
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="مثال: إطلاق النسخة الأولى من المنتج التجاري..."
-              className="w-full p-2.5 bg-[#faf8f5] dark:bg-[#121c17] border border-[#d8d4cc] dark:border-[#283d31] rounded-xl text-[#1a2420] dark:text-white focus:border-[#174235] dark:focus:border-emerald-500 focus-visible:outline-hidden"
-              autoFocus
+              placeholder="مثال: الوصول إلى 100,000 جنيه صافي ربح شهري..."
+              className="w-full p-2.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] focus:border-[#174235] outline-hidden"
             />
           </div>
 
           {visions.length > 0 && (
             <div>
-              <label className="font-bold text-[#3a453f] dark:text-[#c4d6cb] block mb-1">الرؤية التابع لها:</label>
+              <label className="font-bold text-[#3a453f] block mb-1">الرؤية التابع لها:</label>
               <CustomSelect
                 value={visionId}
                 onChange={(val) => setVisionId(val)}
                 options={[
-                  { value: '', label: 'بدون رؤية وسيطة (ربط بالمجال مباشرة)' },
+                  { value: '', label: 'بدون رؤية وسيطة (ربط بالركيزة مباشرة)' },
                   ...visions.map((v) => ({ value: v.id, label: v.title }))
                 ]}
                 className="w-full"
@@ -495,7 +432,7 @@ export const ValueGoalModal: React.FC<ValueGoalModalProps> = ({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="font-bold text-[#3a453f] dark:text-[#c4d6cb] block mb-1">الحالة:</label>
+              <label className="font-bold text-[#3a453f] block mb-1">الحالة:</label>
               <CustomSelect
                 value={status}
                 onChange={(val) => setStatus(val as any)}
@@ -511,38 +448,38 @@ export const ValueGoalModal: React.FC<ValueGoalModalProps> = ({
             </div>
 
             <div>
-              <label className="font-bold text-[#3a453f] dark:text-[#c4d6cb] block mb-1">تاريخ الاستحقاق المستهدف:</label>
+              <label className="font-bold text-[#3a453f] block mb-1">تاريخ الاستحقاق المستهدف:</label>
               <input
                 type="date"
                 value={targetDate}
                 onChange={(e) => setTargetDate(e.target.value)}
-                className="w-full p-2.5 bg-[#faf8f5] dark:bg-[#121c17] border border-[#d8d4cc] dark:border-[#283d31] rounded-xl text-[#1a2420] dark:text-white focus:border-[#174235] dark:focus:border-emerald-500 focus-visible:outline-hidden font-mono"
+                className="w-full p-2.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] outline-hidden font-mono"
               />
             </div>
           </div>
 
           <div>
-            <label className="font-bold text-[#3a453f] dark:text-[#c4d6cb] block mb-1">تفاصيل ومؤشرات النجاح:</label>
+            <label className="font-bold text-[#3a453f] block mb-1">تفاصيل إضافية / معايير النجاح:</label>
             <textarea
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="معايير إنجاز هذا الهدف ومؤشرات تحقيقه..."
-              className="w-full p-2.5 bg-[#faf8f5] dark:bg-[#121c17] border border-[#d8d4cc] dark:border-[#283d31] rounded-xl text-[#1a2420] dark:text-white focus:border-[#174235] dark:focus:border-emerald-500 focus-visible:outline-hidden"
+              placeholder="اكتب معايير إنجاز هذا الهدف ومؤشرات تحقيقه..."
+              className="w-full p-2.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] focus:border-[#174235] outline-hidden"
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-[#f0eee9] dark:border-[#223028]">
+          <div className="flex justify-end gap-2 pt-2 border-t border-[#f0eee9]">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-[#56625b] dark:text-[#a2b3aa] hover:bg-[#f2efe9] dark:hover:bg-[#203027] rounded-xl font-bold cursor-pointer"
+              className="px-4 py-2 text-[#56625b] hover:bg-[#f2efe9] rounded-xl font-bold cursor-pointer"
             >
               إلغاء
             </button>
             <button
               type="submit"
-              className="px-5 py-2 bg-[#174235] dark:bg-emerald-600 hover:bg-[#12352a] dark:hover:bg-emerald-700 text-white font-bold rounded-xl shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-[#174235] dark:focus-visible:ring-emerald-400 focus-visible:outline-hidden"
+              className="px-5 py-2 bg-[#174235] hover:bg-[#12352a] text-white font-bold rounded-xl shadow-xs cursor-pointer"
             >
               حفظ الهدف
             </button>
@@ -579,9 +516,6 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
   const [startDate, setStartDate] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [goalId, setGoalId] = useState(goals[0]?.id || '');
-  const [isBreakingDown, setIsBreakingDown] = useState(false);
-  const [suggestedTasks, setSuggestedTasks] = useState<AiTaskSuggestion[]>([]);
-  const [selectedTaskIndices, setSelectedTaskIndices] = useState<number[]>([]);
 
   useEffect(() => {
     if (initialProject) {
@@ -591,8 +525,6 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
       setStartDate(initialProject.start_date || '');
       setDueDate(initialProject.due_date || '');
       setGoalId(initialProject.goal_id);
-      setSuggestedTasks([]);
-      setSelectedTaskIndices([]);
     } else {
       const today = new Date().toISOString().split('T')[0];
       setTitle('');
@@ -600,33 +532,9 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
       setStatus('in_progress');
       setStartDate(today);
       setDueDate(today);
-      setSuggestedTasks([]);
-      setSelectedTaskIndices([]);
       if (goals.length > 0) setGoalId(goals[0].id);
     }
   }, [initialProject, isOpen, goals]);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) onClose();
-    };
-    if (isOpen) window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
-
-  const handleAiBreakdown = async () => {
-    if (!title.trim()) return;
-    setIsBreakingDown(true);
-    try {
-      const tasks = await generateAiTaskBreakdown(title.trim(), description.trim());
-      setSuggestedTasks(tasks);
-      setSelectedTaskIndices(tasks.map((_, i) => i));
-    } catch (err) {
-      console.warn('AI breakdown failed in modal:', err);
-    } finally {
-      setIsBreakingDown(false);
-    }
-  };
 
   if (!isOpen) return null;
 
@@ -634,66 +542,50 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
     e.preventDefault();
     if (!title.trim()) return;
 
-    const chosenTasks = selectedTaskIndices.map((i) => suggestedTasks[i]);
-
-    (onSave as any)({
+    onSave({
       title: title.trim(),
       description: description.trim(),
       status,
       start_date: startDate,
       due_date: dueDate,
       goal_id: goalId,
-      generatedTasks: chosenTasks,
     });
     onClose();
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="project-modal-title"
-      className="fixed inset-0 z-50 bg-black/50 dark:bg-black/70 backdrop-blur-xs flex items-center justify-center p-4"
-    >
-      <div className="bg-white dark:bg-[#16201b] rounded-2xl max-w-lg w-full shadow-2xl border border-[#e8e5de] dark:border-[#26372d] overflow-hidden text-xs transition-colors">
-        <div className="p-4 sm:p-5 border-b border-[#f0eee9] dark:border-[#223028] flex items-center justify-between bg-[#fbfbfa] dark:bg-[#1b2620]">
+    <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-2xs flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl max-w-lg w-full shadow-xl border border-[#e8e5de] overflow-hidden text-xs animate-in fade-in">
+        <div className="p-4 sm:p-5 border-b border-[#f0eee9] flex items-center justify-between bg-[#fbfbfa]">
           <div>
-            <h3 id="project-modal-title" className="font-bold text-sm text-[#1a2420] dark:text-white">
-              {initialProject ? 'تعديل المشروع' : 'إضافة مشروع تنفيذي جديد'}
+            <h3 className="font-bold text-sm text-[#1a2420]">
+              {initialProject ? 'تعديل المشروع (Edit Project)' : 'إضافة مشروع تنفيذي جديد (New Project)'}
             </h3>
             {goalTitle && (
-              <p className="text-[11px] text-[#174235] dark:text-emerald-400 font-semibold mt-0.5">
-                الهدف التابع له: {goalTitle}
+              <p className="text-[11px] text-[#174235] font-semibold mt-0.5">
+                تابع للهدف: {goalTitle}
               </p>
             )}
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="إغلاق"
-            className="text-[#85918a] dark:text-[#8ea095] hover:text-[#1a2420] dark:hover:text-white text-sm p-1.5 rounded-lg hover:bg-[#f2efe8] dark:hover:bg-[#22332a] cursor-pointer"
-          >
-            ✕
-          </button>
+          <button onClick={onClose} className="text-[#85918a] hover:text-[#1a2420] text-sm p-1">✕</button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           <div>
-            <label className="font-bold text-[#3a453f] dark:text-[#c4d6cb] block mb-1">عنوان المشروع: *</label>
+            <label className="font-bold text-[#3a453f] block mb-1">عنوان المشروع: *</label>
             <input
               type="text"
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="مثال: تطوير الهوية البصرية، إعداد الميزانية..."
-              className="w-full p-2.5 bg-[#faf8f5] dark:bg-[#121c17] border border-[#d8d4cc] dark:border-[#283d31] rounded-xl text-[#1a2420] dark:text-white focus:border-[#174235] dark:focus:border-emerald-500 focus-visible:outline-hidden"
-              autoFocus
+              placeholder="مثال: إكمال التدريب العملي الممّول..."
+              className="w-full p-2.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] focus:border-[#174235] outline-hidden"
             />
           </div>
 
           {goals.length > 0 && !goalTitle && (
             <div>
-              <label className="font-bold text-[#3a453f] dark:text-[#c4d6cb] block mb-1">الهدف التابع له: *</label>
+              <label className="font-bold text-[#3a453f] block mb-1">الهدف التابع له: *</label>
               <CustomSelect
                 value={goalId}
                 onChange={(val) => setGoalId(val)}
@@ -707,7 +599,7 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
 
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="font-bold text-[#3a453f] dark:text-[#c4d6cb] block mb-1">حالة المشروع:</label>
+              <label className="font-bold text-[#3a453f] block mb-1">حالة المشروع:</label>
               <CustomSelect
                 value={status}
                 onChange={(val) => setStatus(val as any)}
@@ -724,123 +616,48 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
             </div>
 
             <div>
-              <label className="font-bold text-[#3a453f] dark:text-[#c4d6cb] block mb-1">تاريخ البدء:</label>
+              <label className="font-bold text-[#3a453f] block mb-1">تاريخ البدء:</label>
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-full p-2.5 bg-[#faf8f5] dark:bg-[#121c17] border border-[#d8d4cc] dark:border-[#283d31] rounded-xl text-[#1a2420] dark:text-white focus:border-[#174235] dark:focus:border-emerald-500 focus-visible:outline-hidden font-mono"
+                className="w-full p-2.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] outline-hidden font-mono"
               />
             </div>
 
             <div>
-              <label className="font-bold text-[#3a453f] dark:text-[#c4d6cb] block mb-1">تاريخ الاستحقاق:</label>
+              <label className="font-bold text-[#3a453f] block mb-1">تاريخ التسليم:</label>
               <input
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="w-full p-2.5 bg-[#faf8f5] dark:bg-[#121c17] border border-[#d8d4cc] dark:border-[#283d31] rounded-xl text-[#1a2420] dark:text-white focus:border-[#174235] dark:focus:border-emerald-500 focus-visible:outline-hidden font-mono"
+                className="w-full p-2.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] outline-hidden font-mono"
               />
             </div>
           </div>
 
           <div>
-            <label className="font-bold text-[#3a453f] dark:text-[#c4d6cb] block mb-1">وصف المشروع:</label>
+            <label className="font-bold text-[#3a453f] block mb-1">وصف المشروع:</label>
             <textarea
               rows={2}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="وصف تفصيلي لمخرجات المشروع..."
-              className="w-full p-2.5 bg-[#faf8f5] dark:bg-[#121c17] border border-[#d8d4cc] dark:border-[#283d31] rounded-xl text-[#1a2420] dark:text-white focus:border-[#174235] dark:focus:border-emerald-500 focus-visible:outline-hidden"
+              placeholder="وصف تفصيلي لأهداف المشروع ومخرجاته..."
+              className="w-full p-2.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] focus:border-[#174235] outline-hidden"
             />
           </div>
 
-          {/* AI Task Breakdown Section */}
-          <div className="bg-[#f5f9f6] dark:bg-[#15231b] border border-[#cfe0d5] dark:border-[#243a2c] rounded-xl p-3.5 space-y-2.5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-[#174235] dark:text-emerald-400">
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                <span>تفكيك المشروع لمهام ذكية (AI Task Breakdown)</span>
-              </div>
-              <button
-                type="button"
-                disabled={isBreakingDown || !title.trim()}
-                onClick={handleAiBreakdown}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                  isBreakingDown || !title.trim()
-                    ? 'opacity-50 cursor-not-allowed bg-slate-200 dark:bg-slate-800 text-slate-500'
-                    : 'bg-[#174235] dark:bg-emerald-600 hover:bg-[#12362b] text-white shadow-2xs'
-                }`}
-              >
-                {isBreakingDown ? (
-                  <>
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                    <span>جاري التفكيك...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-3 h-3 text-amber-300" />
-                    <span>تفكيك ذكي بالـ AI</span>
-                  </>
-                )}
-              </button>
-            </div>
-
-            {suggestedTasks.length > 0 && (
-              <div className="space-y-1.5 pt-1">
-                <p className="text-[11px] text-[#55695e] dark:text-[#9bb0a3]">
-                  حدد المهام المقترحة لإنشائها تلقائياً داخل هذا المشروع:
-                </p>
-                {suggestedTasks.map((st, idx) => {
-                  const isChecked = selectedTaskIndices.includes(idx);
-                  return (
-                    <label
-                      key={idx}
-                      className={`flex items-center justify-between p-2 rounded-lg border text-xs cursor-pointer transition-colors ${
-                        isChecked
-                          ? 'bg-white dark:bg-[#18271f] border-[#b0d4bf] dark:border-[#284f37]'
-                          : 'bg-white/60 dark:bg-[#121c17] border-transparent opacity-60'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => {
-                            setSelectedTaskIndices((prev) =>
-                              prev.includes(idx) ? prev.filter((i) => i !== idx) : [...prev, idx]
-                            );
-                          }}
-                          className="w-3.5 h-3.5 text-[#174235] rounded accent-[#174235]"
-                        />
-                        <span className="font-semibold text-[#1a2420] dark:text-white">
-                          {st.title}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-[11px] font-mono text-[#718278] dark:text-[#9bb0a3]">
-                        <span>{st.estimated_hours || 1} س</span>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300">
-                          {st.priority || 'متوسط'}
-                        </span>
-                      </div>
-                    </label>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          <div className="flex justify-end gap-2 pt-2 border-t border-[#f0eee9] dark:border-[#223028]">
+          <div className="flex justify-end gap-2 pt-2 border-t border-[#f0eee9]">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-[#56625b] dark:text-[#a2b3aa] hover:bg-[#f2efe9] dark:hover:bg-[#203027] rounded-xl font-bold cursor-pointer"
+              className="px-4 py-2 text-[#56625b] hover:bg-[#f2efe9] rounded-xl font-bold cursor-pointer"
             >
               إلغاء
             </button>
             <button
               type="submit"
-              className="px-5 py-2 bg-[#174235] dark:bg-emerald-600 hover:bg-[#12352a] dark:hover:bg-emerald-700 text-white font-bold rounded-xl shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-[#174235] dark:focus-visible:ring-emerald-400 focus-visible:outline-hidden"
+              className="px-5 py-2 bg-[#174235] hover:bg-[#12352a] text-white font-bold rounded-xl shadow-xs cursor-pointer"
             >
               حفظ المشروع
             </button>
@@ -896,14 +713,6 @@ export const TaskModal: React.FC<TaskModalProps> = ({
     }
   }, [initialTask, isOpen, projects]);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) onClose();
-    };
-    if (isOpen) window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
-
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -923,51 +732,39 @@ export const TaskModal: React.FC<TaskModalProps> = ({
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="task-modal-title"
-      className="fixed inset-0 z-50 bg-black/50 dark:bg-black/70 backdrop-blur-xs flex items-center justify-center p-4"
-    >
-      <div className="bg-white dark:bg-[#16201b] rounded-2xl max-w-lg w-full shadow-2xl border border-[#e8e5de] dark:border-[#26372d] overflow-hidden text-xs transition-colors">
-        <div className="p-4 sm:p-5 border-b border-[#f0eee9] dark:border-[#223028] flex items-center justify-between bg-[#fbfbfa] dark:bg-[#1b2620]">
+    <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-2xs flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl max-w-lg w-full shadow-xl border border-[#e8e5de] overflow-hidden text-xs animate-in fade-in">
+        <div className="p-4 sm:p-5 border-b border-[#f0eee9] flex items-center justify-between bg-[#fbfbfa]">
           <div>
-            <h3 id="task-modal-title" className="font-bold text-sm text-[#1a2420] dark:text-white">
-              {initialTask ? 'تعديل المهمة' : 'إضافة مهمة جديدة'}
+            <h3 className="font-bold text-sm text-[#1a2420]">
+              {initialTask ? 'تعديل المهمة (Edit Task)' : 'إضافة مهمة جديدة (New Task)'}
             </h3>
             {projectTitle && (
-              <p className="text-[11px] text-[#174235] dark:text-emerald-400 font-semibold mt-0.5">
+              <p className="text-[11px] text-[#174235] font-semibold mt-0.5">
                 المشروع التابع له: {projectTitle}
               </p>
             )}
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="إغلاق"
-            className="text-[#85918a] dark:text-[#8ea095] hover:text-[#1a2420] dark:hover:text-white text-sm p-1.5 rounded-lg hover:bg-[#f2efe8] dark:hover:bg-[#22332a] cursor-pointer"
-          >
-            ✕
-          </button>
+          <button onClick={onClose} className="text-[#85918a] hover:text-[#1a2420] text-sm p-1">✕</button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           <div>
-            <label className="font-bold text-[#3a453f] dark:text-[#c4d6cb] block mb-1">عنوان المهمة: *</label>
+            <label className="font-bold text-[#3a453f] block mb-1">عنوان المهمة: *</label>
             <input
               type="text"
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="اكتب اسم المهمة الواضحة والتنفيذية..."
-              className="w-full p-2.5 bg-[#faf8f5] dark:bg-[#121c17] border border-[#d8d4cc] dark:border-[#283d31] rounded-xl text-[#1a2420] dark:text-white focus:border-[#174235] dark:focus:border-emerald-500 focus-visible:outline-hidden"
+              className="w-full p-2.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] focus:border-[#174235] outline-hidden"
               autoFocus
             />
           </div>
 
           {projects.length > 0 && !projectTitle && (
             <div>
-              <label className="font-bold text-[#3a453f] dark:text-[#c4d6cb] block mb-1">المشروع التابع له: *</label>
+              <label className="font-bold text-[#3a453f] block mb-1">المشروع التابع له: *</label>
               <CustomSelect
                 value={projectId}
                 onChange={(val) => setProjectId(val)}
@@ -981,7 +778,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
 
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="font-bold text-[#3a453f] dark:text-[#c4d6cb] block mb-1">الحالة:</label>
+              <label className="font-bold text-[#3a453f] block mb-1">الحالة:</label>
               <CustomSelect
                 value={status}
                 onChange={(val) => setStatus(val as any)}
@@ -997,7 +794,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
             </div>
 
             <div>
-              <label className="font-bold text-[#3a453f] dark:text-[#c4d6cb] block mb-1">الأولوية:</label>
+              <label className="font-bold text-[#3a453f] block mb-1">الأولوية:</label>
               <CustomSelect
                 value={priority}
                 onChange={(val) => setPriority(val as any)}
@@ -1013,38 +810,38 @@ export const TaskModal: React.FC<TaskModalProps> = ({
             </div>
 
             <div>
-              <label className="font-bold text-[#3a453f] dark:text-[#c4d6cb] block mb-1">تاريخ الاستحقاق:</label>
+              <label className="font-bold text-[#3a453f] block mb-1">تاريخ الاستحقاق:</label>
               <input
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="w-full p-2.5 bg-[#faf8f5] dark:bg-[#121c17] border border-[#d8d4cc] dark:border-[#283d31] rounded-xl text-[#1a2420] dark:text-white focus:border-[#174235] dark:focus:border-emerald-500 focus-visible:outline-hidden font-mono"
+                className="w-full p-2.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] outline-hidden font-mono"
               />
             </div>
           </div>
 
           <div>
-            <label className="font-bold text-[#3a453f] dark:text-[#c4d6cb] block mb-1">ملاحظات المهمة:</label>
+            <label className="font-bold text-[#3a453f] block mb-1">ملاحظات المهمة:</label>
             <textarea
               rows={2}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="أي تفاصيل أو خطوات لازمة للإنجاز..."
-              className="w-full p-2.5 bg-[#faf8f5] dark:bg-[#121c17] border border-[#d8d4cc] dark:border-[#283d31] rounded-xl text-[#1a2420] dark:text-white focus:border-[#174235] dark:focus:border-emerald-500 focus-visible:outline-hidden"
+              placeholder="أي تفاصيل أو روابط لازمة لإنجاز المهمة..."
+              className="w-full p-2.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] focus:border-[#174235] outline-hidden"
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-[#f0eee9] dark:border-[#223028]">
+          <div className="flex justify-end gap-2 pt-2 border-t border-[#f0eee9]">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-[#56625b] dark:text-[#a2b3aa] hover:bg-[#f2efe9] dark:hover:bg-[#203027] rounded-xl font-bold cursor-pointer"
+              className="px-4 py-2 text-[#56625b] hover:bg-[#f2efe9] rounded-xl font-bold cursor-pointer"
             >
               إلغاء
             </button>
             <button
               type="submit"
-              className="px-5 py-2 bg-[#174235] dark:bg-emerald-600 hover:bg-[#12352a] dark:hover:bg-emerald-700 text-white font-bold rounded-xl shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-[#174235] dark:focus-visible:ring-emerald-400 focus-visible:outline-hidden"
+              className="px-5 py-2 bg-[#174235] hover:bg-[#12352a] text-white font-bold rounded-xl shadow-xs cursor-pointer"
             >
               حفظ المهمة
             </button>

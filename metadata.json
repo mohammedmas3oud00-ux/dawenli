@@ -2,7 +2,6 @@
   "name": "دوّنلي | النظام الهرمي للإنتاجية الشخصية",
   "description": "نظام هرمي متكامل لإدارة ركائز الحياة والرؤى وأهداف القيمة والمشاريع والمهام مع حساب تلقائي صاعد لنسب الإنجاز.",
   "requestFramePermissions": [],
-  "majorCapabilities": [
-    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
-  ]
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
+
