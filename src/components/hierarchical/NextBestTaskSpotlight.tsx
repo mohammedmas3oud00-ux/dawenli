@@ -105,11 +105,11 @@ export const NextBestTaskSpotlight: React.FC<NextBestTaskSpotlightProps> = ({
         </div>
 
         {/* Clean Filter Row: Dedicated line with wrapping that NEVER overlaps */}
-        <div className="flex flex-wrap items-center gap-2 pt-1">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-1">
           
           {/* Available Minutes Selector */}
-          <div className="flex items-center bg-white dark:bg-slate-800 border border-[#d6dfd9] dark:border-slate-700 rounded-xl p-0.5 shadow-2xs">
-            <span className="text-[11px] text-[#718278] dark:text-slate-400 font-bold px-2 flex items-center gap-1">
+          <div className="flex items-center bg-white dark:bg-slate-800 border border-[#d6dfd9] dark:border-slate-700 rounded-xl p-0.5 shadow-2xs max-w-full overflow-x-auto no-scrollbar">
+            <span className="text-[10px] sm:text-[11px] text-[#718278] dark:text-slate-400 font-bold px-1.5 sm:px-2 flex items-center gap-1 shrink-0">
               <Clock className="w-3.5 h-3.5 text-[#174235] dark:text-emerald-400" />
               <span>الوقت:</span>
             </span>
@@ -126,7 +126,7 @@ export const NextBestTaskSpotlight: React.FC<NextBestTaskSpotlightProps> = ({
                   setAvailableMinutes(t.val);
                   setCurrentIndex(0);
                 }}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                className={`px-2 sm:px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                   availableMinutes === t.val
                     ? 'bg-[#174235] dark:bg-emerald-600 text-white shadow-2xs'
                     : 'text-[#526359] dark:text-slate-300 hover:bg-[#f0f4f1] dark:hover:bg-slate-700'
@@ -138,8 +138,8 @@ export const NextBestTaskSpotlight: React.FC<NextBestTaskSpotlightProps> = ({
           </div>
 
           {/* Energy Level Selector */}
-          <div className="flex items-center bg-white dark:bg-slate-800 border border-[#d6dfd9] dark:border-slate-700 rounded-xl p-0.5 shadow-2xs">
-            <span className="text-[11px] text-[#718278] dark:text-slate-400 font-bold px-2 flex items-center gap-1">
+          <div className="flex items-center bg-white dark:bg-slate-800 border border-[#d6dfd9] dark:border-slate-700 rounded-xl p-0.5 shadow-2xs max-w-full overflow-x-auto no-scrollbar">
+            <span className="text-[10px] sm:text-[11px] text-[#718278] dark:text-slate-400 font-bold px-1.5 sm:px-2 flex items-center gap-1 shrink-0">
               <Zap className="w-3.5 h-3.5 text-[#d97706]" />
               <span>الطاقة:</span>
             </span>
@@ -155,7 +155,7 @@ export const NextBestTaskSpotlight: React.FC<NextBestTaskSpotlightProps> = ({
                   setEnergyLevel(e.val as EnergyLevel);
                   setCurrentIndex(0);
                 }}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                className={`px-2 sm:px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-bold transition-all cursor-pointer flex items-center gap-1 whitespace-nowrap ${
                   energyLevel === e.val
                     ? 'bg-[#174235] dark:bg-emerald-600 text-white shadow-2xs'
                     : 'text-[#526359] dark:text-slate-300 hover:bg-[#f0f4f1] dark:hover:bg-slate-700'
@@ -169,7 +169,7 @@ export const NextBestTaskSpotlight: React.FC<NextBestTaskSpotlightProps> = ({
 
           {/* Pillar Filter: Clean, Non-overlapping Native Styled Select */}
           {pillars.length > 0 && (
-            <div className="flex items-center bg-white dark:bg-slate-800 border border-[#d6dfd9] dark:border-slate-700 rounded-xl px-2 py-0.5 shadow-2xs">
+            <div className="flex items-center bg-white dark:bg-slate-800 border border-[#d6dfd9] dark:border-slate-700 rounded-xl px-2 py-0.5 shadow-2xs max-w-full">
               <Layers className="w-3.5 h-3.5 text-[#174235] dark:text-emerald-400 ml-1.5 shrink-0" />
               <select
                 value={selectedPillarFilter}
@@ -177,11 +177,11 @@ export const NextBestTaskSpotlight: React.FC<NextBestTaskSpotlightProps> = ({
                   setSelectedPillarFilter(e.target.value);
                   setCurrentIndex(0);
                 }}
-                className="bg-transparent text-xs font-bold text-[#174235] dark:text-emerald-300 py-1 outline-hidden cursor-pointer"
+                className="bg-transparent text-[11px] sm:text-xs font-bold text-[#174235] dark:text-emerald-300 py-1 outline-hidden cursor-pointer max-w-[130px] sm:max-w-[180px] truncate"
               >
                 <option value="all">كافة الركائز</option>
                 {pillars.map((p) => (
-                  <option key={p.id} value={p.id}>
+                  <option key={p.id} value={p.id} className="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">
                     {p.title}
                   </option>
                 ))}
@@ -291,27 +291,27 @@ export const NextBestTaskSpotlight: React.FC<NextBestTaskSpotlightProps> = ({
               </div>
 
               {/* Action Buttons Section */}
-              <div className="flex flex-col sm:flex-row md:flex-col gap-2 shrink-0 justify-center">
+              <div className="flex flex-col sm:flex-row md:flex-col gap-2 shrink-0 justify-center w-full md:w-auto">
                 
                 {/* 1. Start Focus Session */}
                 <button
                   type="button"
                   onClick={() => onStartFocus(currentRec.task)}
-                  className="flex items-center justify-center gap-2 px-5 py-2.5 bg-[#174235] dark:bg-emerald-700 hover:bg-[#12362b] text-white rounded-xl text-xs font-black transition-all shadow-xs hover:shadow-md cursor-pointer group"
+                  className="flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 bg-[#174235] dark:bg-emerald-600 hover:bg-[#12362b] dark:hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition-all shadow-xs hover:shadow-md cursor-pointer group w-full"
                 >
                   <Play className="w-4 h-4 fill-white transition-transform group-hover:scale-110" />
                   <span>بدء العمل عليها الآن</span>
                 </button>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 sm:gap-2 w-full">
                   {/* 2. Complete Task Button */}
                   <button
                     type="button"
                     onClick={handleCompleteCurrent}
-                    className="flex-1 flex items-center justify-center gap-1.5 px-3.5 py-2 bg-emerald-50 dark:bg-emerald-950/80 hover:bg-emerald-100 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                    className="flex-1 flex items-center justify-center gap-1 px-2.5 sm:px-3.5 py-2 bg-emerald-50 dark:bg-emerald-950/80 hover:bg-emerald-100 dark:hover:bg-emerald-900/80 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer whitespace-nowrap"
                     title="تعليم المهمة كمنجزة بنقرة واحدة"
                   >
-                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
                     <span>تم الإنجاز</span>
                   </button>
 
@@ -320,10 +320,10 @@ export const NextBestTaskSpotlight: React.FC<NextBestTaskSpotlightProps> = ({
                     <button
                       type="button"
                       onClick={handleNextSuggestion}
-                      className="px-3 py-2 bg-white dark:bg-slate-800 hover:bg-[#f3f0e8] text-[#4d5c52] dark:text-slate-300 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1"
+                      className="px-2.5 sm:px-3 py-2 bg-white dark:bg-slate-800 hover:bg-[#f3f0e8] dark:hover:bg-slate-700 text-[#4d5c52] dark:text-slate-300 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 whitespace-nowrap"
                       title="اقتراح مهمة بديلة تناسب نفس المعايير"
                     >
-                      <RotateCw className="w-3.5 h-3.5" />
+                      <RotateCw className="w-3.5 h-3.5 shrink-0" />
                       <span>اقتراح آخر</span>
                     </button>
                   )}
@@ -333,7 +333,7 @@ export const NextBestTaskSpotlight: React.FC<NextBestTaskSpotlightProps> = ({
                     <button
                       type="button"
                       onClick={onOpenTimeBlocking}
-                      className="p-2 bg-white dark:bg-slate-800 hover:bg-[#f3f0e8] text-[#4d5c52] dark:text-slate-300 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                      className="p-2 bg-white dark:bg-slate-800 hover:bg-[#f3f0e8] dark:hover:bg-slate-700 text-[#4d5c52] dark:text-slate-300 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0"
                       title="جدولتها في حجب الوقت"
                     >
                       <Calendar className="w-4 h-4 text-[#174235] dark:text-emerald-400" />

@@ -65,33 +65,33 @@ export const PillarModal: React.FC<PillarModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-2xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-lg w-full shadow-xl border border-[#e8e5de] overflow-hidden text-xs animate-in fade-in">
-        <div className="p-4 sm:p-5 border-b border-[#f0eee9] flex items-center justify-between bg-[#fbfbfa]">
+    <div className="fixed inset-0 z-50 bg-slate-900/50 dark:bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full shadow-xl border border-[#e8e5de] dark:border-slate-800 overflow-hidden text-xs animate-in fade-in">
+        <div className="p-4 sm:p-5 border-b border-[#f0eee9] dark:border-slate-800 flex items-center justify-between bg-[#fbfbfa] dark:bg-slate-800/80">
           <div>
-            <h3 className="font-bold text-sm text-[#1a2420]">
+            <h3 className="font-bold text-sm text-[#1a2420] dark:text-slate-100">
               {initialPillar ? 'تعديل الركيزة' : 'إضافة ركيزة حياة جديدة'}
             </h3>
-            <p className="text-[11px] text-[#6d7972]">الركيزة تمثل مجالك الحياتي الأكبر وغايتك الأساسية</p>
+            <p className="text-[11px] text-[#6d7972] dark:text-slate-400">الركيزة تمثل مجالك الحياتي الأكبر وغايتك الأساسية</p>
           </div>
-          <button onClick={onClose} className="text-[#85918a] hover:text-[#1a2420] text-sm p-1">✕</button>
+          <button onClick={onClose} className="text-[#85918a] dark:text-slate-400 hover:text-[#1a2420] dark:hover:text-slate-100 text-sm p-1">✕</button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           <div>
-            <label className="font-bold text-[#3a453f] block mb-1">اسم الركيزة: *</label>
+            <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">اسم الركيزة: *</label>
             <input
               type="text"
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="مثال: العلاقة مع الله، بناء الذات، الصحة والجسد..."
-              className="w-full p-2.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] focus:border-[#174235] outline-hidden"
+              className="w-full p-2.5 bg-[#faf8f5] dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-[#1a2420] dark:text-slate-100 focus:border-[#174235] dark:focus:border-emerald-500 outline-hidden"
             />
           </div>
 
           <div>
-            <label className="font-bold text-[#3a453f] block mb-1">
+            <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">
               الغاية الكبرى للركيزة (Purpose — The Big Why): *
             </label>
             <textarea
@@ -100,51 +100,51 @@ export const PillarModal: React.FC<PillarModalProps> = ({
               value={purpose}
               onChange={(e) => setPurpose(e.target.value)}
               placeholder="اكتب العبارة التوجيهية الكبرى التي تمثل بوصلتك في هذا المجال الحياتي..."
-              className="w-full p-2.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] focus:border-[#174235] outline-hidden"
+              className="w-full p-2.5 bg-[#faf8f5] dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-[#1a2420] dark:text-slate-100 focus:border-[#174235] dark:focus:border-emerald-500 outline-hidden"
             />
-            <span className="text-[10px] text-[#78857e]">ستظهر هذه الغاية بشكل بارز كبوصلة توجيهية كبرى</span>
+            <span className="text-[10px] text-[#78857e] dark:text-slate-400">ستظهر هذه الغاية بشكل بارز كبوصلة توجيهية كبرى</span>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="font-bold text-[#3a453f] block mb-1">المجموعة:</label>
+              <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">المجموعة:</label>
               <input
                 type="text"
                 value={pillarGroup}
                 onChange={(e) => setPillarGroup(e.target.value)}
                 placeholder="Growth, Vitality, Impact, Wealth..."
-                className="w-full p-2.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] focus:border-[#174235] outline-hidden"
+                className="w-full p-2.5 bg-[#faf8f5] dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-[#1a2420] dark:text-slate-100 focus:border-[#174235] dark:focus:border-emerald-500 outline-hidden"
               />
             </div>
 
             <div>
-              <label className="font-bold text-[#3a453f] block mb-1">ترتيب الأولوية:</label>
+              <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">ترتيب الأولوية:</label>
               <input
                 type="number"
                 min={1}
                 max={20}
                 value={priority}
                 onChange={(e) => setPriority(parseInt(e.target.value) || 1)}
-                className="w-full p-2.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] focus:border-[#174235] outline-hidden font-mono"
+                className="w-full p-2.5 bg-[#faf8f5] dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-[#1a2420] dark:text-slate-100 focus:border-[#174235] dark:focus:border-emerald-500 outline-hidden font-mono"
               />
             </div>
           </div>
 
           <div>
-            <label className="font-bold text-[#3a453f] block mb-1">الوصف المختصر:</label>
+            <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">الوصف المختصر:</label>
             <input
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="وصف إضافي لطبيعة الركيزة..."
-              className="w-full p-2.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] focus:border-[#174235] outline-hidden"
+              className="w-full p-2.5 bg-[#faf8f5] dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-[#1a2420] dark:text-slate-100 focus:border-[#174235] dark:focus:border-emerald-500 outline-hidden"
             />
           </div>
 
-          <div className="flex items-center justify-between p-3 bg-[#f8f7f4] rounded-xl border border-[#ece8e0]">
+          <div className="flex items-center justify-between p-3 bg-[#f8f7f4] dark:bg-slate-800/80 rounded-xl border border-[#ece8e0] dark:border-slate-700">
             <div>
-              <span className="font-bold text-[#1a2420] block">عرض في الصفحة الرئيسية</span>
-              <span className="text-[11px] text-[#78857e]">تثبيت الركيزة في لوحة المتابعة السريعة</span>
+              <span className="font-bold text-[#1a2420] dark:text-slate-100 block">عرض في الصفحة الرئيسية</span>
+              <span className="text-[11px] text-[#78857e] dark:text-slate-400">تثبيت الركيزة في لوحة المتابعة السريعة</span>
             </div>
             <input
               type="checkbox"
@@ -154,17 +154,17 @@ export const PillarModal: React.FC<PillarModalProps> = ({
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-[#f0eee9]">
+          <div className="flex justify-end gap-2 pt-2 border-t border-[#f0eee9] dark:border-slate-800">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-[#56625b] hover:bg-[#f2efe9] rounded-xl font-bold cursor-pointer"
+              className="px-4 py-2 text-[#56625b] dark:text-slate-300 hover:bg-[#f2efe9] dark:hover:bg-slate-800 rounded-xl font-bold cursor-pointer"
             >
               إلغاء
             </button>
             <button
               type="submit"
-              className="px-5 py-2 bg-[#174235] hover:bg-[#12352a] text-white font-bold rounded-xl shadow-xs cursor-pointer"
+              className="px-5 py-2 bg-[#174235] dark:bg-emerald-700 hover:bg-[#12352a] dark:hover:bg-emerald-800 text-white font-bold rounded-xl shadow-xs cursor-pointer"
             >
               حفظ الركيزة
             </button>
@@ -234,26 +234,26 @@ export const VisionModal: React.FC<VisionModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-2xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-lg w-full shadow-xl border border-[#e8e5de] overflow-hidden text-xs animate-in fade-in">
-        <div className="p-4 sm:p-5 border-b border-[#f0eee9] flex items-center justify-between bg-[#fbfbfa]">
+    <div className="fixed inset-0 z-50 bg-slate-900/50 dark:bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full shadow-xl border border-[#e8e5de] dark:border-slate-800 overflow-hidden text-xs animate-in fade-in">
+        <div className="p-4 sm:p-5 border-b border-[#f0eee9] dark:border-slate-800 flex items-center justify-between bg-[#fbfbfa] dark:bg-slate-800/80">
           <div>
-            <h3 className="font-bold text-sm text-[#1a2420]">
+            <h3 className="font-bold text-sm text-[#1a2420] dark:text-slate-100">
               {initialVision ? 'تعديل الرؤية' : 'صياغة رؤية مستقبلية جديدة'}
             </h3>
             {pillarTitle && (
-              <p className="text-[11px] text-[#174235] font-semibold mt-0.5">
+              <p className="text-[11px] text-[#174235] dark:text-emerald-400 font-semibold mt-0.5">
                 تابع للركيزة: {pillarTitle}
               </p>
             )}
           </div>
-          <button onClick={onClose} className="text-[#85918a] hover:text-[#1a2420] text-sm p-1">✕</button>
+          <button onClick={onClose} className="text-[#85918a] dark:text-slate-400 hover:text-[#1a2420] dark:hover:text-slate-100 text-sm p-1">✕</button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           {pillars && pillars.length > 0 && !pillarTitle && (
             <div>
-              <label className="font-bold text-[#3a453f] block mb-1">الركيزة التابعة لها: *</label>
+              <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">الركيزة التابعة لها: *</label>
               <CustomSelect
                 value={pillarId}
                 onChange={(val) => setPillarId(val)}
@@ -269,50 +269,50 @@ export const VisionModal: React.FC<VisionModalProps> = ({
           )}
 
           <div>
-            <label className="font-bold text-[#3a453f] block mb-1">عنوان الرؤية: *</label>
+            <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">عنوان الرؤية: *</label>
             <input
               type="text"
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="مثال: الرسوخ المعرفي، الاستقلال المالي..."
-              className="w-full p-2.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] focus:border-[#174235] outline-hidden"
+              className="w-full p-2.5 bg-[#faf8f5] dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-[#1a2420] dark:text-slate-100 focus:border-[#174235] dark:focus:border-emerald-500 outline-hidden"
             />
           </div>
 
           <div>
-            <label className="font-bold text-[#3a453f] block mb-1">بيان الرؤية والأفق المستقبلي:</label>
+            <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">بيان الرؤية والأفق المستقبلي:</label>
             <textarea
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="اكتب وصفاً مفصلاً للصورة التي تطمح إليها مستقبلاً..."
-              className="w-full p-2.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] focus:border-[#174235] outline-hidden"
+              className="w-full p-2.5 bg-[#faf8f5] dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-[#1a2420] dark:text-slate-100 focus:border-[#174235] dark:focus:border-emerald-500 outline-hidden"
             />
           </div>
 
           <div>
-            <label className="font-bold text-[#3a453f] block mb-1">الأفق الزمني:</label>
+            <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">الأفق الزمني:</label>
             <input
               type="text"
               value={timeframe}
               onChange={(e) => setTimeframe(e.target.value)}
               placeholder="مثال: 3-5 سنوات، 2026-2030، مستمر..."
-              className="w-full p-2.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] outline-hidden"
+              className="w-full p-2.5 bg-[#faf8f5] dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-[#1a2420] dark:text-slate-100 focus:border-[#174235] dark:focus:border-emerald-500 outline-hidden"
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-[#f0eee9]">
+          <div className="flex justify-end gap-2 pt-2 border-t border-[#f0eee9] dark:border-slate-800">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-[#56625b] hover:bg-[#f2efe9] rounded-xl font-bold cursor-pointer"
+              className="px-4 py-2 text-[#56625b] dark:text-slate-300 hover:bg-[#f2efe9] dark:hover:bg-slate-800 rounded-xl font-bold cursor-pointer"
             >
               إلغاء
             </button>
             <button
               type="submit"
-              className="px-5 py-2 bg-[#174235] hover:bg-[#12352a] text-white font-bold rounded-xl shadow-xs cursor-pointer"
+              className="px-5 py-2 bg-[#174235] dark:bg-emerald-700 hover:bg-[#12352a] dark:hover:bg-emerald-800 text-white font-bold rounded-xl shadow-xs cursor-pointer"
             >
               حفظ الرؤية
             </button>
@@ -384,38 +384,38 @@ export const ValueGoalModal: React.FC<ValueGoalModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-2xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-lg w-full shadow-xl border border-[#e8e5de] overflow-hidden text-xs animate-in fade-in">
-        <div className="p-4 sm:p-5 border-b border-[#f0eee9] flex items-center justify-between bg-[#fbfbfa]">
+    <div className="fixed inset-0 z-50 bg-slate-900/50 dark:bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full shadow-xl border border-[#e8e5de] dark:border-slate-800 overflow-hidden text-xs animate-in fade-in">
+        <div className="p-4 sm:p-5 border-b border-[#f0eee9] dark:border-slate-800 flex items-center justify-between bg-[#fbfbfa] dark:bg-slate-800/80">
           <div>
-            <h3 className="font-bold text-sm text-[#1a2420]">
+            <h3 className="font-bold text-sm text-[#1a2420] dark:text-slate-100">
               {initialGoal ? 'تعديل هدف القيمة' : 'إضافة هدف قيمة استراتيجي'}
             </h3>
             {parentTitle && (
-              <p className="text-[11px] text-[#174235] font-semibold mt-0.5">
+              <p className="text-[11px] text-[#174235] dark:text-emerald-400 font-semibold mt-0.5">
                 الأب الحالي: {parentTitle}
               </p>
             )}
           </div>
-          <button onClick={onClose} className="text-[#85918a] hover:text-[#1a2420] text-sm p-1">✕</button>
+          <button onClick={onClose} className="text-[#85918a] dark:text-slate-400 hover:text-[#1a2420] dark:hover:text-slate-100 text-sm p-1">✕</button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           <div>
-            <label className="font-bold text-[#3a453f] block mb-1">عنوان الهدف: *</label>
+            <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">عنوان الهدف: *</label>
             <input
               type="text"
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="مثال: الوصول إلى 100,000 جنيه صافي ربح شهري..."
-              className="w-full p-2.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] focus:border-[#174235] outline-hidden"
+              className="w-full p-2.5 bg-[#faf8f5] dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-[#1a2420] dark:text-slate-100 focus:border-[#174235] dark:focus:border-emerald-500 outline-hidden"
             />
           </div>
 
           {visions.length > 0 && (
             <div>
-              <label className="font-bold text-[#3a453f] block mb-1">الرؤية التابع لها:</label>
+              <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">الرؤية التابع لها:</label>
               <CustomSelect
                 value={visionId}
                 onChange={(val) => setVisionId(val)}
@@ -432,7 +432,7 @@ export const ValueGoalModal: React.FC<ValueGoalModalProps> = ({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="font-bold text-[#3a453f] block mb-1">الحالة:</label>
+              <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">الحالة:</label>
               <CustomSelect
                 value={status}
                 onChange={(val) => setStatus(val as any)}
@@ -448,38 +448,38 @@ export const ValueGoalModal: React.FC<ValueGoalModalProps> = ({
             </div>
 
             <div>
-              <label className="font-bold text-[#3a453f] block mb-1">تاريخ الاستحقاق المستهدف:</label>
+              <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">تاريخ الاستحقاق المستهدف:</label>
               <input
                 type="date"
                 value={targetDate}
                 onChange={(e) => setTargetDate(e.target.value)}
-                className="w-full p-2.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] outline-hidden font-mono"
+                className="w-full p-2.5 bg-[#faf8f5] dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-[#1a2420] dark:text-slate-100 focus:border-[#174235] dark:focus:border-emerald-500 outline-hidden font-mono"
               />
             </div>
           </div>
 
           <div>
-            <label className="font-bold text-[#3a453f] block mb-1">تفاصيل إضافية / معايير النجاح:</label>
+            <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">تفاصيل إضافية / معايير النجاح:</label>
             <textarea
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="اكتب معايير إنجاز هذا الهدف ومؤشرات تحقيقه..."
-              className="w-full p-2.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] focus:border-[#174235] outline-hidden"
+              className="w-full p-2.5 bg-[#faf8f5] dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-[#1a2420] dark:text-slate-100 focus:border-[#174235] dark:focus:border-emerald-500 outline-hidden"
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-[#f0eee9]">
+          <div className="flex justify-end gap-2 pt-2 border-t border-[#f0eee9] dark:border-slate-800">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-[#56625b] hover:bg-[#f2efe9] rounded-xl font-bold cursor-pointer"
+              className="px-4 py-2 text-[#56625b] dark:text-slate-300 hover:bg-[#f2efe9] dark:hover:bg-slate-800 rounded-xl font-bold cursor-pointer"
             >
               إلغاء
             </button>
             <button
               type="submit"
-              className="px-5 py-2 bg-[#174235] hover:bg-[#12352a] text-white font-bold rounded-xl shadow-xs cursor-pointer"
+              className="px-5 py-2 bg-[#174235] dark:bg-emerald-700 hover:bg-[#12352a] dark:hover:bg-emerald-800 text-white font-bold rounded-xl shadow-xs cursor-pointer"
             >
               حفظ الهدف
             </button>
@@ -554,38 +554,38 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-2xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-lg w-full shadow-xl border border-[#e8e5de] overflow-hidden text-xs animate-in fade-in">
-        <div className="p-4 sm:p-5 border-b border-[#f0eee9] flex items-center justify-between bg-[#fbfbfa]">
+    <div className="fixed inset-0 z-50 bg-slate-900/50 dark:bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full shadow-xl border border-[#e8e5de] dark:border-slate-800 overflow-hidden text-xs animate-in fade-in">
+        <div className="p-4 sm:p-5 border-b border-[#f0eee9] dark:border-slate-800 flex items-center justify-between bg-[#fbfbfa] dark:bg-slate-800/80">
           <div>
-            <h3 className="font-bold text-sm text-[#1a2420]">
+            <h3 className="font-bold text-sm text-[#1a2420] dark:text-slate-100">
               {initialProject ? 'تعديل المشروع' : 'إضافة مشروع تنفيذي جديد'}
             </h3>
             {goalTitle && (
-              <p className="text-[11px] text-[#174235] font-semibold mt-0.5">
+              <p className="text-[11px] text-[#174235] dark:text-emerald-400 font-semibold mt-0.5">
                 تابع للهدف: {goalTitle}
               </p>
             )}
           </div>
-          <button onClick={onClose} className="text-[#85918a] hover:text-[#1a2420] text-sm p-1">✕</button>
+          <button onClick={onClose} className="text-[#85918a] dark:text-slate-400 hover:text-[#1a2420] dark:hover:text-slate-100 text-sm p-1">✕</button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           <div>
-            <label className="font-bold text-[#3a453f] block mb-1">عنوان المشروع: *</label>
+            <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">عنوان المشروع: *</label>
             <input
               type="text"
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="مثال: إكمال التدريب العملي الممّول..."
-              className="w-full p-2.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] focus:border-[#174235] outline-hidden"
+              className="w-full p-2.5 bg-[#faf8f5] dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-[#1a2420] dark:text-slate-100 focus:border-[#174235] dark:focus:border-emerald-500 outline-hidden"
             />
           </div>
 
           {goals.length > 0 && !goalTitle && (
             <div>
-              <label className="font-bold text-[#3a453f] block mb-1">الهدف التابع له: *</label>
+              <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">الهدف التابع له: *</label>
               <CustomSelect
                 value={goalId}
                 onChange={(val) => setGoalId(val)}
@@ -599,7 +599,7 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
 
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="font-bold text-[#3a453f] block mb-1">حالة المشروع:</label>
+              <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">حالة المشروع:</label>
               <CustomSelect
                 value={status}
                 onChange={(val) => setStatus(val as any)}
@@ -616,48 +616,48 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
             </div>
 
             <div>
-              <label className="font-bold text-[#3a453f] block mb-1">تاريخ البدء:</label>
+              <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">تاريخ البدء:</label>
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-full p-2.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] outline-hidden font-mono"
+                className="w-full p-2.5 bg-[#faf8f5] dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-[#1a2420] dark:text-slate-100 focus:border-[#174235] dark:focus:border-emerald-500 outline-hidden font-mono"
               />
             </div>
 
             <div>
-              <label className="font-bold text-[#3a453f] block mb-1">تاريخ التسليم:</label>
+              <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">تاريخ التسليم:</label>
               <input
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="w-full p-2.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] outline-hidden font-mono"
+                className="w-full p-2.5 bg-[#faf8f5] dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-[#1a2420] dark:text-slate-100 focus:border-[#174235] dark:focus:border-emerald-500 outline-hidden font-mono"
               />
             </div>
           </div>
 
           <div>
-            <label className="font-bold text-[#3a453f] block mb-1">وصف المشروع:</label>
+            <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">وصف المشروع:</label>
             <textarea
               rows={2}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="وصف تفصيلي لأهداف المشروع ومخرجاته..."
-              className="w-full p-2.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] focus:border-[#174235] outline-hidden"
+              className="w-full p-2.5 bg-[#faf8f5] dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-[#1a2420] dark:text-slate-100 focus:border-[#174235] dark:focus:border-emerald-500 outline-hidden"
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-[#f0eee9]">
+          <div className="flex justify-end gap-2 pt-2 border-t border-[#f0eee9] dark:border-slate-800">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-[#56625b] hover:bg-[#f2efe9] rounded-xl font-bold cursor-pointer"
+              className="px-4 py-2 text-[#56625b] dark:text-slate-300 hover:bg-[#f2efe9] dark:hover:bg-slate-800 rounded-xl font-bold cursor-pointer"
             >
               إلغاء
             </button>
             <button
               type="submit"
-              className="px-5 py-2 bg-[#174235] hover:bg-[#12352a] text-white font-bold rounded-xl shadow-xs cursor-pointer"
+              className="px-5 py-2 bg-[#174235] dark:bg-emerald-700 hover:bg-[#12352a] dark:hover:bg-emerald-800 text-white font-bold rounded-xl shadow-xs cursor-pointer"
             >
               حفظ المشروع
             </button>
@@ -732,39 +732,39 @@ export const TaskModal: React.FC<TaskModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-2xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-lg w-full shadow-xl border border-[#e8e5de] overflow-hidden text-xs animate-in fade-in">
-        <div className="p-4 sm:p-5 border-b border-[#f0eee9] flex items-center justify-between bg-[#fbfbfa]">
+    <div className="fixed inset-0 z-50 bg-slate-900/50 dark:bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full shadow-xl border border-[#e8e5de] dark:border-slate-800 overflow-hidden text-xs animate-in fade-in">
+        <div className="p-4 sm:p-5 border-b border-[#f0eee9] dark:border-slate-800 flex items-center justify-between bg-[#fbfbfa] dark:bg-slate-800/80">
           <div>
-            <h3 className="font-bold text-sm text-[#1a2420]">
+            <h3 className="font-bold text-sm text-[#1a2420] dark:text-slate-100">
               {initialTask ? 'تعديل المهمة' : 'إضافة مهمة جديدة'}
             </h3>
             {projectTitle && (
-              <p className="text-[11px] text-[#174235] font-semibold mt-0.5">
+              <p className="text-[11px] text-[#174235] dark:text-emerald-400 font-semibold mt-0.5">
                 المشروع التابع له: {projectTitle}
               </p>
             )}
           </div>
-          <button onClick={onClose} className="text-[#85918a] hover:text-[#1a2420] text-sm p-1">✕</button>
+          <button onClick={onClose} className="text-[#85918a] dark:text-slate-400 hover:text-[#1a2420] dark:hover:text-slate-100 text-sm p-1">✕</button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           <div>
-            <label className="font-bold text-[#3a453f] block mb-1">عنوان المهمة: *</label>
+            <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">عنوان المهمة: *</label>
             <input
               type="text"
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="اكتب اسم المهمة الواضحة والتنفيذية..."
-              className="w-full p-2.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] focus:border-[#174235] outline-hidden"
+              className="w-full p-2.5 bg-[#faf8f5] dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-[#1a2420] dark:text-slate-100 focus:border-[#174235] dark:focus:border-emerald-500 outline-hidden"
               autoFocus
             />
           </div>
 
           {projects.length > 0 && !projectTitle && (
             <div>
-              <label className="font-bold text-[#3a453f] block mb-1">المشروع التابع له: *</label>
+              <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">المشروع التابع له: *</label>
               <CustomSelect
                 value={projectId}
                 onChange={(val) => setProjectId(val)}
@@ -778,7 +778,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
 
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="font-bold text-[#3a453f] block mb-1">الحالة:</label>
+              <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">الحالة:</label>
               <CustomSelect
                 value={status}
                 onChange={(val) => setStatus(val as any)}
@@ -794,7 +794,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
             </div>
 
             <div>
-              <label className="font-bold text-[#3a453f] block mb-1">الأولوية:</label>
+              <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">الأولوية:</label>
               <CustomSelect
                 value={priority}
                 onChange={(val) => setPriority(val as any)}
@@ -810,38 +810,38 @@ export const TaskModal: React.FC<TaskModalProps> = ({
             </div>
 
             <div>
-              <label className="font-bold text-[#3a453f] block mb-1">تاريخ الاستحقاق:</label>
+              <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">تاريخ الاستحقاق:</label>
               <input
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="w-full p-2.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] outline-hidden font-mono"
+                className="w-full p-2.5 bg-[#faf8f5] dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-[#1a2420] dark:text-slate-100 focus:border-[#174235] dark:focus:border-emerald-500 outline-hidden font-mono"
               />
             </div>
           </div>
 
           <div>
-            <label className="font-bold text-[#3a453f] block mb-1">ملاحظات المهمة:</label>
+            <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">ملاحظات المهمة:</label>
             <textarea
               rows={2}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="أي تفاصيل أو روابط لازمة لإنجاز المهمة..."
-              className="w-full p-2.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] focus:border-[#174235] outline-hidden"
+              className="w-full p-2.5 bg-[#faf8f5] dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-[#1a2420] dark:text-slate-100 focus:border-[#174235] dark:focus:border-emerald-500 outline-hidden"
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-[#f0eee9]">
+          <div className="flex justify-end gap-2 pt-2 border-t border-[#f0eee9] dark:border-slate-800">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-[#56625b] hover:bg-[#f2efe9] rounded-xl font-bold cursor-pointer"
+              className="px-4 py-2 text-[#56625b] dark:text-slate-300 hover:bg-[#f2efe9] dark:hover:bg-slate-800 rounded-xl font-bold cursor-pointer"
             >
               إلغاء
             </button>
             <button
               type="submit"
-              className="px-5 py-2 bg-[#174235] hover:bg-[#12352a] text-white font-bold rounded-xl shadow-xs cursor-pointer"
+              className="px-5 py-2 bg-[#174235] dark:bg-emerald-700 hover:bg-[#12352a] dark:hover:bg-emerald-800 text-white font-bold rounded-xl shadow-xs cursor-pointer"
             >
               حفظ المهمة
             </button>

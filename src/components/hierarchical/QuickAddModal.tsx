@@ -163,18 +163,18 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-2xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-lg w-full shadow-xl border border-[#e8e4db] overflow-hidden text-xs animate-in fade-in">
+    <div className="fixed inset-0 z-50 bg-slate-900/50 dark:bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full shadow-xl border border-[#e8e4db] dark:border-slate-800 overflow-hidden text-xs animate-in fade-in">
         
         {/* Header matching Dawenli */}
-        <div className="p-4 bg-white border-b border-[#f0eee9] flex items-center justify-between">
+        <div className="p-4 bg-white dark:bg-slate-900 border-b border-[#f0eee9] dark:border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#ebf4f0] text-[#174235] flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-[#ebf4f0] dark:bg-emerald-950/70 text-[#174235] dark:text-emerald-300 flex items-center justify-center">
               <Zap className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="font-semibold text-sm text-[#1a2420]">إضافة سريعة موحدة</h3>
-              <p className="text-[11px] text-[#6d7972]">أضف أي عنصر هرمي في ثوانٍ مع ربطه التلقائي</p>
+              <h3 className="font-semibold text-sm text-[#1a2420] dark:text-slate-100">إضافة سريعة موحدة</h3>
+              <p className="text-[11px] text-[#6d7972] dark:text-slate-400">أضف أي عنصر هرمي في ثوانٍ مع ربطه التلقائي</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -195,7 +195,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
             )}
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg text-[#85918a] hover:text-[#1a2420] hover:bg-[#f5f4ef]"
+              className="p-1.5 rounded-lg text-[#85918a] hover:text-[#1a2420] dark:hover:text-slate-100 hover:bg-[#f5f4ef] dark:hover:bg-slate-800"
             >
               <X className="w-4 h-4" />
             </button>
@@ -203,14 +203,14 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
         </div>
 
         {/* Entity Type Selection Tabs */}
-        <div className="flex items-center gap-1 p-2 bg-[#fbfbfa] border-b border-[#f0eee9] overflow-x-auto text-[11px] font-medium">
+        <div className="flex items-center gap-1 p-2 bg-[#fbfbfa] dark:bg-slate-800/80 border-b border-[#f0eee9] dark:border-slate-800 overflow-x-auto text-[11px] font-medium">
           <button
             type="button"
             onClick={() => setActiveType('inbox')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap ${
               activeType === 'inbox'
                 ? 'bg-[#174235] text-white shadow-2xs font-semibold'
-                : 'text-[#56625b] hover:bg-[#f0ede6]'
+                : 'text-[#56625b] dark:text-slate-300 hover:bg-[#f0ede6] dark:hover:bg-slate-700'
             }`}
           >
             <Inbox className="w-3.5 h-3.5" />
@@ -223,7 +223,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap ${
               activeType === 'task'
                 ? 'bg-[#174235] text-white shadow-2xs font-semibold'
-                : 'text-[#56625b] hover:bg-[#f0ede6]'
+                : 'text-[#56625b] dark:text-slate-300 hover:bg-[#f0ede6] dark:hover:bg-slate-700'
             }`}
           >
             <CheckSquare className="w-3.5 h-3.5" />
@@ -236,7 +236,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap ${
               activeType === 'project'
                 ? 'bg-[#174235] text-white shadow-2xs font-semibold'
-                : 'text-[#56625b] hover:bg-[#f0ede6]'
+                : 'text-[#56625b] dark:text-slate-300 hover:bg-[#f0ede6] dark:hover:bg-slate-700'
             }`}
           >
             <Folder className="w-3.5 h-3.5" />
@@ -249,7 +249,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap ${
               activeType === 'goal'
                 ? 'bg-[#174235] text-white shadow-2xs font-semibold'
-                : 'text-[#56625b] hover:bg-[#f0ede6]'
+                : 'text-[#56625b] dark:text-slate-300 hover:bg-[#f0ede6] dark:hover:bg-slate-700'
             }`}
           >
             <Target className="w-3.5 h-3.5" />
@@ -262,7 +262,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap ${
               activeType === 'vision'
                 ? 'bg-[#174235] text-white shadow-2xs font-semibold'
-                : 'text-[#56625b] hover:bg-[#f0ede6]'
+                : 'text-[#56625b] dark:text-slate-300 hover:bg-[#f0ede6] dark:hover:bg-slate-700'
             }`}
           >
             <Eye className="w-3.5 h-3.5" />
@@ -275,7 +275,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap ${
               activeType === 'pillar'
                 ? 'bg-[#174235] text-white shadow-2xs font-semibold'
-                : 'text-[#56625b] hover:bg-[#f0ede6]'
+                : 'text-[#56625b] dark:text-slate-300 hover:bg-[#f0ede6] dark:hover:bg-slate-700'
             }`}
           >
             <Layers className="w-3.5 h-3.5" />
@@ -290,21 +290,21 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
           {activeType === 'inbox' && (
             <div className="space-y-3">
               <div>
-                <label className="block font-bold text-[#3d4842] mb-1">ما الذي يدور في ذهنك الآن؟ (فكرة / مهمة / مرجع) *</label>
+                <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">ما الذي يدور في ذهنك الآن؟ (فكرة / مهمة / مرجع) *</label>
                 <input
                   type="text"
                   required
                   placeholder="مثال: فكرة إضافة مؤشر إنتاجية، تجديد الاشتراك، مقال ملهم..."
                   value={inboxTitle}
                   onChange={(e) => setInboxTitle(e.target.value)}
-                  className="w-full px-3 py-2 border border-[#d8d4cc] rounded-xl focus:border-[#174235] focus:ring-1 focus:ring-[#174235] bg-[#faf8f5] text-[#1a2420] outline-hidden font-semibold"
+                  className="w-full px-3 py-2 border border-[#d8d4cc] dark:border-slate-700 rounded-xl focus:border-[#174235] dark:focus:border-emerald-500 bg-[#faf8f5] dark:bg-slate-800 text-[#1a2420] dark:text-slate-100 outline-hidden font-semibold"
                   autoFocus
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-[#3d4842] mb-1">تصنيف الإيداع السريع</label>
+                  <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">تصنيف الإيداع السريع</label>
                   <CustomSelect
                     value={inboxType}
                     onChange={(val) => setInboxType(val as any)}
@@ -322,25 +322,25 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block font-bold text-[#3d4842] mb-1">رابط إن وُجد (اختياري)</label>
+                  <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">رابط إن وُجد (اختياري)</label>
                   <input
                     type="url"
                     placeholder="https://..."
                     value={inboxUrl}
                     onChange={(e) => setInboxUrl(e.target.value)}
-                    className="w-full px-3 py-2 border border-[#d8d4cc] rounded-xl focus:border-[#174235] bg-[#faf8f5] text-[#1a2420] outline-hidden"
+                    className="w-full px-3 py-2 border border-[#d8d4cc] dark:border-slate-700 rounded-xl focus:border-[#174235] dark:focus:border-emerald-500 bg-[#faf8f5] dark:bg-slate-800 text-[#1a2420] dark:text-slate-100 outline-hidden"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-semibold text-[#57645d] mb-1">سياق أو ملاحظات إضافية (اختياري)</label>
+                <label className="block font-semibold text-[#57645d] dark:text-slate-300 mb-1">سياق أو ملاحظات إضافية (اختياري)</label>
                 <textarea
                   rows={2}
                   placeholder="أي تفاصيل ترغب بتذكرها لاحقاً عند فرز الصندوق..."
                   value={inboxContent}
                   onChange={(e) => setInboxContent(e.target.value)}
-                  className="w-full px-3 py-2 border border-[#d8d4cc] rounded-xl focus:border-[#174235] bg-[#faf8f5] text-[#1a2420] outline-hidden"
+                  className="w-full px-3 py-2 border border-[#d8d4cc] dark:border-slate-700 rounded-xl focus:border-[#174235] dark:focus:border-emerald-500 bg-[#faf8f5] dark:bg-slate-800 text-[#1a2420] dark:text-slate-100 outline-hidden"
                 />
               </div>
             </div>
@@ -350,7 +350,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
           {activeType === 'task' && (
             <div className="space-y-3">
               <div>
-                <label className="block font-bold text-[#3d4842] mb-1">عنوان المهمة *</label>
+                <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">عنوان المهمة *</label>
                 <input
                   type="text"
                   required
@@ -363,7 +363,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
               </div>
 
               <div>
-                <label className="block font-bold text-[#3d4842] mb-1">المشروع التابع له *</label>
+                <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">المشروع التابع له *</label>
                 <CustomSelect
                   value={taskProjectId}
                   onChange={(val) => setTaskProjectId(val)}
@@ -376,7 +376,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-[#3d4842] mb-1">الأولوية</label>
+                  <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">الأولوية</label>
                   <CustomSelect
                     value={taskPriority}
                     onChange={(val) => setTaskPriority(val as any)}
@@ -392,12 +392,12 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block font-bold text-[#3d4842] mb-1">تاريخ الاستحقاق</label>
+                  <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">تاريخ الاستحقاق</label>
                   <input
                     type="date"
                     value={taskDueDate}
                     onChange={(e) => setTaskDueDate(e.target.value)}
-                    className="w-full px-3 py-2 border border-[#d8d4cc] rounded-xl focus:border-[#174235] bg-[#faf8f5] text-[#1a2420] outline-hidden font-mono"
+                    className="w-full px-3 py-2 border border-[#d8d4cc] dark:border-slate-700 rounded-xl focus:border-[#174235] dark:focus:border-emerald-500 bg-[#faf8f5] dark:bg-slate-800 text-[#1a2420] dark:text-slate-100 outline-hidden font-mono"
                   />
                 </div>
               </div>
@@ -408,20 +408,20 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
           {activeType === 'project' && (
             <div className="space-y-3">
               <div>
-                <label className="block font-bold text-[#3d4842] mb-1">اسم المشروع *</label>
+                <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">اسم المشروع *</label>
                 <input
                   type="text"
                   required
                   placeholder="مثال: إكمال مجالس كتاب العادات الذرية"
                   value={projectTitle}
                   onChange={(e) => setProjectTitle(e.target.value)}
-                  className="w-full px-3 py-2 border border-[#d8d4cc] rounded-xl focus:border-[#174235] bg-[#faf8f5] text-[#1a2420] outline-hidden"
+                  className="w-full px-3 py-2 border border-[#d8d4cc] dark:border-slate-700 rounded-xl focus:border-[#174235] dark:focus:border-emerald-500 bg-[#faf8f5] dark:bg-slate-800 text-[#1a2420] dark:text-slate-100 outline-hidden"
                   autoFocus
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-[#3d4842] mb-1">الهدف الاستراتيجي التابع له *</label>
+                <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">الهدف الاستراتيجي التابع له *</label>
                 <CustomSelect
                   value={projectGoalId}
                   onChange={(val) => setProjectGoalId(val)}
@@ -433,12 +433,12 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
               </div>
 
               <div>
-                <label className="block font-bold text-[#3d4842] mb-1">تاريخ الانتهاء المتوقع</label>
+                <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">تاريخ الانتهاء المتوقع</label>
                 <input
                   type="date"
                   value={projectDueDate}
                   onChange={(e) => setProjectDueDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-[#d8d4cc] rounded-xl focus:border-[#174235] bg-[#faf8f5] text-[#1a2420] outline-hidden font-mono"
+                  className="w-full px-3 py-2 border border-[#d8d4cc] dark:border-slate-700 rounded-xl focus:border-[#174235] dark:focus:border-emerald-500 bg-[#faf8f5] dark:bg-slate-800 text-[#1a2420] dark:text-slate-100 outline-hidden font-mono"
                 />
               </div>
             </div>
@@ -448,20 +448,20 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
           {activeType === 'goal' && (
             <div className="space-y-3">
               <div>
-                <label className="block font-bold text-[#3d4842] mb-1">عنوان هدف القيمة *</label>
+                <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">عنوان هدف القيمة *</label>
                 <input
                   type="text"
                   required
                   placeholder="مثال: الوصول إلى 100,000 جنيه صافي ربح شهري"
                   value={goalTitle}
                   onChange={(e) => setGoalTitle(e.target.value)}
-                  className="w-full px-3 py-2 border border-[#d8d4cc] rounded-xl focus:border-[#174235] bg-[#faf8f5] text-[#1a2420] outline-hidden"
+                  className="w-full px-3 py-2 border border-[#d8d4cc] dark:border-slate-700 rounded-xl focus:border-[#174235] dark:focus:border-emerald-500 bg-[#faf8f5] dark:bg-slate-800 text-[#1a2420] dark:text-slate-100 outline-hidden"
                   autoFocus
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-[#3d4842] mb-1">الرؤية التابع لها</label>
+                <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">الرؤية التابع لها</label>
                 <CustomSelect
                   value={goalVisionId}
                   onChange={(val) => setGoalVisionId(val)}
@@ -477,7 +477,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
 
               {!goalVisionId && (
                 <div>
-                  <label className="block font-bold text-[#3d4842] mb-1">الركيزة التابع لها *</label>
+                  <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">الركيزة التابع لها *</label>
                   <CustomSelect
                     value={goalPillarId}
                     onChange={(val) => setGoalPillarId(val)}
@@ -490,12 +490,12 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
               )}
 
               <div>
-                <label className="block font-bold text-[#3d4842] mb-1">تاريخ الاستحقاق المستهدف</label>
+                <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">تاريخ الاستحقاق المستهدف</label>
                 <input
                   type="date"
                   value={goalTargetDate}
                   onChange={(e) => setGoalTargetDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-[#d8d4cc] rounded-xl focus:border-[#174235] bg-[#faf8f5] text-[#1a2420] outline-hidden font-mono"
+                  className="w-full px-3 py-2 border border-[#d8d4cc] dark:border-slate-700 rounded-xl focus:border-[#174235] dark:focus:border-emerald-500 bg-[#faf8f5] dark:bg-slate-800 text-[#1a2420] dark:text-slate-100 outline-hidden font-mono"
                 />
               </div>
             </div>
@@ -505,20 +505,20 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
           {activeType === 'vision' && (
             <div className="space-y-3">
               <div>
-                <label className="block font-bold text-[#3d4842] mb-1">عنوان الرؤية المستقبلية *</label>
+                <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">عنوان الرؤية المستقبلية *</label>
                 <input
                   type="text"
                   required
                   placeholder="مثال: بناء استقلال مالي راسخ ومشاريع رقمية رابحة"
                   value={visionTitle}
                   onChange={(e) => setVisionTitle(e.target.value)}
-                  className="w-full px-3 py-2 border border-[#d8d4cc] rounded-xl focus:border-[#174235] bg-[#faf8f5] text-[#1a2420] outline-hidden"
+                  className="w-full px-3 py-2 border border-[#d8d4cc] dark:border-slate-700 rounded-xl focus:border-[#174235] dark:focus:border-emerald-500 bg-[#faf8f5] dark:bg-slate-800 text-[#1a2420] dark:text-slate-100 outline-hidden"
                   autoFocus
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-[#3d4842] mb-1">الركيزة التابعة لها *</label>
+                <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">الركيزة التابعة لها *</label>
                 <CustomSelect
                   value={visionPillarId}
                   onChange={(val) => setVisionPillarId(val)}
@@ -530,24 +530,24 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
               </div>
 
               <div>
-                <label className="block font-bold text-[#3d4842] mb-1">الأفق الزمني للرؤية</label>
+                <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">الأفق الزمني للرؤية</label>
                 <input
                   type="text"
                   value={visionTimeframe}
                   onChange={(e) => setVisionTimeframe(e.target.value)}
                   placeholder="مثال: 3-5 سنوات أو 2026-2030"
-                  className="w-full px-3 py-2 border border-[#d8d4cc] rounded-xl focus:border-[#174235] bg-[#faf8f5] text-[#1a2420] outline-hidden"
+                  className="w-full px-3 py-2 border border-[#d8d4cc] dark:border-slate-700 rounded-xl focus:border-[#174235] dark:focus:border-emerald-500 bg-[#faf8f5] dark:bg-slate-800 text-[#1a2420] dark:text-slate-100 outline-hidden"
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-[#3d4842] mb-1">بيان الرؤية والأفق المنشود</label>
+                <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">بيان الرؤية والأفق المنشود</label>
                 <textarea
                   rows={2}
                   value={visionStatement}
                   onChange={(e) => setVisionStatement(e.target.value)}
                   placeholder="صِف الصورة التي تطمح للوصول إليها..."
-                  className="w-full px-3 py-2 border border-[#d8d4cc] rounded-xl focus:border-[#174235] bg-[#faf8f5] text-[#1a2420] outline-hidden"
+                  className="w-full px-3 py-2 border border-[#d8d4cc] dark:border-slate-700 rounded-xl focus:border-[#174235] dark:focus:border-emerald-500 bg-[#faf8f5] dark:bg-slate-800 text-[#1a2420] dark:text-slate-100 outline-hidden"
                 />
               </div>
             </div>
@@ -557,67 +557,67 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
           {activeType === 'pillar' && (
             <div className="space-y-3">
               <div>
-                <label className="block font-bold text-[#3d4842] mb-1">اسم الركيزة الأساسية *</label>
+                <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">اسم الركيزة الأساسية *</label>
                 <input
                   type="text"
                   required
                   placeholder="مثال: العلاقة مع الله، بناء الذات، الصحة"
                   value={pillarTitle}
                   onChange={(e) => setPillarTitle(e.target.value)}
-                  className="w-full px-3 py-2 border border-[#d8d4cc] rounded-xl focus:border-[#174235] bg-[#faf8f5] text-[#1a2420] outline-hidden"
+                  className="w-full px-3 py-2 border border-[#d8d4cc] dark:border-slate-700 rounded-xl focus:border-[#174235] dark:focus:border-emerald-500 bg-[#faf8f5] dark:bg-slate-800 text-[#1a2420] dark:text-slate-100 outline-hidden"
                   autoFocus
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-[#3d4842] mb-1">المجموعة التصنيفية</label>
+                <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">المجموعة التصنيفية</label>
                 <input
                   type="text"
                   placeholder="مثال: Growth, Vitality, Impact, Wealth"
                   value={pillarGroup}
                   onChange={(e) => setPillarGroup(e.target.value)}
-                  className="w-full px-3 py-2 border border-[#d8d4cc] rounded-xl focus:border-[#174235] bg-[#faf8f5] text-[#1a2420] outline-hidden"
+                  className="w-full px-3 py-2 border border-[#d8d4cc] dark:border-slate-700 rounded-xl focus:border-[#174235] dark:focus:border-emerald-500 bg-[#faf8f5] dark:bg-slate-800 text-[#1a2420] dark:text-slate-100 outline-hidden"
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-[#3d4842] mb-1">الغاية الكبرى (Purpose — The Big Why) *</label>
+                <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">الغاية الكبرى (Purpose — The Big Why) *</label>
                 <textarea
                   rows={2}
                   required
                   placeholder="البيان التوجيهي والمقصد الأسمى لهذه الركيزة..."
                   value={pillarPurpose}
                   onChange={(e) => setPillarPurpose(e.target.value)}
-                  className="w-full px-3 py-2 border border-[#d8d4cc] rounded-xl focus:border-[#174235] bg-[#faf8f5] text-[#1a2420] outline-hidden"
+                  className="w-full px-3 py-2 border border-[#d8d4cc] dark:border-slate-700 rounded-xl focus:border-[#174235] dark:focus:border-emerald-500 bg-[#faf8f5] dark:bg-slate-800 text-[#1a2420] dark:text-slate-100 outline-hidden"
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-[#3d4842] mb-1">ترتيب الأولوية</label>
+                <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">ترتيب الأولوية</label>
                 <input
                   type="number"
                   min={1}
                   max={20}
                   value={pillarPriority}
                   onChange={(e) => setPillarPriority(Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-[#d8d4cc] rounded-xl focus:border-[#174235] bg-[#faf8f5] text-[#1a2420] outline-hidden font-mono"
+                  className="w-full px-3 py-2 border border-[#d8d4cc] dark:border-slate-700 rounded-xl focus:border-[#174235] dark:focus:border-emerald-500 bg-[#faf8f5] dark:bg-slate-800 text-[#1a2420] dark:text-slate-100 outline-hidden font-mono"
                 />
               </div>
             </div>
           )}
 
           {/* Form Actions matching Dawenli */}
-          <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-[#f0eee9]">
+          <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-[#f0eee9] dark:border-slate-800">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-[#f4f2ec] hover:bg-[#eae6dd] text-[#4a554f] rounded-xl font-bold cursor-pointer transition-colors"
+              className="px-4 py-2 bg-[#f4f2ec] dark:bg-slate-800 hover:bg-[#eae6dd] dark:hover:bg-slate-700 text-[#4a554f] dark:text-slate-300 rounded-xl font-bold cursor-pointer transition-colors border border-transparent dark:border-slate-700"
             >
               إلغاء
             </button>
             <button
               type="submit"
-              className="px-5 py-2 bg-[#174235] hover:bg-[#12352a] text-white rounded-xl font-bold transition-all shadow-xs cursor-pointer"
+              className="px-5 py-2 bg-[#174235] dark:bg-emerald-700 hover:bg-[#12352a] dark:hover:bg-emerald-800 text-white rounded-xl font-bold transition-all shadow-xs cursor-pointer"
             >
               حفظ وإضافة الآن
             </button>

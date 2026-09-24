@@ -86,11 +86,11 @@ export const PillarsListView: React.FC<PillarsListViewProps> = ({
             </p>
           </div>
 
-          <div className="flex items-center gap-2.5 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 shrink-0">
             <button
               type="button"
               onClick={onOpenSqlModal}
-              className="flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-slate-800 hover:bg-[#f6f5f1] dark:hover:bg-slate-700 text-[#3a443f] dark:text-slate-200 border border-[#e3dfd7] dark:border-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs"
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 bg-white dark:bg-slate-800 hover:bg-[#f6f5f1] dark:hover:bg-slate-700 text-[#3a443f] dark:text-slate-200 border border-[#e3dfd7] dark:border-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs whitespace-nowrap"
               title="عرض كود SQL التأسيسي لـ Supabase والتريجرات"
             >
               <Database className="w-3.5 h-3.5 text-[#174235] dark:text-emerald-400" />
@@ -100,7 +100,7 @@ export const PillarsListView: React.FC<PillarsListViewProps> = ({
             <button
               type="button"
               onClick={onNewPillar}
-              className="flex items-center gap-1.5 px-4 py-2 bg-[#174235] dark:bg-emerald-700 hover:bg-[#12352a] dark:hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2 bg-[#174235] dark:bg-emerald-700 hover:bg-[#12352a] dark:hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer whitespace-nowrap"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>ركيزة جديدة</span>
@@ -109,14 +109,14 @@ export const PillarsListView: React.FC<PillarsListViewProps> = ({
         </div>
 
         {/* Group Filter Tabs */}
-        <div className="flex items-center gap-1.5 mt-4 pt-4 border-t border-[#f0eee9] dark:border-slate-800 overflow-x-auto text-xs">
-          <span className="text-[#838d86] dark:text-slate-400 font-medium pl-1 text-[11px]">المجموعة:</span>
+        <div className="flex items-center gap-1.5 mt-4 pt-4 border-t border-[#f0eee9] dark:border-slate-800 overflow-x-auto no-scrollbar text-xs">
+          <span className="text-[#838d86] dark:text-slate-400 font-medium pl-1 text-[11px] shrink-0">المجموعة:</span>
           {groups.map((group) => (
             <button
               key={group}
               type="button"
               onClick={() => setSelectedGroup(group)}
-              className={`px-3 py-1.5 rounded-lg font-bold transition-all text-xs cursor-pointer whitespace-nowrap ${
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all text-xs cursor-pointer whitespace-nowrap shrink-0 ${
                 selectedGroup === group
                   ? 'bg-[#174235] dark:bg-emerald-600 text-white shadow-2xs'
                   : 'text-[#5b6660] dark:text-slate-300 hover:text-[#174235] dark:hover:text-emerald-300 hover:bg-[#f2efe9] dark:hover:bg-slate-800'

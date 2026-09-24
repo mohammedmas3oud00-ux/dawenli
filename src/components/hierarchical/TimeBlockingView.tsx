@@ -35,51 +35,51 @@ interface TimeBlockingViewProps {
 const CATEGORY_CONFIG: Record<TimeBlockCategory, { label: string; bg: string; border: string; text: string; icon: string }> = {
   deep_work: {
     label: 'تركيز عميق',
-    bg: 'bg-[#174235]/10',
-    border: 'border-[#174235]/30',
-    text: 'text-[#174235]',
+    bg: 'bg-[#174235]/10 dark:bg-emerald-950/60',
+    border: 'border-[#174235]/30 dark:border-emerald-800',
+    text: 'text-[#174235] dark:text-emerald-300',
     icon: '🧠',
   },
   shallow_work: {
     label: 'عمل إجرائي ومتابعات',
-    bg: 'bg-sky-50',
-    border: 'border-sky-200',
-    text: 'text-sky-800',
+    bg: 'bg-sky-50 dark:bg-sky-950/60',
+    border: 'border-sky-200 dark:border-sky-800',
+    text: 'text-sky-800 dark:text-sky-300',
     icon: '⚡',
   },
   meeting: {
     label: 'اجتماع أو تواصل',
-    bg: 'bg-purple-50',
-    border: 'border-purple-200',
-    text: 'text-purple-800',
+    bg: 'bg-purple-50 dark:bg-purple-950/60',
+    border: 'border-purple-200 dark:border-purple-800',
+    text: 'text-purple-800 dark:text-purple-300',
     icon: '🤝',
   },
   health_habit: {
     label: 'صحة وعادات ورياضة',
-    bg: 'bg-emerald-50',
-    border: 'border-emerald-200',
-    text: 'text-emerald-800',
+    bg: 'bg-emerald-50 dark:bg-emerald-950/60',
+    border: 'border-emerald-200 dark:border-emerald-800',
+    text: 'text-emerald-800 dark:text-emerald-300',
     icon: '🏃',
   },
   learning: {
     label: 'قراءة وتعلم وخزائن',
-    bg: 'bg-amber-50',
-    border: 'border-amber-200',
-    text: 'text-amber-800',
+    bg: 'bg-amber-50 dark:bg-amber-950/60',
+    border: 'border-amber-200 dark:border-amber-800',
+    text: 'text-amber-800 dark:text-amber-300',
     icon: '📚',
   },
   rest: {
     label: 'استراحة وتجديد طاقة',
-    bg: 'bg-stone-100',
-    border: 'border-stone-200',
-    text: 'text-stone-700',
+    bg: 'bg-stone-100 dark:bg-slate-800',
+    border: 'border-stone-200 dark:border-slate-700',
+    text: 'text-stone-700 dark:text-slate-300',
     icon: '☕',
   },
   personal: {
     label: 'شأن شخصي وعائلي',
-    bg: 'bg-rose-50',
-    border: 'border-rose-200',
-    text: 'text-rose-800',
+    bg: 'bg-rose-50 dark:bg-rose-950/60',
+    border: 'border-rose-200 dark:border-rose-900',
+    text: 'text-rose-800 dark:text-rose-300',
     icon: '🏡',
   },
 };
@@ -287,21 +287,21 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
     <div className="space-y-6 max-w-7xl mx-auto">
       
       {/* 1. Header with Date Navigator & Stats */}
-      <div className="bg-white border border-[#e8e5de] rounded-2xl p-5 sm:p-6 shadow-2xs">
+      <div className="bg-white dark:bg-slate-900 border border-[#e8e5de] dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-2xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           
           {/* Title */}
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <span className="text-xl">📅</span>
-              <h1 className="text-lg sm:text-xl font-black text-[#1a2420]">
+              <h1 className="text-lg sm:text-xl font-black text-[#1a2420] dark:text-slate-100">
                 حجب الوقت اليومي
               </h1>
-              <span className="text-[11px] px-2.5 py-0.5 rounded-md font-bold bg-[#ebf4f0] text-[#174235] border border-[#cfe3d9]">
+              <span className="text-[11px] px-2.5 py-0.5 rounded-md font-bold bg-[#ebf4f0] dark:bg-emerald-950/70 text-[#174235] dark:text-emerald-300 border border-[#cfe3d9] dark:border-emerald-800">
                 {dayBlocks.length} كتل مجدولة
               </span>
             </div>
-            <p className="text-xs text-[#636e67]">
+            <p className="text-xs text-[#636e67] dark:text-slate-400">
               خصص لكل ساعة من يومك نية واضحة ومسبقة لحماية تركيزك العميق ومنع التسويف.
             </p>
           </div>
@@ -309,11 +309,11 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
           {/* Date Selector and Navigation Controls */}
           <div className="flex flex-wrap items-center gap-2">
             
-            <div className="flex items-center bg-[#faf8f4] border border-[#d8d4cc] rounded-xl p-0.5 shadow-2xs">
+            <div className="flex items-center bg-[#faf8f4] dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-xl p-0.5 shadow-2xs">
               <button
                 type="button"
                 onClick={() => changeDateBy(-1)}
-                className="p-1.5 hover:bg-[#ede9df] rounded-lg text-[#55645b] transition-colors cursor-pointer"
+                className="p-1.5 hover:bg-[#ede9df] dark:hover:bg-slate-700 rounded-lg text-[#55645b] dark:text-slate-300 transition-colors cursor-pointer"
                 title="اليوم السابق"
               >
                 <ChevronRight className="w-4 h-4" />
@@ -324,8 +324,8 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
                 onClick={() => setSelectedDate(todayStr)}
                 className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   isToday
-                    ? 'bg-[#174235] text-white shadow-2xs'
-                    : 'text-[#55645b] hover:bg-[#ede9df]'
+                    ? 'bg-[#174235] dark:bg-emerald-600 text-white shadow-2xs'
+                    : 'text-[#55645b] dark:text-slate-300 hover:bg-[#ede9df] dark:hover:bg-slate-700'
                 }`}
               >
                 اليوم
@@ -334,7 +334,7 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
               <button
                 type="button"
                 onClick={() => changeDateBy(1)}
-                className="p-1.5 hover:bg-[#ede9df] rounded-lg text-[#55645b] transition-colors cursor-pointer"
+                className="p-1.5 hover:bg-[#ede9df] dark:hover:bg-slate-700 rounded-lg text-[#55645b] dark:text-slate-300 transition-colors cursor-pointer"
                 title="اليوم التالي"
               >
                 <ChevronLeft className="w-4 h-4" />
@@ -346,14 +346,14 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="px-3 py-1.5 bg-[#faf8f4] border border-[#d8d4cc] rounded-xl text-xs font-bold text-[#1a2420] outline-hidden cursor-pointer"
+              className="px-3 py-1.5 bg-[#faf8f4] dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-xs font-bold text-[#1a2420] dark:text-slate-100 outline-hidden cursor-pointer"
             />
 
             {/* Add Block Button */}
             <button
               type="button"
               onClick={() => handleOpenAddModal()}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-[#174235] hover:bg-[#12362b] text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer transition-all"
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-[#174235] dark:bg-emerald-700 hover:bg-[#12362b] dark:hover:bg-emerald-800 text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer transition-all"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>كتلة زمنية جديدة</span>
@@ -363,10 +363,10 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
             <button
               type="button"
               onClick={handleApplyTemplate}
-              className="flex items-center gap-1.5 px-3 py-2 bg-[#f4f2ed] hover:bg-[#eae6dd] text-[#4d5c52] border border-[#dcd7cc] rounded-xl text-xs font-bold transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-2 bg-[#f4f2ed] dark:bg-slate-800 hover:bg-[#eae6dd] dark:hover:bg-slate-700 text-[#4d5c52] dark:text-slate-300 border border-[#dcd7cc] dark:border-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer"
               title="تطبيق قالب يوم قياسي جاهز"
             >
-              <LayoutTemplate className="w-3.5 h-3.5 text-[#174235]" />
+              <LayoutTemplate className="w-3.5 h-3.5 text-[#174235] dark:text-emerald-400" />
               <span className="hidden sm:inline">قالب يوم</span>
             </button>
 
@@ -376,7 +376,7 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
 
         {/* Live Active Block Banner if running right now */}
         {activeBlockNow && (
-          <div className="mt-4 p-3.5 bg-[#174235] text-white rounded-xl shadow-xs flex items-center justify-between gap-3">
+          <div className="mt-4 p-3.5 bg-[#174235] dark:bg-emerald-900 text-white rounded-xl shadow-xs flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <span className="relative flex h-3 w-3">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -407,24 +407,24 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
         )}
 
         {/* Metrics Strip */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-4 border-t border-[#f0eee9] text-xs">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-4 border-t border-[#f0eee9] dark:border-slate-800 text-xs">
           <div>
-            <span className="text-[#7d8b82] text-[11px] block">إجمالي الساعات المجدولة:</span>
-            <span className="font-black text-[#1a2420] text-sm">{totalScheduledHours} ساعة</span>
+            <span className="text-[#7d8b82] dark:text-slate-400 text-[11px] block">إجمالي الساعات المجدولة:</span>
+            <span className="font-black text-[#1a2420] dark:text-slate-100 text-sm">{totalScheduledHours} ساعة</span>
           </div>
           <div>
-            <span className="text-[#7d8b82] text-[11px] block">ساعات التركيز العميق:</span>
-            <span className="font-black text-[#174235] text-sm">{deepWorkHours} ساعة</span>
+            <span className="text-[#7d8b82] dark:text-slate-400 text-[11px] block">ساعات التركيز العميق:</span>
+            <span className="font-black text-[#174235] dark:text-emerald-400 text-sm">{deepWorkHours} ساعة</span>
           </div>
           <div>
-            <span className="text-[#7d8b82] text-[11px] block">الكتل المنجزة:</span>
-            <span className="font-black text-emerald-700 text-sm">
+            <span className="text-[#7d8b82] dark:text-slate-400 text-[11px] block">الكتل المنجزة:</span>
+            <span className="font-black text-emerald-700 dark:text-emerald-400 text-sm">
               {dayBlocks.filter((b) => b.is_completed).length} من {dayBlocks.length}
             </span>
           </div>
           <div>
-            <span className="text-[#7d8b82] text-[11px] block">نسبة الالتزام بالجدول:</span>
-            <span className="font-black text-[#1a2420] text-sm">
+            <span className="text-[#7d8b82] dark:text-slate-400 text-[11px] block">نسبة الالتزام بالجدول:</span>
+            <span className="font-black text-[#1a2420] dark:text-slate-100 text-sm">
               {dayBlocks.length > 0 ? Math.round((dayBlocks.filter((b) => b.is_completed).length / dayBlocks.length) * 100) : 0}%
             </span>
           </div>
@@ -437,9 +437,9 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
         
         {/* Left 2 Cols: Timeline Schedule */}
         <div className="lg:col-span-2 space-y-4">
-          <div className="bg-white border border-[#e8e5de] rounded-2xl p-5 shadow-2xs">
-            <h2 className="text-sm font-black text-[#1a2420] mb-4 flex items-center gap-2">
-              <Clock className="w-4 h-4 text-[#174235]" />
+          <div className="bg-white dark:bg-slate-900 border border-[#e8e5de] dark:border-slate-800 rounded-2xl p-5 shadow-2xs">
+            <h2 className="text-sm font-black text-[#1a2420] dark:text-slate-100 mb-4 flex items-center gap-2">
+              <Clock className="w-4 h-4 text-[#174235] dark:text-emerald-400" />
               <span>الجدول الزمني ليوم {new Date(selectedDate).toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
             </h2>
 
@@ -455,7 +455,7 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
                     <div
                       key={block.id}
                       className={`relative border rounded-2xl p-4 transition-all ${cfg.bg} ${cfg.border} ${
-                        isCurrent ? 'ring-2 ring-[#174235] shadow-md' : 'shadow-2xs'
+                        isCurrent ? 'ring-2 ring-[#174235] dark:ring-emerald-500 shadow-md' : 'shadow-2xs'
                       } ${block.is_completed ? 'opacity-65' : 'opacity-100'}`}
                     >
                       <div className="flex items-start justify-between gap-3">
@@ -469,8 +469,8 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
                             onClick={() => onToggleTimeBlockStatus(block.id)}
                             className={`mt-0.5 w-5 h-5 rounded-lg border flex items-center justify-center transition-all cursor-pointer ${
                               block.is_completed
-                                ? 'bg-[#174235] border-[#174235] text-white'
-                                : 'bg-white border-[#d8d4cc] hover:border-[#174235]'
+                                ? 'bg-[#174235] dark:bg-emerald-600 border-[#174235] dark:border-emerald-600 text-white'
+                                : 'bg-white dark:bg-slate-800 border-[#d8d4cc] dark:border-slate-700 hover:border-[#174235] dark:hover:border-emerald-400'
                             }`}
                             title={block.is_completed ? 'تعليم كغير منجز' : 'تعليم كمنجز'}
                           >
@@ -481,37 +481,37 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
                             
                             {/* Time badge & Category */}
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="font-mono text-xs font-bold text-[#1a2420] bg-white/80 px-2 py-0.5 rounded-md border border-black/5">
+                              <span className="font-mono text-xs font-bold text-[#1a2420] dark:text-slate-100 bg-white/80 dark:bg-slate-800/80 px-2 py-0.5 rounded-md border border-black/5 dark:border-slate-700">
                                 {block.start_time} - {block.end_time}
                               </span>
 
-                              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md bg-white/60 ${cfg.text}`}>
+                              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md bg-white/60 dark:bg-slate-800/60 ${cfg.text}`}>
                                 <span>{cfg.icon}</span> {cfg.label}
                               </span>
 
                               {isCurrent && (
-                                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-[#174235] text-white">
+                                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-[#174235] dark:bg-emerald-600 text-white">
                                   جارية الآن
                                 </span>
                               )}
                             </div>
 
                             {/* Block Title */}
-                            <h3 className={`text-sm font-bold text-[#1a2420] ${block.is_completed ? 'line-through text-[#6e7d73]' : ''}`}>
+                            <h3 className={`text-sm font-bold text-[#1a2420] dark:text-slate-100 ${block.is_completed ? 'line-through text-[#6e7d73] dark:text-slate-500' : ''}`}>
                               {block.title}
                             </h3>
 
                             {/* Linked Task & Project */}
                             {(linkedTask || linkedProject) && (
-                              <div className="flex items-center gap-2 text-xs text-[#5c6d62] pt-0.5">
+                              <div className="flex items-center gap-2 text-xs text-[#5c6d62] dark:text-slate-400 pt-0.5">
                                 {linkedProject && (
                                   <span className="inline-flex items-center gap-1">
-                                    <Folder className="w-3 h-3 text-[#174235]" />
+                                    <Folder className="w-3 h-3 text-[#174235] dark:text-emerald-400" />
                                     <span>{linkedProject.title}</span>
                                   </span>
                                 )}
                                 {linkedTask && (
-                                  <span className="text-[11px] bg-white/50 px-1.5 py-0.5 rounded text-[#2d3a33]">
+                                  <span className="text-[11px] bg-white/50 dark:bg-slate-800/50 px-1.5 py-0.5 rounded text-[#2d3a33] dark:text-slate-300">
                                     المهمة: {linkedTask.title}
                                   </span>
                                 )}
@@ -520,7 +520,7 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
 
                             {/* Notes */}
                             {block.notes && (
-                              <p className="text-xs text-[#637269] mt-1 italic">
+                              <p className="text-xs text-[#637269] dark:text-slate-400 mt-1 italic">
                                 {block.notes}
                               </p>
                             )}
@@ -534,17 +534,17 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
                             <button
                               type="button"
                               onClick={() => onStartFocusOnTask(linkedTask)}
-                              className="p-1.5 bg-white hover:bg-emerald-50 text-[#174235] rounded-lg border border-black/10 transition-colors cursor-pointer"
+                              className="p-1.5 bg-white dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-slate-700 text-[#174235] dark:text-emerald-400 rounded-lg border border-black/10 dark:border-slate-700 transition-colors cursor-pointer"
                               title="بدء جلسة تركيز (بومودورو/فلوتايم) على هذه المهمة"
                             >
-                              <Play className="w-3.5 h-3.5 fill-[#174235]" />
+                              <Play className="w-3.5 h-3.5 fill-[#174235] dark:fill-emerald-400" />
                             </button>
                           )}
 
                           <button
                             type="button"
                             onClick={() => handleOpenEditModal(block)}
-                            className="p-1.5 bg-white hover:bg-[#f2efe9] text-[#55645b] rounded-lg border border-black/10 transition-colors cursor-pointer"
+                            className="p-1.5 bg-white dark:bg-slate-800 hover:bg-[#f2efe9] dark:hover:bg-slate-700 text-[#55645b] dark:text-slate-300 rounded-lg border border-black/10 dark:border-slate-700 transition-colors cursor-pointer"
                             title="تعديل الكتلة"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
@@ -553,7 +553,7 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
                           <button
                             type="button"
                             onClick={() => onDeleteTimeBlock(block.id)}
-                            className="p-1.5 bg-white hover:bg-rose-50 text-rose-600 rounded-lg border border-black/10 transition-colors cursor-pointer"
+                            className="p-1.5 bg-white dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/60 text-rose-600 dark:text-rose-400 rounded-lg border border-black/10 dark:border-slate-700 transition-colors cursor-pointer"
                             title="حذف الكتلة"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -567,27 +567,27 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
               </div>
             ) : (
               <div className="text-center py-12 space-y-3">
-                <div className="w-12 h-12 rounded-full bg-[#f4f2ed] text-[#718278] mx-auto flex items-center justify-center text-xl">
+                <div className="w-12 h-12 rounded-full bg-[#f4f2ed] dark:bg-slate-800 text-[#718278] dark:text-slate-400 mx-auto flex items-center justify-center text-xl">
                   ⌛
                 </div>
-                <h3 className="text-sm font-bold text-[#1a2420]">
+                <h3 className="text-sm font-bold text-[#1a2420] dark:text-slate-100">
                   لا توجد كتل زمنية مجدولة لهذا اليوم حتى الآن
                 </h3>
-                <p className="text-xs text-[#637269] max-w-sm mx-auto">
+                <p className="text-xs text-[#637269] dark:text-slate-400 max-w-sm mx-auto">
                   ابدأ بجدولة أول ساعة من يومك، أو اسحب المهام غير المجدولة من القائمة الجانبية.
                 </p>
                 <div className="pt-2 flex items-center justify-center gap-2">
                   <button
                     type="button"
                     onClick={() => handleOpenAddModal('09:00')}
-                    className="px-4 py-2 bg-[#174235] text-white rounded-xl text-xs font-bold hover:bg-[#12362b] transition-colors cursor-pointer"
+                    className="px-4 py-2 bg-[#174235] dark:bg-emerald-700 text-white rounded-xl text-xs font-bold hover:bg-[#12362b] dark:hover:bg-emerald-800 transition-colors cursor-pointer"
                   >
                     إضافة كتلة زمنية
                   </button>
                   <button
                     type="button"
                     onClick={handleApplyTemplate}
-                    className="px-4 py-2 bg-[#f4f2ed] text-[#4d5c52] border border-[#d8d4cc] rounded-xl text-xs font-bold hover:bg-[#eae6dd] transition-colors cursor-pointer"
+                    className="px-4 py-2 bg-[#f4f2ed] dark:bg-slate-800 text-[#4d5c52] dark:text-slate-300 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-xs font-bold hover:bg-[#eae6dd] dark:hover:bg-slate-700 transition-colors cursor-pointer"
                   >
                     تطبيق قالب يوم قياسي
                   </button>
@@ -599,17 +599,17 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
 
         {/* Right Col: Unscheduled Tasks Drawer */}
         <div className="space-y-4">
-          <div className="bg-white border border-[#e8e5de] rounded-2xl p-5 shadow-2xs space-y-3">
+          <div className="bg-white dark:bg-slate-900 border border-[#e8e5de] dark:border-slate-800 rounded-2xl p-5 shadow-2xs space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-black text-[#1a2420] flex items-center gap-1.5">
-                <span>مهام غير مهام غير مجدولة</span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#ebf4ef] text-[#174235] font-bold">
+              <h3 className="text-xs font-black text-[#1a2420] dark:text-slate-100 flex items-center gap-1.5">
+                <span>مهام غير مجدولة</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#ebf4ef] dark:bg-emerald-950/70 text-[#174235] dark:text-emerald-300 font-bold border border-[#cfe3d9] dark:border-emerald-800">
                   {unscheduledTasks.length}
                 </span>
               </h3>
             </div>
 
-            <p className="text-[11px] text-[#637269]">
+            <p className="text-[11px] text-[#637269] dark:text-slate-400">
               اختر أي مهمة لإدراجها مباشرة في كتل اليوم:
             </p>
 
@@ -619,41 +619,41 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
               value={taskSearch}
               onChange={(e) => setTaskSearch(e.target.value)}
               placeholder="ابحث في المهام المتاحة..."
-              className="w-full px-3 py-1.5 border border-[#d8d4cc] rounded-xl text-xs bg-[#faf8f5] text-[#1a2420] outline-hidden focus:border-[#174235]"
+              className="w-full px-3 py-1.5 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-xs bg-[#faf8f5] dark:bg-slate-800 text-[#1a2420] dark:text-slate-100 outline-hidden focus:border-[#174235] dark:focus:border-emerald-500"
             />
 
             {/* Tasks List */}
-            <div className="space-y-2 max-h-96 overflow-y-auto pt-1">
+            <div className="space-y-2 max-h-96 overflow-y-auto pt-1 no-scrollbar">
               {unscheduledTasks.map((task) => {
                 const project = projects.find((p) => p.id === task.project_id);
 
                 return (
                   <div
                     key={task.id}
-                    className="p-3 bg-[#faf8f5] hover:bg-[#f4f1ea] border border-[#e8e4db] rounded-xl transition-all space-y-1 group"
+                    className="p-3 bg-[#faf8f5] dark:bg-slate-800/80 hover:bg-[#f4f1ea] dark:hover:bg-slate-700/80 border border-[#e8e4db] dark:border-slate-700 rounded-xl transition-all space-y-1 group"
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <span className="text-xs font-bold text-[#1a2420] line-clamp-2">
+                      <span className="text-xs font-bold text-[#1a2420] dark:text-slate-100 line-clamp-2">
                         {task.title}
                       </span>
                       <button
                         type="button"
                         onClick={() => handleOpenAddModal('10:00', task)}
-                        className="px-2 py-1 bg-[#174235] hover:bg-[#12362b] text-white rounded-lg text-[10px] font-bold shrink-0 transition-colors cursor-pointer"
+                        className="px-2 py-1 bg-[#174235] dark:bg-emerald-700 hover:bg-[#12362b] dark:hover:bg-emerald-800 text-white rounded-lg text-[10px] font-bold shrink-0 transition-colors cursor-pointer"
                         title="جدولة هذه المهمة في كتل اليوم"
                       >
                         + جدولة
                       </button>
                     </div>
 
-                    <div className="flex items-center justify-between text-[10px] text-[#718278]">
+                    <div className="flex items-center justify-between text-[10px] text-[#718278] dark:text-slate-400">
                       {project && (
                         <span className="truncate max-w-[140px]">
                           📁 {project.title}
                         </span>
                       )}
                       <span className={`font-bold ${
-                        task.priority === 'high' ? 'text-rose-600' : 'text-amber-600'
+                        task.priority === 'high' ? 'text-rose-600 dark:text-rose-400' : 'text-amber-600 dark:text-amber-400'
                       }`}>
                         {task.priority === 'high' ? 'عالية' : 'متوسطة'}
                       </span>
@@ -663,7 +663,7 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
               })}
 
               {unscheduledTasks.length === 0 && (
-                <div className="text-center py-6 text-xs text-[#718278]">
+                <div className="text-center py-6 text-xs text-[#718278] dark:text-slate-400">
                   {taskSearch ? 'لا توجد نتائج مطابقة للبحث' : 'تمت جدولة كافة المهام!'}
                 </div>
               )}
@@ -676,17 +676,17 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
 
       {/* 3. Add/Edit Time Block Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-2xs flex items-center justify-center p-4">
-          <div className="bg-white border border-[#d8d4cc] rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-2xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 border border-[#d8d4cc] dark:border-slate-800 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150">
             
-            <div className="px-6 py-4 bg-[#faf8f5] border-b border-[#e8e4db] flex items-center justify-between">
-              <h3 className="text-sm font-black text-[#1a2420]">
+            <div className="px-6 py-4 bg-[#faf8f5] dark:bg-slate-800/80 border-b border-[#e8e4db] dark:border-slate-800 flex items-center justify-between">
+              <h3 className="text-sm font-black text-[#1a2420] dark:text-slate-100">
                 {editingBlock ? 'تعديل الكتلة الزمنية' : 'إضافة كتلة زمنية جديدة'}
               </h3>
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="p-1 rounded-lg text-[#718278] hover:text-[#1a2420] hover:bg-[#ede9df]"
+                className="p-1 rounded-lg text-[#718278] dark:text-slate-400 hover:text-[#1a2420] dark:hover:text-slate-100 hover:bg-[#ede9df] dark:hover:bg-slate-700 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -696,7 +696,7 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
               
               {/* Title */}
               <div>
-                <label className="block text-xs font-bold text-[#35433b] mb-1">
+                <label className="block text-xs font-bold text-[#35433b] dark:text-slate-300 mb-1">
                   عنوان الكتلة الزمنية: *
                 </label>
                 <input
@@ -704,7 +704,7 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
                   value={formTitle}
                   onChange={(e) => setFormTitle(e.target.value)}
                   placeholder="مثلاً: جلسة تركيز عميق على كود الواجهة..."
-                  className="w-full px-3 py-2 border border-[#d8d4cc] rounded-xl text-xs bg-[#faf8f5] text-[#1a2420] outline-hidden focus:border-[#174235]"
+                  className="w-full px-3 py-2 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-xs bg-[#faf8f5] dark:bg-slate-800 text-[#1a2420] dark:text-slate-100 outline-hidden focus:border-[#174235] dark:focus:border-emerald-500"
                   required
                 />
               </div>
@@ -712,26 +712,26 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
               {/* Time Range */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-[#35433b] mb-1">
+                  <label className="block text-xs font-bold text-[#35433b] dark:text-slate-300 mb-1">
                     وقت البدء: *
                   </label>
                   <input
                     type="time"
                     value={formStartTime}
                     onChange={(e) => setFormStartTime(e.target.value)}
-                    className="w-full px-3 py-2 border border-[#d8d4cc] rounded-xl text-xs bg-[#faf8f5] text-[#1a2420] outline-hidden focus:border-[#174235]"
+                    className="w-full px-3 py-2 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-xs bg-[#faf8f5] dark:bg-slate-800 text-[#1a2420] dark:text-slate-100 outline-hidden focus:border-[#174235] dark:focus:border-emerald-500"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-[#35433b] mb-1">
+                  <label className="block text-xs font-bold text-[#35433b] dark:text-slate-300 mb-1">
                     وقت الانتهاء: *
                   </label>
                   <input
                     type="time"
                     value={formEndTime}
                     onChange={(e) => setFormEndTime(e.target.value)}
-                    className="w-full px-3 py-2 border border-[#d8d4cc] rounded-xl text-xs bg-[#faf8f5] text-[#1a2420] outline-hidden focus:border-[#174235]"
+                    className="w-full px-3 py-2 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-xs bg-[#faf8f5] dark:bg-slate-800 text-[#1a2420] dark:text-slate-100 outline-hidden focus:border-[#174235] dark:focus:border-emerald-500"
                     required
                   />
                 </div>
@@ -739,7 +739,7 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
 
               {/* Category */}
               <div>
-                <label className="block text-xs font-bold text-[#35433b] mb-1">
+                <label className="block text-xs font-bold text-[#35433b] dark:text-slate-300 mb-1">
                   تصنيف النشاط:
                 </label>
                 <CustomSelect
@@ -755,14 +755,14 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
                     { value: 'personal', label: '🏡 شأن شخصي وعائلي' },
                   ]}
                   className="w-full"
-                  buttonClassName="w-full py-2 px-3 text-xs rounded-xl"
+                  buttonClassName="w-full py-2 px-3 text-xs rounded-xl bg-white dark:bg-slate-800 border-[#d8d4cc] dark:border-slate-700"
                   dropdownClassName="w-full"
                 />
               </div>
 
               {/* Link to Task */}
               <div>
-                <label className="block text-xs font-bold text-[#35433b] mb-1">
+                <label className="block text-xs font-bold text-[#35433b] dark:text-slate-300 mb-1">
                   ربط بمهمة محددة (اختياري):
                 </label>
                 <CustomSelect
@@ -779,14 +779,14 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
                       .map((t) => ({ value: t.id, label: t.title })),
                   ]}
                   className="w-full"
-                  buttonClassName="w-full py-2 px-3 text-xs rounded-xl"
+                  buttonClassName="w-full py-2 px-3 text-xs rounded-xl bg-white dark:bg-slate-800 border-[#d8d4cc] dark:border-slate-700"
                   dropdownClassName="w-full max-h-48"
                 />
               </div>
 
               {/* Notes */}
               <div>
-                <label className="block text-xs font-bold text-[#35433b] mb-1">
+                <label className="block text-xs font-bold text-[#35433b] dark:text-slate-300 mb-1">
                   ملاحظات أو مخرجات مستهدفة:
                 </label>
                 <textarea
@@ -794,7 +794,7 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
                   onChange={(e) => setFormNotes(e.target.value)}
                   rows={2}
                   placeholder="أي تفاصيل أو نية ذهنية لهذه الكتلة..."
-                  className="w-full px-3 py-2 border border-[#d8d4cc] rounded-xl text-xs bg-[#faf8f5] text-[#1a2420] outline-hidden focus:border-[#174235]"
+                  className="w-full px-3 py-2 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-xs bg-[#faf8f5] dark:bg-slate-800 text-[#1a2420] dark:text-slate-100 outline-hidden focus:border-[#174235] dark:focus:border-emerald-500"
                 />
               </div>
 
@@ -803,13 +803,13 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 bg-[#f4f2ed] hover:bg-[#eae6dd] text-[#55645b] rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                  className="px-4 py-2 bg-[#f4f2ed] dark:bg-slate-800 hover:bg-[#eae6dd] dark:hover:bg-slate-700 text-[#55645b] dark:text-slate-300 rounded-xl text-xs font-bold transition-colors cursor-pointer"
                 >
                   إلغاء
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-[#174235] hover:bg-[#12362b] text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+                  className="px-5 py-2 bg-[#174235] dark:bg-emerald-700 hover:bg-[#12362b] dark:hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
                 >
                   {editingBlock ? 'حفظ التعديلات' : 'إضافة الكتلة'}
                 </button>

@@ -13,7 +13,7 @@ import {
   Star, 
   Eye, 
   Copy, 
-  Check
+  Check 
 } from 'lucide-react';
 import { CustomSelect } from './CustomSelect';
 
@@ -131,32 +131,32 @@ export const VaultsTabView: React.FC<VaultsTabViewProps> = ({
   };
 
   const typeConfig: Record<VaultType, { label: string; icon: React.ReactNode }> = {
-    books: { label: 'كتاب / ملخص', icon: <Bookmark className="w-3.5 h-3.5 text-amber-700" /> },
-    notes: { label: 'مذكرة / فكرة', icon: <FileText className="w-3.5 h-3.5 text-emerald-800" /> },
-    resources: { label: 'مرجع / رابط', icon: <LinkIcon className="w-3.5 h-3.5 text-blue-700" /> },
-    templates: { label: 'قالب تشغيلي', icon: <BookOpen className="w-3.5 h-3.5 text-purple-700" /> },
+    books: { label: 'كتاب / ملخص', icon: <Bookmark className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" /> },
+    notes: { label: 'مذكرة / فكرة', icon: <FileText className="w-3.5 h-3.5 text-emerald-800 dark:text-emerald-400" /> },
+    resources: { label: 'مرجع / رابط', icon: <LinkIcon className="w-3.5 h-3.5 text-blue-700 dark:text-blue-400" /> },
+    templates: { label: 'قالب تشغيلي', icon: <BookOpen className="w-3.5 h-3.5 text-purple-700 dark:text-purple-400" /> },
   };
 
   return (
     <div className="space-y-4 max-w-5xl mx-auto">
       
       {/* 1. Compact Editorial Header */}
-      <div className="bg-white rounded-2xl border border-[#e8e4db] p-4 sm:p-5 shadow-2xs space-y-3.5">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-[#e8e4db] dark:border-slate-800 p-4 sm:p-5 shadow-2xs space-y-3.5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#ebf4f0] text-[#174235] flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-[#ebf4f0] dark:bg-emerald-950/80 text-[#174235] dark:text-emerald-300 flex items-center justify-center shrink-0">
               <BookOpen className="w-4 h-4" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-base font-semibold text-[#1a2420]">
+                <h1 className="text-base font-semibold text-[#1a2420] dark:text-slate-100">
                   خزائن المعرفة
                 </h1>
-                <span className="text-xs font-mono text-[#78857e] tabular-nums">
+                <span className="text-xs font-mono text-[#78857e] dark:text-slate-400 tabular-nums">
                   ({vaults.length} عناصر معرفية)
                 </span>
               </div>
-              <p className="text-xs text-[#6e7b74]">
+              <p className="text-xs text-[#6e7b74] dark:text-slate-400">
                 مستودعات معرفية منظمة تغذي المشاريع والركائز: ملخصات، مذكرات فكرية، وقوالب.
               </p>
             </div>
@@ -164,7 +164,7 @@ export const VaultsTabView: React.FC<VaultsTabViewProps> = ({
 
           <button
             onClick={handleOpenNew}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-[#174235] hover:bg-[#12352a] text-white rounded-xl text-xs font-medium transition-all shadow-xs cursor-pointer shrink-0 self-start sm:self-auto"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-[#174235] dark:bg-emerald-700 hover:bg-[#12352a] dark:hover:bg-emerald-800 text-white rounded-xl text-xs font-medium transition-all shadow-xs cursor-pointer shrink-0 self-start sm:self-auto"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>إضافة للخزينة</span>
@@ -172,15 +172,15 @@ export const VaultsTabView: React.FC<VaultsTabViewProps> = ({
         </div>
 
         {/* Categories Tab & Search Toolbar */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-2 border-t border-[#f0ede6]">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-2 border-t border-[#f0ede6] dark:border-slate-800">
           {/* Segmented Category Filter */}
-          <div className="flex items-center bg-[#f4f2ec] p-0.5 rounded-xl text-xs overflow-x-auto">
+          <div className="flex items-center bg-[#f4f2ec] dark:bg-slate-800 p-0.5 rounded-xl text-xs overflow-x-auto no-scrollbar">
             <button
               onClick={() => setSelectedTypeFilter('all')}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
                 selectedTypeFilter === 'all'
-                  ? 'bg-white text-[#174235] shadow-2xs font-semibold'
-                  : 'text-[#637068] hover:text-[#1a2420]'
+                  ? 'bg-white dark:bg-slate-700 text-[#174235] dark:text-emerald-300 shadow-2xs font-semibold'
+                  : 'text-[#637068] dark:text-slate-400 hover:text-[#1a2420] dark:hover:text-slate-200'
               }`}
             >
               الكل <span className="font-mono tabular-nums text-[11px]">({vaults.length})</span>
@@ -189,8 +189,8 @@ export const VaultsTabView: React.FC<VaultsTabViewProps> = ({
               onClick={() => setSelectedTypeFilter('books')}
               className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
                 selectedTypeFilter === 'books'
-                  ? 'bg-white text-[#174235] shadow-2xs font-semibold'
-                  : 'text-[#637068] hover:text-[#1a2420]'
+                  ? 'bg-white dark:bg-slate-700 text-[#174235] dark:text-emerald-300 shadow-2xs font-semibold'
+                  : 'text-[#637068] dark:text-slate-400 hover:text-[#1a2420] dark:hover:text-slate-200'
               }`}
             >
               الكتب
@@ -199,8 +199,8 @@ export const VaultsTabView: React.FC<VaultsTabViewProps> = ({
               onClick={() => setSelectedTypeFilter('notes')}
               className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
                 selectedTypeFilter === 'notes'
-                  ? 'bg-white text-[#174235] shadow-2xs font-semibold'
-                  : 'text-[#637068] hover:text-[#1a2420]'
+                  ? 'bg-white dark:bg-slate-700 text-[#174235] dark:text-emerald-300 shadow-2xs font-semibold'
+                  : 'text-[#637068] dark:text-slate-400 hover:text-[#1a2420] dark:hover:text-slate-200'
               }`}
             >
               الملاحظات
@@ -209,8 +209,8 @@ export const VaultsTabView: React.FC<VaultsTabViewProps> = ({
               onClick={() => setSelectedTypeFilter('resources')}
               className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
                 selectedTypeFilter === 'resources'
-                  ? 'bg-white text-[#174235] shadow-2xs font-semibold'
-                  : 'text-[#637068] hover:text-[#1a2420]'
+                  ? 'bg-white dark:bg-slate-700 text-[#174235] dark:text-emerald-300 shadow-2xs font-semibold'
+                  : 'text-[#637068] dark:text-slate-400 hover:text-[#1a2420] dark:hover:text-slate-200'
               }`}
             >
               الموارد
@@ -219,8 +219,8 @@ export const VaultsTabView: React.FC<VaultsTabViewProps> = ({
               onClick={() => setSelectedTypeFilter('templates')}
               className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
                 selectedTypeFilter === 'templates'
-                  ? 'bg-white text-[#174235] shadow-2xs font-semibold'
-                  : 'text-[#637068] hover:text-[#1a2420]'
+                  ? 'bg-white dark:bg-slate-700 text-[#174235] dark:text-emerald-300 shadow-2xs font-semibold'
+                  : 'text-[#637068] dark:text-slate-400 hover:text-[#1a2420] dark:hover:text-slate-200'
               }`}
             >
               القوالب
@@ -230,13 +230,13 @@ export const VaultsTabView: React.FC<VaultsTabViewProps> = ({
           {/* Search & Pillar Select */}
           <div className="flex items-center gap-2">
             <div className="relative flex-1 sm:w-56">
-              <Search className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-[#85928a]" />
+              <Search className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-[#85928a] dark:text-slate-400" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="بحث في الخزائن..."
-                className="w-full bg-[#f8f7f4] border border-[#d8d4cc] rounded-lg pr-7 pl-2.5 py-1.5 text-xs text-[#1a2420] outline-hidden focus:border-[#174235]"
+                className="w-full bg-[#f8f7f4] dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-lg pr-7 pl-2.5 py-1.5 text-xs text-[#1a2420] dark:text-slate-100 outline-hidden focus:border-[#174235] dark:focus:border-emerald-500"
               />
             </div>
 
@@ -248,15 +248,15 @@ export const VaultsTabView: React.FC<VaultsTabViewProps> = ({
                 ...pillars.map((p) => ({ value: p.id, label: p.title })),
               ]}
               size="xs"
-              buttonClassName="rounded-lg py-1.5 px-2 bg-[#f8f7f4] border-[#d8d4cc]"
+              buttonClassName="rounded-lg py-1.5 px-2 bg-[#f8f7f4] dark:bg-slate-800 border-[#d8d4cc] dark:border-slate-700"
             />
           </div>
         </div>
       </div>
 
-      {/* 2. Knowledge Vaults Grid - Zero-Pill High Craft Design */}
+      {/* 2. Knowledge Vaults Grid */}
       {filteredVaults.length === 0 ? (
-        <div className="bg-white border border-[#e8e4db] rounded-2xl p-10 text-center text-xs text-[#7d8982]">
+        <div className="bg-white dark:bg-slate-900 border border-[#e8e4db] dark:border-slate-800 rounded-2xl p-10 text-center text-xs text-[#7d8982] dark:text-slate-400">
           لا توجد عناصر مطابقة في الخزائن حالياً.
         </div>
       ) : (
@@ -269,18 +269,18 @@ export const VaultsTabView: React.FC<VaultsTabViewProps> = ({
             return (
               <div
                 key={item.id}
-                className="bg-white border border-[#e8e4db] hover:border-[#174235]/40 rounded-2xl p-4 sm:p-5 shadow-2xs hover:shadow-xs transition-all space-y-3 flex flex-col justify-between group"
+                className="bg-white dark:bg-slate-900 border border-[#e8e4db] dark:border-slate-800 hover:border-[#174235]/40 dark:hover:border-emerald-500/50 rounded-2xl p-4 sm:p-5 shadow-2xs hover:shadow-xs transition-all space-y-3 flex flex-col justify-between group"
               >
                 <div className="space-y-2">
-                  {/* Clean Inline Typographic Metadata (Anti-Pill) */}
-                  <div className="flex items-center justify-between text-xs text-[#78857e]">
+                  {/* Clean Inline Typographic Metadata */}
+                  <div className="flex items-center justify-between text-xs text-[#78857e] dark:text-slate-400">
                     <div className="flex items-center gap-1.5 font-medium">
                       {config.icon}
-                      <span className="text-[#35403a]">{config.label}</span>
+                      <span className="text-[#35403a] dark:text-slate-200">{config.label}</span>
                       {pillar && (
                         <>
-                          <span className="text-[#d8d4cc]">·</span>
-                          <span className="text-[#616e67]">{pillar.title}</span>
+                          <span className="text-[#d8d4cc] dark:text-slate-700">·</span>
+                          <span className="text-[#616e67] dark:text-slate-300">{pillar.title}</span>
                         </>
                       )}
                     </div>
@@ -295,35 +295,35 @@ export const VaultsTabView: React.FC<VaultsTabViewProps> = ({
                   </div>
 
                   <div>
-                    <h3 className="text-sm font-semibold text-[#1a2420] line-clamp-1 group-hover:text-[#174235] transition-colors">
+                    <h3 className="text-sm font-semibold text-[#1a2420] dark:text-slate-100 line-clamp-1 group-hover:text-[#174235] dark:group-hover:text-emerald-400 transition-colors">
                       {item.title}
                     </h3>
                     {item.author_or_source && (
-                      <span className="text-[11px] text-[#78857e] block font-medium mt-0.5">
+                      <span className="text-[11px] text-[#78857e] dark:text-slate-400 block font-medium mt-0.5">
                         بواسطة: {item.author_or_source}
                       </span>
                     )}
                   </div>
 
                   {item.summary && (
-                    <p className="text-xs text-[#525f58] line-clamp-2 leading-relaxed bg-[#faf9f6] p-2.5 rounded-xl border border-[#f0ede6]">
+                    <p className="text-xs text-[#525f58] dark:text-slate-300 line-clamp-2 leading-relaxed bg-[#faf9f6] dark:bg-slate-800/80 p-2.5 rounded-xl border border-[#f0ede6] dark:border-slate-700">
                       {item.summary}
                     </p>
                   )}
 
                   {/* Connected Project Link */}
                   {project && (
-                    <div className="text-[11px] text-[#2c5282] font-medium flex items-center gap-1 pt-0.5">
+                    <div className="text-[11px] text-[#2c5282] dark:text-blue-400 font-medium flex items-center gap-1 pt-0.5">
                       <span>📁 مشروع مرتبط:</span>
                       <span className="font-semibold">{project.title}</span>
                     </div>
                   )}
 
-                  {/* Editorial Text Tags (Anti-Badge) */}
+                  {/* Tags */}
                   {item.tags.length > 0 && (
-                    <div className="flex items-center gap-2 flex-wrap pt-0.5 text-[11px] text-[#78857e]">
+                    <div className="flex items-center gap-2 flex-wrap pt-0.5 text-[11px] text-[#78857e] dark:text-slate-400">
                       {item.tags.map((tag, idx) => (
-                        <span key={idx} className="hover:text-[#174235] transition-colors">
+                        <span key={idx} className="hover:text-[#174235] dark:hover:text-emerald-400 transition-colors">
                           #{tag}
                         </span>
                       ))}
@@ -332,10 +332,10 @@ export const VaultsTabView: React.FC<VaultsTabViewProps> = ({
                 </div>
 
                 {/* Footer Action Strip */}
-                <div className="flex items-center justify-between pt-2.5 border-t border-[#f0ede6] text-xs">
+                <div className="flex items-center justify-between pt-2.5 border-t border-[#f0ede6] dark:border-slate-800 text-xs">
                   <button
                     onClick={() => setReadingItem(item)}
-                    className="flex items-center gap-1.5 font-medium text-[#174235] hover:underline cursor-pointer"
+                    className="flex items-center gap-1.5 font-medium text-[#174235] dark:text-emerald-400 hover:underline cursor-pointer"
                   >
                     <Eye className="w-3.5 h-3.5" />
                     <span>قراءة المحتوى</span>
@@ -347,7 +347,7 @@ export const VaultsTabView: React.FC<VaultsTabViewProps> = ({
                         href={item.url}
                         target="_blank"
                         rel="noreferrer"
-                        className="p-1.5 text-[#85928a] hover:text-[#174235] rounded-lg hover:bg-[#ebf4f0] transition-colors"
+                        className="p-1.5 text-[#85928a] dark:text-slate-400 hover:text-[#174235] dark:hover:text-emerald-400 rounded-lg hover:bg-[#ebf4f0] dark:hover:bg-slate-800 transition-colors"
                         title="فتح الرابط"
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
@@ -355,14 +355,14 @@ export const VaultsTabView: React.FC<VaultsTabViewProps> = ({
                     )}
                     <button
                       onClick={() => handleOpenEdit(item)}
-                      className="p-1.5 text-[#85928a] hover:text-[#1a2420] rounded-lg hover:bg-[#f4f2ec] transition-colors cursor-pointer"
+                      className="p-1.5 text-[#85928a] dark:text-slate-400 hover:text-[#1a2420] dark:hover:text-slate-100 rounded-lg hover:bg-[#f4f2ec] dark:hover:bg-slate-800 transition-colors cursor-pointer"
                       title="تعديل"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => onDeleteVaultItem(item.id)}
-                      className="p-1.5 text-[#85928a] hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
+                      className="p-1.5 text-[#85928a] dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/60 transition-colors cursor-pointer"
                       title="حذف"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -377,36 +377,36 @@ export const VaultsTabView: React.FC<VaultsTabViewProps> = ({
 
       {/* Reading Mode Drawer/Modal */}
       {readingItem && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-2xs flex items-center justify-center p-4">
-          <div className="bg-[#fcfbfa] rounded-2xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl border border-[#e8e4db] animate-in fade-in">
-            <div className="p-5 border-b border-[#e8e4db] flex items-center justify-between bg-white rounded-t-2xl">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-2xs flex items-center justify-center p-4">
+          <div className="bg-[#fcfbfa] dark:bg-slate-900 rounded-2xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl border border-[#e8e4db] dark:border-slate-800 animate-in fade-in">
+            <div className="p-5 border-b border-[#e8e4db] dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900 rounded-t-2xl">
               <div>
-                <span className="text-[11px] text-[#78857e] block font-medium">
+                <span className="text-[11px] text-[#78857e] dark:text-slate-400 block font-medium">
                   {typeConfig[readingItem.vault_type]?.label} · {pillars.find(p => p.id === readingItem.pillar_id)?.title}
                 </span>
-                <h2 className="text-base font-bold text-[#1a2420] mt-0.5">{readingItem.title}</h2>
+                <h2 className="text-base font-bold text-[#1a2420] dark:text-slate-100 mt-0.5">{readingItem.title}</h2>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => handleCopyContent(readingItem.content || readingItem.summary || '')}
-                  className="p-2 text-[#78857e] hover:text-[#174235] rounded-lg hover:bg-[#f4f2ec] cursor-pointer"
+                  className="p-2 text-[#78857e] dark:text-slate-400 hover:text-[#174235] dark:hover:text-emerald-400 rounded-lg hover:bg-[#f4f2ec] dark:hover:bg-slate-800 cursor-pointer"
                   title="نسخ المحتوى"
                 >
-                  {copiedContent ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                  {copiedContent ? <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> : <Copy className="w-4 h-4" />}
                 </button>
                 <button
                   onClick={() => setReadingItem(null)}
-                  className="p-2 text-[#78857e] hover:text-[#1a2420] rounded-lg hover:bg-[#f4f2ec] cursor-pointer"
+                  className="p-2 text-[#78857e] dark:text-slate-400 hover:text-[#1a2420] dark:hover:text-slate-100 rounded-lg hover:bg-[#f4f2ec] dark:hover:bg-slate-800 cursor-pointer"
                 >
                   ✕
                 </button>
               </div>
             </div>
 
-            <div className="p-6 overflow-y-auto flex-1 space-y-4 text-sm text-[#2d3731] leading-relaxed font-sans">
+            <div className="p-6 overflow-y-auto flex-1 space-y-4 text-sm text-[#2d3731] dark:text-slate-200 leading-relaxed font-sans">
               {readingItem.summary && (
-                <div className="bg-[#faf8f4] p-4 rounded-xl border border-[#ece8df] italic text-[#4a554f]">
-                  <span className="font-semibold not-italic block text-xs text-[#78857e] mb-1">الملخص التنفيذي:</span>
+                <div className="bg-[#faf8f4] dark:bg-slate-800 p-4 rounded-xl border border-[#ece8df] dark:border-slate-700 italic text-[#4a554f] dark:text-slate-300">
+                  <span className="font-semibold not-italic block text-xs text-[#78857e] dark:text-slate-400 mb-1">الملخص التنفيذي:</span>
                   {readingItem.summary}
                 </div>
               )}
@@ -421,33 +421,33 @@ export const VaultsTabView: React.FC<VaultsTabViewProps> = ({
 
       {/* Form Create/Edit Modal */}
       {isFormOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-2xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] flex flex-col shadow-xl border border-[#e8e4db] animate-in fade-in text-xs">
-            <div className="p-4 border-b border-[#f0ede6] flex items-center justify-between">
-              <h3 className="font-semibold text-sm text-[#1a2420]">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-2xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full max-h-[90vh] flex flex-col shadow-xl border border-[#e8e4db] dark:border-slate-800 animate-in fade-in text-xs">
+            <div className="p-4 border-b border-[#f0ede6] dark:border-slate-800 flex items-center justify-between">
+              <h3 className="font-semibold text-sm text-[#1a2420] dark:text-slate-100">
                 {editingItem ? 'تعديل عنصر المعرفة' : 'إيداع عنصر جديد في الخزائن'}
               </h3>
-              <button onClick={() => setIsFormOpen(false)} className="text-[#85928a] hover:text-[#1a2420] p-1">
+              <button onClick={() => setIsFormOpen(false)} className="text-[#85928a] dark:text-slate-400 hover:text-[#1a2420] dark:hover:text-slate-100 p-1 cursor-pointer">
                 ✕
               </button>
             </div>
 
             <form onSubmit={handleSubmitForm} className="p-4 overflow-y-auto space-y-3 flex-1">
               <div>
-                <label className="block font-medium text-[#35403a] mb-1">العنوان:</label>
+                <label className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">العنوان:</label>
                 <input
                   type="text"
                   required
                   value={formTitle}
                   onChange={(e) => setFormTitle(e.target.value)}
                   placeholder="عنوان الكتاب، الفكرة، أو القالب..."
-                  className="w-full p-2 bg-white border border-[#d8d4cc] rounded-xl text-xs text-[#1a2420] outline-hidden focus:border-[#174235]"
+                  className="w-full p-2 bg-white dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-xs text-[#1a2420] dark:text-slate-100 outline-hidden focus:border-[#174235] dark:focus:border-emerald-500"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block font-medium text-[#35403a] mb-1">النوع:</label>
+                  <label className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">النوع:</label>
                   <CustomSelect<VaultType>
                     value={formType}
                     onChange={(val) => setFormType(val)}
@@ -458,19 +458,19 @@ export const VaultsTabView: React.FC<VaultsTabViewProps> = ({
                       { value: 'templates', label: 'قالب تشغيلي', icon: '📋' },
                     ]}
                     className="w-full"
-                    buttonClassName="w-full rounded-xl py-2 px-3 text-xs"
+                    buttonClassName="w-full rounded-xl py-2 px-3 text-xs bg-white dark:bg-slate-800 border-[#d8d4cc] dark:border-slate-700"
                     dropdownClassName="w-full"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-medium text-[#35403a] mb-1">الركيزة المرتبطة:</label>
+                  <label className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">الركيزة المرتبطة:</label>
                   <CustomSelect
                     value={formPillarId}
                     onChange={(val) => setFormPillarId(val)}
                     options={pillars.map((p) => ({ value: p.id, label: p.title }))}
                     className="w-full"
-                    buttonClassName="w-full rounded-xl py-2 px-3 text-xs"
+                    buttonClassName="w-full rounded-xl py-2 px-3 text-xs bg-white dark:bg-slate-800 border-[#d8d4cc] dark:border-slate-700"
                     dropdownClassName="w-full"
                   />
                 </div>
@@ -478,18 +478,18 @@ export const VaultsTabView: React.FC<VaultsTabViewProps> = ({
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block font-medium text-[#35403a] mb-1">المؤلف أو المصدر:</label>
+                  <label className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">المؤلف أو المصدر:</label>
                   <input
                     type="text"
                     value={formAuthor}
                     onChange={(e) => setFormAuthor(e.target.value)}
                     placeholder="اسم الكاتب أو المرجع"
-                    className="w-full p-2 bg-white border border-[#d8d4cc] rounded-xl text-xs text-[#1a2420] outline-hidden"
+                    className="w-full p-2 bg-white dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-xs text-[#1a2420] dark:text-slate-100 outline-hidden"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-medium text-[#35403a] mb-1">مشروع مرتبط (اختياري):</label>
+                  <label className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">مشروع مرتبط (اختياري):</label>
                   <CustomSelect
                     value={formProjectId}
                     onChange={(val) => setFormProjectId(val)}
@@ -498,59 +498,59 @@ export const VaultsTabView: React.FC<VaultsTabViewProps> = ({
                       ...projects.map((pr) => ({ value: pr.id, label: pr.title })),
                     ]}
                     className="w-full"
-                    buttonClassName="w-full rounded-xl py-2 px-3 text-xs"
+                    buttonClassName="w-full rounded-xl py-2 px-3 text-xs bg-white dark:bg-slate-800 border-[#d8d4cc] dark:border-slate-700"
                     dropdownClassName="w-full"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-medium text-[#35403a] mb-1">الرابط المرجعي (اختياري):</label>
+                <label className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">الرابط المرجعي (اختياري):</label>
                 <input
                   type="url"
                   value={formUrl}
                   onChange={(e) => setFormUrl(e.target.value)}
                   placeholder="https://..."
-                  className="w-full p-2 bg-white border border-[#d8d4cc] rounded-xl text-xs text-[#1a2420] outline-hidden font-mono"
+                  className="w-full p-2 bg-white dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-xs text-[#1a2420] dark:text-slate-100 outline-hidden font-mono"
                 />
               </div>
 
               <div>
-                <label className="block font-medium text-[#35403a] mb-1">الملخص السريع:</label>
+                <label className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">الملخص السريع:</label>
                 <textarea
                   rows={2}
                   value={formSummary}
                   onChange={(e) => setFormSummary(e.target.value)}
                   placeholder="فكرة المادة في جملتين..."
-                  className="w-full p-2 bg-white border border-[#d8d4cc] rounded-xl text-xs text-[#1a2420] outline-hidden focus:border-[#174235]"
+                  className="w-full p-2 bg-white dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-xs text-[#1a2420] dark:text-slate-100 outline-hidden focus:border-[#174235] dark:focus:border-emerald-500"
                 />
               </div>
 
               <div>
-                <label className="block font-medium text-[#35403a] mb-1">المحتوى التفصيلي والملاحظات:</label>
+                <label className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">المحتوى التفصيلي والملاحظات:</label>
                 <textarea
                   rows={4}
                   value={formContent}
                   onChange={(e) => setFormContent(e.target.value)}
                   placeholder="اكتب الملاحظات، النقاط الجوهرية، أو نصوص الاقتباسات هنا..."
-                  className="w-full p-2 bg-white border border-[#d8d4cc] rounded-xl text-xs text-[#1a2420] outline-hidden focus:border-[#174235] font-sans leading-relaxed"
+                  className="w-full p-2 bg-white dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-xs text-[#1a2420] dark:text-slate-100 outline-hidden focus:border-[#174235] dark:focus:border-emerald-500 font-sans leading-relaxed"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block font-medium text-[#35403a] mb-1">الوسوم (مفصولة بفاصلة):</label>
+                  <label className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">الوسوم (مفصولة بفاصلة):</label>
                   <input
                     type="text"
                     value={formTagsStr}
                     onChange={(e) => setFormTagsStr(e.target.value)}
                     placeholder="إنتاجية, فكر, كتابة"
-                    className="w-full p-2 bg-white border border-[#d8d4cc] rounded-xl text-xs text-[#1a2420] outline-hidden"
+                    className="w-full p-2 bg-white dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-xs text-[#1a2420] dark:text-slate-100 outline-hidden"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-medium text-[#35403a] mb-1">التقييم:</label>
+                  <label className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">التقييم:</label>
                   <CustomSelect<number>
                     value={formRating}
                     onChange={(val) => setFormRating(val)}
@@ -562,23 +562,23 @@ export const VaultsTabView: React.FC<VaultsTabViewProps> = ({
                       { value: 1, label: '⭐ (1/5)' },
                     ]}
                     className="w-full"
-                    buttonClassName="w-full rounded-xl py-2 px-3 text-xs"
+                    buttonClassName="w-full rounded-xl py-2 px-3 text-xs bg-white dark:bg-slate-800 border-[#d8d4cc] dark:border-slate-700"
                     dropdownClassName="w-full"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#f0ede6]">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#f0ede6] dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsFormOpen(false)}
-                  className="px-3.5 py-1.5 bg-[#f4f2ec] hover:bg-[#ece8de] text-[#4a554f] rounded-xl font-medium cursor-pointer"
+                  className="px-3.5 py-1.5 bg-[#f4f2ec] dark:bg-slate-800 hover:bg-[#ece8de] dark:hover:bg-slate-700 text-[#4a554f] dark:text-slate-300 rounded-xl font-medium cursor-pointer"
                 >
                   إلغاء
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 bg-[#174235] hover:bg-[#12352a] text-white rounded-xl font-medium shadow-xs cursor-pointer"
+                  className="px-4 py-1.5 bg-[#174235] dark:bg-emerald-700 hover:bg-[#12352a] dark:hover:bg-emerald-800 text-white rounded-xl font-medium shadow-xs cursor-pointer"
                 >
                   حفظ في الخزائن
                 </button>

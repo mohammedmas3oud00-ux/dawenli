@@ -317,8 +317,8 @@ export const VoiceAiCaptureModal: React.FC<VoiceAiCaptureModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in">
-      <div className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-[#e2ded5] overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-xl w-full shadow-2xl border border-[#e2ded5] dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh]">
         
         {/* Header */}
         <div className="p-4 bg-gradient-to-r from-[#174235] to-[#235848] text-white flex items-center justify-between shrink-0">
@@ -361,7 +361,7 @@ export const VoiceAiCaptureModal: React.FC<VoiceAiCaptureModalProps> = ({
             <div className="space-y-4">
               
               {/* Voice Interaction Hero Box */}
-              <div className="bg-[#f8f7f4] border border-[#e8e4db] rounded-2xl p-5 text-center space-y-3">
+              <div className="bg-[#f8f7f4] dark:bg-slate-800/80 border border-[#e8e4db] dark:border-slate-700 rounded-2xl p-5 text-center space-y-3">
                 <div className="flex items-center justify-center gap-3">
                   {/* Microphone Primary Button */}
                   <button
@@ -384,7 +384,7 @@ export const VoiceAiCaptureModal: React.FC<VoiceAiCaptureModalProps> = ({
                     className={`w-11 h-11 rounded-full flex items-center justify-center transition-all cursor-pointer border ${
                       isRecordingAudio
                         ? 'bg-rose-500 text-white animate-bounce border-rose-600'
-                        : 'bg-white hover:bg-[#f2efe9] text-[#174235] border-[#d8d4cc]'
+                        : 'bg-white dark:bg-slate-800 hover:bg-[#f2efe9] dark:hover:bg-slate-700 text-[#174235] dark:text-emerald-400 border-[#d8d4cc] dark:border-slate-700'
                     }`}
                     title={isRecordingAudio ? 'إيقاف التسجيل الصوتي' : 'تسجيل صوتي عالي عالية الدقة'}
                   >
@@ -393,14 +393,14 @@ export const VoiceAiCaptureModal: React.FC<VoiceAiCaptureModalProps> = ({
                 </div>
 
                 <div>
-                  <span className="font-bold text-sm text-[#1a2420] block">
+                  <span className="font-bold text-sm text-[#1a2420] dark:text-slate-100 block">
                     {isListening
                       ? '🎙️ جاري الاستماع المباشر... تحدث الآن'
                       : isRecordingAudio
                       ? `🔴 جاري تسجيل مقطع الصوت (${recordingSeconds} ثانية)...`
                       : 'اضغط وتحدث بما يخطر في بالك'}
                   </span>
-                  <p className="text-[11px] text-[#6d7972] mt-1">
+                  <p className="text-[11px] text-[#6d7972] dark:text-slate-400 mt-1">
                     مثال: "عايز أعمل موقع إلكتروني أو نظام يخليني أقدر أعمل صور ونصوص إعلانية لشغلي"
                   </p>
                 </div>
@@ -409,7 +409,7 @@ export const VoiceAiCaptureModal: React.FC<VoiceAiCaptureModalProps> = ({
               {/* Real-time Transcription & Editable Text Area */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="font-bold text-[#35423b] flex items-center gap-1.5">
+                  <label className="font-bold text-[#35423b] dark:text-slate-300 flex items-center gap-1.5">
                     <Edit3 className="w-3.5 h-3.5 text-[#174235]" />
                     <span>النص المنقى والمكتوب:</span>
                   </label>
@@ -417,7 +417,7 @@ export const VoiceAiCaptureModal: React.FC<VoiceAiCaptureModalProps> = ({
                     <button
                       type="button"
                       onClick={() => setInputText('')}
-                      className="text-[11px] text-[#7d8982] hover:text-rose-600"
+                      className="text-[11px] text-[#7d8982] dark:text-slate-400 hover:text-rose-600"
                     >
                       مسح النص
                     </button>
@@ -429,10 +429,10 @@ export const VoiceAiCaptureModal: React.FC<VoiceAiCaptureModalProps> = ({
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
                   placeholder="سيظهر ما تقوله هنا بصوتك بعد تنقيته من أي تكرار أو يمكنك كتابته مباشرة..."
-                  className="w-full p-3.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] placeholder:text-[#9aa69f] focus:bg-white focus:border-[#174235] focus:ring-1 focus:ring-[#174235]/20 outline-hidden leading-relaxed"
+                  className="w-full p-3.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] dark:text-slate-100 placeholder:text-[#9aa69f] focus:bg-white focus:border-[#174235] focus:ring-1 focus:ring-[#174235]/20 outline-hidden leading-relaxed"
                 />
 
-                <div className="flex items-center justify-between mt-1 text-[11px] text-[#7a8880]">
+                <div className="flex items-center justify-between mt-1 text-[11px] text-[#7a8880] dark:text-slate-400">
                   <span>✨ يقوم النظام آلياً بتنقية التأتأة وتكرار الكلمات</span>
                   <button
                     type="button"
@@ -446,8 +446,8 @@ export const VoiceAiCaptureModal: React.FC<VoiceAiCaptureModalProps> = ({
               </div>
 
               {/* Sample Prompts to test */}
-              <div className="bg-[#f6f5f0] p-3 rounded-xl border border-[#ece8df] space-y-1.5">
-                <span className="font-semibold text-[#48554e] block text-[11px]">
+              <div className="bg-[#f6f5f0] dark:bg-slate-800/60 p-3 rounded-xl border border-[#ece8df] dark:border-slate-700 space-y-1.5">
+                <span className="font-semibold text-[#48554e] dark:text-slate-300 block text-[11px]">
                   💡 جرب نصوصاً وأفكاراً مثل:
                 </span>
                 <div className="flex flex-wrap gap-1.5">
@@ -460,7 +460,7 @@ export const VoiceAiCaptureModal: React.FC<VoiceAiCaptureModalProps> = ({
                       key={i}
                       type="button"
                       onClick={() => setInputText(sample)}
-                      className="text-[11px] text-right bg-white hover:bg-[#eef5f2] border border-[#dcd8cf] hover:border-[#174235] px-2.5 py-1 rounded-lg text-[#2a3530] transition-colors cursor-pointer"
+                      className="text-[11px] text-right bg-white dark:bg-slate-800 hover:bg-[#eef5f2] dark:hover:bg-slate-700 border border-[#dcd8cf] dark:border-slate-700 hover:border-[#174235] dark:hover:border-emerald-500 px-2.5 py-1 rounded-lg text-[#2a3530] dark:text-slate-200 transition-colors cursor-pointer"
                     >
                       {sample.length > 55 ? sample.slice(0, 55) + '...' : sample}
                     </button>
@@ -475,7 +475,7 @@ export const VoiceAiCaptureModal: React.FC<VoiceAiCaptureModalProps> = ({
               <div className="space-y-4">
                 
                 {/* Synthesis Summary Banner */}
-                <div className="bg-gradient-to-r from-[#ebf4f0] to-[#f4f8f6] border border-[#cbe2d7] rounded-xl p-3.5 space-y-2">
+                <div className="bg-gradient-to-r from-[#ebf4f0] to-[#f4f8f6] dark:from-emerald-950/60 dark:to-slate-800/80 border border-[#cbe2d7] dark:border-emerald-800 rounded-xl p-3.5 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-bold text-[#174235] uppercase tracking-wider flex items-center gap-1">
                       <Sparkles className="w-3.5 h-3.5 text-amber-500" />
@@ -490,26 +490,26 @@ export const VoiceAiCaptureModal: React.FC<VoiceAiCaptureModalProps> = ({
                     </button>
                   </div>
 
-                  <p className="text-xs font-semibold text-[#1a2420] leading-relaxed">
+                  <p className="text-xs font-semibold text-[#1a2420] dark:text-slate-100 leading-relaxed">
                     {analysisResult.summary}
                   </p>
 
-                  <div className="text-[11px] text-[#526058] bg-white/80 p-2 rounded-lg border border-[#dcebe3]">
+                  <div className="text-[11px] text-[#526058] dark:text-slate-300 bg-white/80 dark:bg-slate-800/80 p-2 rounded-lg border border-[#dcebe3] dark:border-slate-700">
                     <span className="font-bold text-[#174235]">النص الصوتي بعد التنقية: </span>
                     "{analysisResult.cleanedTranscription}"
                   </div>
                 </div>
 
                 {/* Proposed Project & Pillar Placement */}
-                <div className="bg-[#fbfbfa] border border-[#e8e4db] rounded-xl p-3.5 space-y-3">
-                  <h4 className="font-bold text-xs text-[#1a2420] flex items-center gap-1.5">
+                <div className="bg-[#fbfbfa] dark:bg-slate-800/60 border border-[#e8e4db] dark:border-slate-700 rounded-xl p-3.5 space-y-3">
+                  <h4 className="font-bold text-xs text-[#1a2420] dark:text-slate-100 flex items-center gap-1.5">
                     <FolderPlus className="w-4 h-4 text-[#174235]" />
                     <span>المشروع والركيزة المقترحة</span>
                   </h4>
 
                   <div className="space-y-2">
                     <div>
-                      <label className="block text-[11px] font-semibold text-[#5a6861] mb-1">
+                      <label className="block text-[11px] font-semibold text-[#5a6861] dark:text-slate-300 mb-1">
                         اسم المشروع:
                       </label>
                       <input
@@ -518,18 +518,18 @@ export const VoiceAiCaptureModal: React.FC<VoiceAiCaptureModalProps> = ({
                         onChange={(e) =>
                           setAnalysisResult({ ...analysisResult, projectTitle: e.target.value })
                         }
-                        className="w-full p-2 bg-white border border-[#d8d4cc] rounded-lg text-xs font-bold text-[#1a2420] outline-hidden focus:border-[#174235]"
+                        className="w-full p-2 bg-white dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-lg text-xs font-bold text-[#1a2420] dark:text-slate-100 dark:text-slate-100 outline-hidden focus:border-[#174235]"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-semibold text-[#5a6861] mb-1">
+                      <label className="block text-[11px] font-semibold text-[#5a6861] dark:text-slate-300 mb-1">
                         إيداع تحت الركيزة الحياتية:
                       </label>
                       <select
                         value={selectedPillarId}
                         onChange={(e) => setSelectedPillarId(e.target.value)}
-                        className="w-full p-2 bg-white border border-[#d8d4cc] rounded-lg text-xs font-medium text-[#1a2420] cursor-pointer outline-hidden"
+                        className="w-full p-2 bg-white dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-lg text-xs font-medium text-[#1a2420] dark:text-slate-100 dark:text-slate-100 cursor-pointer outline-hidden"
                       >
                         {pillars.map((p) => (
                           <option key={p.id} value={p.id}>
@@ -544,11 +544,11 @@ export const VoiceAiCaptureModal: React.FC<VoiceAiCaptureModalProps> = ({
                 {/* Extracted Tasks Checklist */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <h4 className="font-bold text-xs text-[#1a2420] flex items-center gap-1.5">
+                    <h4 className="font-bold text-xs text-[#1a2420] dark:text-slate-100 flex items-center gap-1.5">
                       <CheckSquare className="w-4 h-4 text-[#174235]" />
                       <span>المهام التنفيذية المستخلصة ({analysisResult.tasks.length} مهام):</span>
                     </h4>
-                    <span className="text-[11px] text-[#78857e]">حدد المهام التي ترغب بإنشائها</span>
+                    <span className="text-[11px] text-[#78857e] dark:text-slate-400">حدد المهام التي ترغب بإنشائها</span>
                   </div>
 
                   <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
@@ -563,38 +563,38 @@ export const VoiceAiCaptureModal: React.FC<VoiceAiCaptureModalProps> = ({
                           }
                           className={`p-2.5 rounded-xl border transition-all cursor-pointer flex items-start gap-2.5 ${
                             isChecked
-                              ? 'bg-white border-[#174235]/40 shadow-2xs'
-                              : 'bg-[#f8f7f4] border-[#e2ded5] opacity-60'
+                              ? 'bg-white dark:bg-slate-800 border-[#174235]/40 dark:border-emerald-600/40 shadow-2xs'
+                              : 'bg-[#f8f7f4] dark:bg-slate-850 border-[#e2ded5] dark:border-slate-700 opacity-60'
                           }`}
                         >
                           <div
                             className={`w-4 h-4 rounded mt-0.5 flex items-center justify-center border transition-colors shrink-0 ${
                               isChecked
                                 ? 'bg-[#174235] border-[#174235] text-white'
-                                : 'border-[#b5bfb9] bg-white'
+                                : 'border-[#b5bfb9] dark:border-slate-600 bg-white dark:bg-slate-800'
                             }`}
                           >
                             {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
                           </div>
 
                           <div className="flex-1 min-w-0">
-                            <span className="font-bold text-[#1a2420] block leading-snug">
+                            <span className="font-bold text-[#1a2420] dark:text-slate-100 block leading-snug">
                               {task.title}
                             </span>
                             {task.description && (
-                              <p className="text-[11px] text-[#637169] mt-0.5 line-clamp-1">
+                              <p className="text-[11px] text-[#637169] dark:text-slate-400 mt-0.5 line-clamp-1">
                                 {task.description}
                               </p>
                             )}
-                            <div className="flex items-center gap-2 mt-1.5 text-[10px] text-[#717e77]">
-                              <span className="px-1.5 py-0.5 rounded bg-[#f0ede6] font-medium">
+                            <div className="flex items-center gap-2 mt-1.5 text-[10px] text-[#717e77] dark:text-slate-400">
+                              <span className="px-1.5 py-0.5 rounded bg-[#f0ede6] dark:bg-slate-700 text-[#404c45] dark:text-slate-300 font-medium">
                                 أولوية: {task.priority === 'high' ? '🔴 عليا' : task.priority === 'medium' ? '🟡 متوسطة' : '🟢 عادية'}
                               </span>
-                              <span className="px-1.5 py-0.5 rounded bg-[#f0ede6] font-medium flex items-center gap-1">
+                              <span className="px-1.5 py-0.5 rounded bg-[#f0ede6] dark:bg-slate-700 text-[#404c45] dark:text-slate-300 font-medium flex items-center gap-1">
                                 <Clock className="w-2.5 h-2.5" />
                                 <span>{task.estimatedHours} س</span>
                               </span>
-                              <span className="px-1.5 py-0.5 rounded bg-[#f0ede6] font-medium">
+                              <span className="px-1.5 py-0.5 rounded bg-[#f0ede6] dark:bg-slate-700 text-[#404c45] dark:text-slate-300 font-medium">
                                 {task.energyLevel === 'high' ? '🚀 تركيز عميق' : '⚡ طاقة معتدلة'}
                               </span>
                             </div>
@@ -612,11 +612,11 @@ export const VoiceAiCaptureModal: React.FC<VoiceAiCaptureModalProps> = ({
         </div>
 
         {/* Modal Footer Actions */}
-        <div className="p-4 bg-[#fbfbfa] border-t border-[#ede9e1] flex items-center justify-between shrink-0">
+        <div className="p-4 bg-[#fbfbfa] dark:bg-slate-900 border-t border-[#ede9e1] dark:border-slate-800 flex items-center justify-between shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold text-[#5a6660] hover:bg-[#eae7df] rounded-xl cursor-pointer transition-colors"
+            className="px-4 py-2 text-xs font-semibold text-[#5a6660] dark:text-slate-300 hover:bg-[#eae7df] dark:hover:bg-slate-800 rounded-xl cursor-pointer transition-colors"
           >
             إغلاق
           </button>

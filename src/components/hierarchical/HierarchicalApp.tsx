@@ -1103,28 +1103,28 @@ export const HierarchicalApp: React.FC = () => {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         
         {/* Top App Header matching the clean header of screenshot 2 */}
-        <header className="bg-white dark:bg-slate-900 border-b border-[#e8e5de] dark:border-slate-800 px-4 sm:px-6 py-3 sticky top-0 z-30 shadow-2xs">
-          <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+        <header className="bg-white dark:bg-slate-900 border-b border-[#e8e5de] dark:border-slate-800 px-3 sm:px-6 py-2.5 sm:py-3 sticky top-0 z-30 shadow-2xs">
+          <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-3">
             
             {/* Left section: mobile hamburger & breadcrumbs */}
-            <div className="flex items-center gap-3 min-w-0">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
               <button
                 onClick={() => setIsMobileSidebarOpen(true)}
-                className="md:hidden p-2 text-[#65736b] dark:text-slate-400 hover:text-[#1a2420] dark:hover:text-slate-100 rounded-xl hover:bg-[#f2efe8] dark:hover:bg-slate-800 cursor-pointer"
+                className="md:hidden p-2 text-[#65736b] dark:text-slate-400 hover:text-[#1a2420] dark:hover:text-slate-100 rounded-xl hover:bg-[#f2efe8] dark:hover:bg-slate-800 cursor-pointer shrink-0"
                 title="القائمة الجانبية"
               >
                 <Menu className="w-5 h-5" />
               </button>
 
               {currentTab === 'hierarchy' ? (
-                <div className="overflow-x-auto py-0.5 max-w-xl">
+                <div className="overflow-x-auto py-0.5 max-w-full no-scrollbar">
                   <Breadcrumbs items={breadcrumbItems} onNavigate={handleBreadcrumbClick} />
                 </div>
               ) : (
-                <div className="flex items-center gap-1.5 text-xs text-[#6e7b74] dark:text-slate-400">
-                  <span className="font-normal text-[#85928a] dark:text-slate-400">دَوّنـلي</span>
-                  <span className="text-[#c2bcaf] dark:text-slate-600">/</span>
-                  <span className="font-semibold text-[#1a2420] dark:text-slate-200">
+                <div className="flex items-center gap-1.5 text-xs text-[#6e7b74] dark:text-slate-400 truncate">
+                  <span className="font-normal text-[#85928a] dark:text-slate-400 shrink-0">دَوّنـلي</span>
+                  <span className="text-[#c2bcaf] dark:text-slate-600 shrink-0">/</span>
+                  <span className="font-semibold text-[#1a2420] dark:text-slate-200 truncate">
                     {currentTab === 'inbox' && 'صندوق الوارد'}
                     {currentTab === 'focus' && 'جلسات التركيز'}
                     {currentTab === 'timeblocking' && 'حجب الوقت اليومي'}
@@ -1142,27 +1142,27 @@ export const HierarchicalApp: React.FC = () => {
             </div>
 
             {/* Right section: Quick Add button and utility actions */}
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               
               {/* VOICE & AI ACTION BUTTON: Amber gradient with microphone and Gemini AI */}
               <button
                 onClick={() => setIsVoiceAiModalOpen(true)}
-                className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold rounded-xl text-xs shadow-xs transition-all cursor-pointer group"
+                className="flex items-center gap-1 sm:gap-2 px-2.5 sm:px-3.5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold rounded-xl text-xs shadow-xs transition-all cursor-pointer group"
                 title="تحدث بصوتك والتحليل والتفكيك الذكي بالذكاء الاصطناعي"
               >
                 <Mic className="w-4 h-4 animate-pulse text-amber-100" />
                 <Sparkles className="w-3.5 h-3.5 text-amber-200 hidden sm:inline" />
-                <span className="whitespace-nowrap">تحدث بصوتك</span>
+                <span className="whitespace-nowrap hidden sm:inline">تحدث بصوتك</span>
               </button>
 
               {/* PRIMARY ACTION BUTTON: Deep Forest Green matching Dawenli */}
               <button
                 onClick={() => setIsQuickAddOpen(true)}
-                className="flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-4 py-2 bg-[#174235] hover:bg-[#12352a] text-white font-bold rounded-xl text-xs shadow-xs transition-all cursor-pointer"
+                className="flex items-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-2 bg-[#174235] dark:bg-emerald-700 hover:bg-[#12352a] dark:hover:bg-emerald-800 text-white font-bold rounded-xl text-xs shadow-xs transition-all cursor-pointer"
                 title="إضافة سريعة موحدة (مهمة، مشروع، هدف، رؤية، ركيزة)"
               >
                 <Plus className="w-4 h-4" />
-                <span className="whitespace-nowrap">إضافة سريعة</span>
+                <span className="whitespace-nowrap hidden sm:inline">إضافة سريعة</span>
               </button>
 
               {/* Theme Toggle Button */}
@@ -1177,13 +1177,13 @@ export const HierarchicalApp: React.FC = () => {
               {/* User Profile / Auth Button */}
               <button
                 onClick={() => setIsAuthModalOpen(true)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-[#e8e5de] dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-[#f2efe8] dark:hover:bg-slate-800 text-[#35403a] dark:text-slate-200 text-xs font-semibold cursor-pointer transition-colors"
+                className="flex items-center gap-1.5 p-1 sm:px-2.5 sm:py-1.5 rounded-xl border border-[#e8e5de] dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-[#f2efe8] dark:hover:bg-slate-800 text-[#35403a] dark:text-slate-200 text-xs font-semibold cursor-pointer transition-colors"
                 title="حساب المستخدم وإعدادات السحابة"
               >
-                <div className="w-5 h-5 rounded-full bg-[#174235] text-white flex items-center justify-center text-[10px] font-bold">
+                <div className="w-6 h-6 rounded-full bg-[#174235] text-white flex items-center justify-center text-[10px] font-bold">
                   {currentUser?.isGuest ? '؟' : (currentUser?.email?.[0]?.toUpperCase() || 'م')}
                 </div>
-                <span className="hidden sm:inline max-w-[120px] truncate text-[11px]">
+                <span className="hidden md:inline max-w-[110px] truncate text-[11px]">
                   {currentUser?.isGuest ? 'ضيف المنظومة' : (currentUser?.email?.split('@')[0] || 'حسابي')}
                 </span>
               </button>
@@ -1191,7 +1191,7 @@ export const HierarchicalApp: React.FC = () => {
               {/* SQL Schema button */}
               <button
                 onClick={() => setIsSqlModalOpen(true)}
-                className="hidden sm:flex items-center gap-1.5 px-3 py-2 bg-[#f8f7f4] dark:bg-slate-800 hover:bg-[#edeae2] dark:hover:bg-slate-700 text-[#404c45] dark:text-slate-200 rounded-xl text-xs font-bold transition-colors cursor-pointer border border-[#e2ddd5] dark:border-slate-700"
+                className="hidden lg:flex items-center gap-1.5 px-3 py-2 bg-[#f8f7f4] dark:bg-slate-800 hover:bg-[#edeae2] dark:hover:bg-slate-700 text-[#404c45] dark:text-slate-200 rounded-xl text-xs font-bold transition-colors cursor-pointer border border-[#e2ddd5] dark:border-slate-700"
                 title="عرض مخطط SQL وتريجرات الحساب التلقائي لـ Supabase"
               >
                 <Database className="w-3.5 h-3.5 text-[#174235] dark:text-emerald-400" />
@@ -1201,7 +1201,7 @@ export const HierarchicalApp: React.FC = () => {
               {/* Reset seed data button */}
               <button
                 onClick={handleResetData}
-                className="p-2 text-[#7d8982] dark:text-slate-400 hover:text-[#1a2420] dark:hover:text-slate-100 hover:bg-[#f2efe8] dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+                className="hidden sm:flex p-2 text-[#7d8982] dark:text-slate-400 hover:text-[#1a2420] dark:hover:text-slate-100 hover:bg-[#f2efe8] dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
                 title="استعادة البيانات الأولية"
               >
                 <RotateCcw className="w-4 h-4" />
@@ -1213,7 +1213,7 @@ export const HierarchicalApp: React.FC = () => {
         </header>
 
         {/* Main Body View Container */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
+        <main className="flex-1 overflow-y-auto p-3 sm:p-5 md:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
             
             {/* TAB 1: DRILL-DOWN HIERARCHY */}

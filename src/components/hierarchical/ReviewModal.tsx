@@ -251,34 +251,34 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-2xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-[#e8e5de] overflow-hidden text-xs animate-in fade-in flex flex-col my-auto max-h-[92vh]">
+    <div className="fixed inset-0 z-50 bg-slate-900/50 dark:bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-2xl w-full shadow-2xl border border-[#e8e5de] dark:border-slate-800 overflow-hidden text-xs animate-in fade-in flex flex-col my-auto max-h-[92vh]">
         
         {/* Modal Top Header */}
-        <div className="p-4 sm:p-5 bg-white border-b border-[#f0eee9] flex items-center justify-between shrink-0">
+        <div className="p-4 sm:p-5 bg-white dark:bg-slate-900 border-b border-[#f0eee9] dark:border-slate-800 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-[#ebf4f0] text-[#174235] border border-[#cfe3d9] flex items-center justify-center font-bold">
               <Activity className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-black text-sm text-[#1a2420]">
+              <h3 className="font-black text-sm text-[#1a2420] dark:text-slate-100 dark:text-slate-100">
                 {initialReview ? 'تعديل المراجعة' : 'مراجعة دورية شاملة'}
               </h3>
-              <p className="text-[11px] text-[#6a7770]">
+              <p className="text-[11px] text-[#6a7770] dark:text-slate-400">
                 تأمل يدوي مع تشخيص تحليلي آلي مرتبط بالركائز والمشاريع والمهام
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-[#85918a] hover:text-[#1a2420] hover:bg-[#f5f4ef] cursor-pointer"
+            className="p-1.5 rounded-lg text-[#85918a] hover:text-[#1a2420] dark:text-slate-100 dark:hover:text-slate-100 hover:bg-[#f5f4ef] dark:hover:bg-slate-800 cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Frequency Tabs Selection */}
-        <div className="p-3 bg-[#fbfbfa] border-b border-[#f0eee9] overflow-x-auto shrink-0">
+        <div className="p-3 bg-[#fbfbfa] dark:bg-slate-850 border-b border-[#f0eee9] dark:border-slate-800 overflow-x-auto shrink-0">
           <div className="flex items-center gap-1.5 min-w-max">
             {frequencyOptions.map(opt => (
               <button
@@ -288,7 +288,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                 className={`px-3 py-1.5 rounded-xl font-bold transition-all text-xs cursor-pointer flex items-center gap-1.5 ${
                   frequency === opt.id
                     ? 'bg-[#174235] text-white shadow-2xs'
-                    : 'text-[#56625b] hover:bg-[#ede9df]'
+                    : 'text-[#56625b] dark:text-slate-300 hover:bg-[#ede9df] dark:hover:bg-slate-700'
                 }`}
               >
                 <span>{opt.label}</span>
@@ -302,33 +302,33 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5">
           
           {/* Top Parameters: Title, Date, Focus Pillar, Rating */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 bg-[#fbfbfa] p-3.5 rounded-xl border border-[#ebe7df]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 bg-[#fbfbfa] dark:bg-slate-800/80 p-3.5 rounded-xl border border-[#ebe7df] dark:border-slate-700">
             <div className="sm:col-span-2">
-              <label className="block font-bold text-[#35403a] mb-1">عنوان المراجعة: *</label>
+              <label className="block font-bold text-[#35403a] dark:text-slate-300 mb-1">عنوان المراجعة: *</label>
               <input
                 type="text"
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full p-2.5 bg-white border border-[#d8d4cc] rounded-xl text-[#1a2420] focus:border-[#174235] font-semibold outline-hidden"
+                className="w-full p-2.5 bg-white dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-[#1a2420] dark:text-slate-100 dark:text-slate-100 focus:border-[#174235] font-semibold outline-hidden"
               />
             </div>
 
             <div>
-              <label className="block font-bold text-[#35403a] mb-1">تاريخ المراجعة:</label>
-              <div className="flex items-center gap-2 bg-white border border-[#d8d4cc] rounded-xl px-3 py-2">
+              <label className="block font-bold text-[#35403a] dark:text-slate-300 mb-1">تاريخ المراجعة:</label>
+              <div className="flex items-center gap-2 bg-white dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-xl px-3 py-2 text-[#1a2420] dark:text-slate-100 dark:text-slate-100">
                 <Calendar className="w-4 h-4 text-[#8a968f]" />
                 <input
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="bg-transparent w-full text-[#1a2420] outline-hidden font-mono text-xs"
+                  className="bg-transparent w-full text-[#1a2420] dark:text-slate-100 outline-hidden font-mono text-xs"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block font-bold text-[#35403a] mb-1">الركيزة محل التركيز:</label>
+              <label className="block font-bold text-[#35403a] dark:text-slate-300 mb-1">الركيزة محل التركيز:</label>
               <CustomSelect
                 value={focusPillarId}
                 onChange={(val) => {
@@ -350,7 +350,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
             </div>
 
             {/* Self-Rating (1-10) */}
-            <div className="sm:col-span-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-[#f0eee9]">
+            <div className="sm:col-span-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-[#f0eee9] dark:border-slate-800">
               <div className="flex items-center gap-1.5">
                 <span className="font-bold text-[#35403a]">التقييم الذاتي العام للفترة:</span>
                 <span className="text-[10px] text-[#78857e]">(درجة الرضا ومستوى الالتزام)</span>
@@ -364,7 +364,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                     className={`w-7 h-7 rounded-lg font-mono text-xs font-bold transition-all cursor-pointer ${
                       rating === num
                         ? 'bg-[#174235] text-white shadow-2xs scale-105'
-                        : 'bg-white border border-[#dcd7ce] text-[#55615a] hover:bg-[#ede8df]'
+                        : 'bg-white border border-[#dcd7ce] text-[#55615a] dark:text-slate-400 hover:bg-[#ede8df]'
                     }`}
                   >
                     {num}
@@ -382,7 +382,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
               className={`pb-2.5 px-4 font-bold text-xs border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${
                 activeTab === 'reflection'
                   ? 'border-[#174235] text-[#174235]'
-                  : 'border-transparent text-[#7d8982] hover:text-[#1a2420]'
+                  : 'border-transparent text-[#7d8982] dark:text-slate-400 hover:text-[#1a2420] dark:text-slate-100'
               }`}
             >
               <span>📝 التأمل والتدوين اليدوي</span>
@@ -393,7 +393,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
               className={`pb-2.5 px-4 font-bold text-xs border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${
                 activeTab === 'smart_audit'
                   ? 'border-[#174235] text-[#174235]'
-                  : 'border-transparent text-[#7d8982] hover:text-[#1a2420]'
+                  : 'border-transparent text-[#7d8982] dark:text-slate-400 hover:text-[#1a2420] dark:text-slate-100'
               }`}
             >
               <Sparkles className="w-3.5 h-3.5 text-[#174235]" />
@@ -410,7 +410,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
               
               {/* Question 1: Wins */}
               <div>
-                <label className="block font-bold text-[#1a2420] mb-1 flex items-center gap-1.5">
+                <label className="block font-bold text-[#1a2420] dark:text-slate-100 mb-1 flex items-center gap-1.5">
                   <CheckCircle2 className="w-3.5 h-3.5 text-[#174235]" />
                   <span>أبرز الانتصارات والإنجازات:</span>
                 </label>
@@ -419,13 +419,13 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                   value={wins}
                   onChange={(e) => setWins(e.target.value)}
                   placeholder="ما الأمور التي تمت بنجاح؟ ما المشاريع أو المهام التي أغلقتها وشعرت فيها بالفخر؟"
-                  className="w-full p-2.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] focus:border-[#174235] outline-hidden leading-relaxed"
+                  className="w-full p-2.5 bg-[#faf8f5] dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-[#1a2420] dark:text-slate-100 dark:text-slate-100 focus:border-[#174235] outline-hidden leading-relaxed"
                 />
               </div>
 
               {/* Question 2: Challenges */}
               <div>
-                <label className="block font-bold text-[#1a2420] mb-1 flex items-center gap-1.5">
+                <label className="block font-bold text-[#1a2420] dark:text-slate-100 mb-1 flex items-center gap-1.5">
                   <AlertTriangle className="w-3.5 h-3.5 text-[#b08726]" />
                   <span>المعوقات والتحديات:</span>
                 </label>
@@ -434,13 +434,13 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                   value={challenges}
                   onChange={(e) => setChallenges(e.target.value)}
                   placeholder="ما الذي عطل وتيرتك؟ هل واجهت تشتتاً أو مهاماً تأخرت ولماذا؟"
-                  className="w-full p-2.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] focus:border-[#174235] outline-hidden leading-relaxed"
+                  className="w-full p-2.5 bg-[#faf8f5] dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-[#1a2420] dark:text-slate-100 dark:text-slate-100 focus:border-[#174235] outline-hidden leading-relaxed"
                 />
               </div>
 
               {/* Question 3: Lessons Learned */}
               <div>
-                <label className="block font-bold text-[#1a2420] mb-1 flex items-center gap-1.5">
+                <label className="block font-bold text-[#1a2420] dark:text-slate-100 mb-1 flex items-center gap-1.5">
                   <Lightbulb className="w-3.5 h-3.5 text-[#174235]" />
                   <span>الدروس المستفادة والتحسينات:</span>
                 </label>
@@ -449,13 +449,13 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                   value={lessons}
                   onChange={(e) => setLessons(e.target.value)}
                   placeholder="ما الدرس الأساسي المستخلص من هذه الفترة لتطوير نظامك الشخصي؟"
-                  className="w-full p-2.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] focus:border-[#174235] outline-hidden leading-relaxed"
+                  className="w-full p-2.5 bg-[#faf8f5] dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-[#1a2420] dark:text-slate-100 dark:text-slate-100 focus:border-[#174235] outline-hidden leading-relaxed"
                 />
               </div>
 
               {/* Question 4: Next Commitments */}
               <div>
-                <label className="block font-bold text-[#1a2420] mb-1 flex items-center gap-1.5">
+                <label className="block font-bold text-[#1a2420] dark:text-slate-100 mb-1 flex items-center gap-1.5">
                   <ArrowRight className="w-3.5 h-3.5 text-[#174235]" />
                   <span>التزامات وأولويات الفترة القادمة:</span>
                 </label>
@@ -464,7 +464,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                   value={nextCommitments}
                   onChange={(e) => setNextCommitments(e.target.value)}
                   placeholder="ما الأولويات الثلاث الكبرى التي ستبني عليها الفترة القادمة؟"
-                  className="w-full p-2.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] focus:border-[#174235] outline-hidden leading-relaxed"
+                  className="w-full p-2.5 bg-[#faf8f5] dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-[#1a2420] dark:text-slate-100 dark:text-slate-100 focus:border-[#174235] outline-hidden leading-relaxed"
                 />
               </div>
 
@@ -478,7 +478,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="أي أفكار أو مشاعر أو تفاصيل إضافية تريد توثيقها..."
-                  className="w-full p-2.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] focus:border-[#174235] outline-hidden"
+                  className="w-full p-2.5 bg-[#faf8f5] dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-[#1a2420] dark:text-slate-100 dark:text-slate-100 focus:border-[#174235] outline-hidden"
                 />
               </div>
 
@@ -540,12 +540,12 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                 
                 {/* Strengths */}
-                <div className="bg-white border border-[#e8e5de] rounded-xl p-3.5 space-y-2 shadow-2xs">
+                <div className="bg-white dark:bg-slate-850 border border-[#e8e5de] dark:border-slate-700/80 rounded-xl p-3.5 space-y-2 shadow-2xs">
                   <div className="flex items-center gap-1.5 font-bold text-[#174235]">
                     <CheckCircle2 className="w-4 h-4 text-[#174235]" />
                     <span>مواطن القوة والزخم المرصودة</span>
                   </div>
-                  <ul className="space-y-1.5 text-[11px] text-[#55615a]">
+                  <ul className="space-y-1.5 text-[11px] text-[#55615a] dark:text-slate-400">
                     {strengths.map((str, idx) => (
                       <li key={idx} className="flex items-start gap-1.5">
                         <span className="text-[#174235] font-bold">✓</span>
@@ -556,12 +556,12 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                 </div>
 
                 {/* Bottlenecks */}
-                <div className="bg-white border border-[#e8e5de] rounded-xl p-3.5 space-y-2 shadow-2xs">
+                <div className="bg-white dark:bg-slate-850 border border-[#e8e5de] dark:border-slate-700/80 rounded-xl p-3.5 space-y-2 shadow-2xs">
                   <div className="flex items-center gap-1.5 font-bold text-[#a63e26]">
                     <AlertTriangle className="w-4 h-4 text-[#a63e26]" />
                     <span>نقاط الاختناق والتأخير</span>
                   </div>
-                  <ul className="space-y-1.5 text-[11px] text-[#55615a]">
+                  <ul className="space-y-1.5 text-[11px] text-[#55615a] dark:text-slate-400">
                     {bottlenecks.length === 0 ? (
                       <li className="text-[#78857e] italic">لا توجد اختناقات بارزة حالياً!</li>
                     ) : (
@@ -578,14 +578,14 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
               </div>
 
               {/* Actionable Recommendations */}
-              <div className="bg-white border border-[#e8e5de] rounded-xl p-3.5 space-y-2 shadow-2xs">
-                <div className="flex items-center gap-1.5 font-bold text-[#1a2420]">
+              <div className="bg-white dark:bg-slate-850 border border-[#e8e5de] dark:border-slate-700/80 rounded-xl p-3.5 space-y-2 shadow-2xs">
+                <div className="flex items-center gap-1.5 font-bold text-[#1a2420] dark:text-slate-100">
                   <Lightbulb className="w-4 h-4 text-[#174235]" />
                   <span>توصيات إجرائية تلقائية لهذه الدورة</span>
                 </div>
                 <div className="space-y-1.5">
                   {recommendations.map((rec, idx) => (
-                    <div key={idx} className="p-2 rounded-lg bg-[#faf8f5] border border-[#ece8df] text-[11px] text-[#3e4842] flex items-start gap-2">
+                    <div key={idx} className="p-2 rounded-lg bg-[#faf8f5] dark:bg-slate-800 border border-[#ece8df] dark:border-slate-700 text-[11px] text-[#3e4842] flex items-start gap-2">
                       <span className="font-bold text-[#174235]">{idx + 1}.</span>
                       <span>{rec}</span>
                     </div>
@@ -594,13 +594,13 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
               </div>
 
               {/* Action Items Generator (Directly relatable to tasks!) */}
-              <div className="bg-white border border-[#e8e5de] rounded-xl p-3.5 space-y-3 shadow-2xs">
+              <div className="bg-white dark:bg-slate-850 border border-[#e8e5de] dark:border-slate-700/80 rounded-xl p-3.5 space-y-3 shadow-2xs">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 font-bold text-[#1a2420]">
+                  <div className="flex items-center gap-1.5 font-bold text-[#1a2420] dark:text-slate-100">
                     <Activity className="w-4 h-4 text-[#174235]" />
                     <span>إجراءات تنفيذية مستخرجة</span>
                   </div>
-                  <span className="text-[10px] text-[#7d8982]">
+                  <span className="text-[10px] text-[#7d8982] dark:text-slate-400">
                     يمكن تحويلها لمهام حقيقية بنقرة واحدة داخل أي مشروع
                   </span>
                 </div>
@@ -618,7 +618,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                         handleAddActionItem();
                       }
                     }}
-                    className="flex-1 p-2 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-xs text-[#1a2420] outline-hidden focus:border-[#174235]"
+                    className="flex-1 p-2 bg-[#faf8f5] dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-xs text-[#1a2420] dark:text-slate-100 dark:text-slate-100 outline-hidden focus:border-[#174235] dark:focus:border-emerald-500"
                   />
                   <button
                     type="button"
@@ -634,11 +634,11 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                   {actionItems.map(item => (
                     <div
                       key={item.id}
-                      className="flex items-center justify-between p-2 rounded-lg bg-[#fbfbfa] border border-[#ece8df] text-xs"
+                      className="flex items-center justify-between p-2 rounded-lg bg-[#fbfbfa] dark:bg-slate-800 border border-[#ece8df] dark:border-slate-700 text-xs"
                     >
                       <div className="flex items-center gap-2 min-w-0">
                         <span className="w-2 h-2 rounded-full bg-[#174235] shrink-0" />
-                        <span className="truncate font-medium text-[#1a2420]">{item.title}</span>
+                        <span className="truncate font-medium text-[#1a2420] dark:text-slate-100">{item.title}</span>
                       </div>
 
                       <div className="flex items-center gap-1.5 shrink-0">
@@ -673,8 +673,8 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
           )}
 
           {/* Form Actions */}
-          <div className="flex items-center justify-between pt-4 border-t border-[#f0eee9] shrink-0">
-            <div className="text-[11px] text-[#7d8982]">
+          <div className="flex items-center justify-between pt-4 border-t border-[#f0eee9] dark:border-slate-800 shrink-0">
+            <div className="text-[11px] text-[#7d8982] dark:text-slate-400">
               يتم حفظ لقطة إحصائية للمنظومة لتوثيق تطور الأداء بمرور الوقت.
             </div>
 
@@ -682,13 +682,13 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 bg-[#f4f2ec] hover:bg-[#eae6dd] text-[#4a554f] rounded-xl font-bold cursor-pointer transition-colors"
+                className="px-4 py-2 bg-[#f4f2ec] dark:bg-slate-800 hover:bg-[#eae6dd] dark:hover:bg-slate-700 text-[#4a554f] dark:text-slate-300 rounded-xl font-bold cursor-pointer transition-colors border border-transparent dark:border-slate-700"
               >
                 إلغاء
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 bg-[#174235] hover:bg-[#12352a] text-white rounded-xl font-bold transition-all shadow-xs cursor-pointer"
+                className="px-5 py-2 bg-[#174235] dark:bg-emerald-700 hover:bg-[#12352a] dark:hover:bg-emerald-800 text-white rounded-xl font-bold transition-all shadow-xs cursor-pointer"
               >
                 حفظ المراجعة الآن
               </button>

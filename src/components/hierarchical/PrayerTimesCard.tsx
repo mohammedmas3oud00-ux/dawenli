@@ -175,28 +175,28 @@ export const PrayerTimesCard: React.FC<PrayerTimesCardProps> = ({
   }
 
   return (
-    <div className={`bg-linear-to-br from-[#fcfbf9] to-[#f4f7f4] dark:from-slate-900 dark:to-slate-900/90 border border-[#dce6e0] dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs relative transition-all ${className}`}>
+    <div className={`bg-linear-to-br from-[#fcfbf9] to-[#f4f7f4] dark:from-slate-900 dark:to-slate-900/90 border border-[#dce6e0] dark:border-slate-800 rounded-2xl p-3.5 sm:p-5 shadow-xs relative transition-all ${className}`}>
       
       {/* Header Row */}
-      <div className="flex items-center justify-between gap-3 pb-3 border-b border-[#e6eee8] dark:border-slate-800">
-        <div className="flex items-center gap-2.5">
+      <div className="flex items-center justify-between gap-2 sm:gap-3 pb-3 border-b border-[#e6eee8] dark:border-slate-800">
+        <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
           <div className="w-8 h-8 rounded-xl bg-[#174235] text-white flex items-center justify-center shrink-0 shadow-2xs">
             <span className="text-sm">🕌</span>
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-xs sm:text-sm font-bold text-[#174235] dark:text-emerald-400">
-                مواقيت الصلاة والتنبيه بالأذان
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+              <h3 className="text-xs sm:text-sm font-bold text-[#174235] dark:text-emerald-400 truncate">
+                مواقيت الصلاة والأذان
               </h3>
               {data?.hijriMonthArabic && (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-[#174235] dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-[#174235] dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shrink-0">
                   {data.hijriMonthArabic}
                 </span>
               )}
             </div>
-            <p className="text-[11px] text-[#627369] dark:text-slate-400 flex items-center gap-1 mt-0.5">
-              <MapPin className="w-3 h-3 text-[#174235] dark:text-emerald-500" />
-              <span>{cityLabel}</span>
+            <p className="text-[10px] sm:text-[11px] text-[#627369] dark:text-slate-400 flex items-center gap-1 mt-0.5 truncate">
+              <MapPin className="w-3 h-3 text-[#174235] dark:text-emerald-500 shrink-0" />
+              <span className="truncate">{cityLabel}</span>
             </p>
           </div>
         </div>
@@ -206,21 +206,21 @@ export const PrayerTimesCard: React.FC<PrayerTimesCardProps> = ({
           <button
             type="button"
             onClick={toggleSound}
-            className={`p-2 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+            className={`p-1.5 sm:p-2 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
               soundEnabled
                 ? 'bg-[#ebf4f0] dark:bg-emerald-950/80 text-[#174235] dark:text-emerald-300 border-[#cfe3d9] dark:border-emerald-800 shadow-2xs'
                 : 'bg-white dark:bg-slate-800 text-[#86968c] dark:text-slate-500 border-[#e8e4db] dark:border-slate-700'
             }`}
             title={soundEnabled ? 'تنبيه الأذان مفعل' : 'تنبيه الأذان مكتوم'}
           >
-            {soundEnabled ? <Bell className="w-3.5 h-3.5 text-[#174235] dark:text-emerald-400" /> : <BellOff className="w-3.5 h-3.5" />}
+            {soundEnabled ? <Bell className="w-3.5 h-3.5 text-[#174235] dark:text-emerald-400 shrink-0" /> : <BellOff className="w-3.5 h-3.5 shrink-0" />}
             <span className="hidden sm:inline text-[11px]">{soundEnabled ? 'الأذان مفعّل' : 'مكتوم'}</span>
           </button>
 
           <button
             type="button"
             onClick={loadTimes}
-            className="p-2 bg-white dark:bg-slate-800 hover:bg-[#f2efe8] dark:hover:bg-slate-700 text-[#55635b] dark:text-slate-300 rounded-xl border border-[#e8e4db] dark:border-slate-700 transition-colors cursor-pointer"
+            className="p-1.5 sm:p-2 bg-white dark:bg-slate-800 hover:bg-[#f2efe8] dark:hover:bg-slate-700 text-[#55635b] dark:text-slate-300 rounded-xl border border-[#e8e4db] dark:border-slate-700 transition-colors cursor-pointer shrink-0"
             title="تحديث المواقيت"
           >
             <RefreshCw className="w-3.5 h-3.5" />
@@ -230,17 +230,17 @@ export const PrayerTimesCard: React.FC<PrayerTimesCardProps> = ({
 
       {/* Next Prayer Countdown Spotlight */}
       {nextPrayer && (
-        <div className="mt-3 p-2.5 sm:p-3 bg-white dark:bg-slate-800/80 border border-[#cfe0d5] dark:border-slate-700 rounded-xl flex items-center justify-between gap-3 shadow-2xs">
+        <div className="mt-3 p-2.5 sm:p-3 bg-white dark:bg-slate-800/80 border border-[#cfe0d5] dark:border-slate-700 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 shadow-2xs">
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping shrink-0" />
             <div>
-              <span className="text-[11px] font-bold text-[#627369] dark:text-slate-400 block">الصلاة القادمة:</span>
+              <span className="text-[10px] sm:text-[11px] font-bold text-[#627369] dark:text-slate-400 block">الصلاة القادمة:</span>
               <span className="text-xs sm:text-sm font-black text-[#174235] dark:text-emerald-300">
                 صلاة {nextPrayer.name} الساعة {nextPrayer.timeStr}
               </span>
             </div>
           </div>
-          <div className="text-left shrink-0">
+          <div className="flex items-center sm:block justify-between sm:text-left shrink-0 pt-1 sm:pt-0 border-t sm:border-t-0 border-[#f0eee9] dark:border-slate-700/60">
             <span className="text-[10px] text-[#718278] dark:text-slate-400 block font-medium">متبقي عليها:</span>
             <span className="text-xs sm:text-sm font-mono font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-800/60">
               {formatDiff(nextPrayer.minutesRemaining)}

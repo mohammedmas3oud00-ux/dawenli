@@ -36,14 +36,14 @@ export const GoalsTabView: React.FC<GoalsTabViewProps> = ({
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-[#e8e5de] shadow-2xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-[#e8e5de] dark:border-slate-800 shadow-2xs">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#ebf4f0] text-[#174235] border border-[#cfe3d9] flex items-center justify-center font-bold">
+          <div className="w-10 h-10 rounded-xl bg-[#ebf4f0] dark:bg-emerald-950/80 text-[#174235] dark:text-emerald-300 border border-[#cfe3d9] dark:border-emerald-800 flex items-center justify-center font-bold shrink-0">
             <Target className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-base sm:text-lg font-black text-[#1a2420]">أهداف القيمة</h1>
-            <p className="text-xs text-[#636e67]">
+            <h1 className="text-base sm:text-lg font-black text-[#1a2420] dark:text-slate-100">أهداف القيمة</h1>
+            <p className="text-xs text-[#636e67] dark:text-slate-400">
               الأهداف الاستراتيجية التي تقود إلى تحقيق الرؤى وترتبط مباشرة بالمشاريع التنفيذية.
             </p>
           </div>
@@ -60,14 +60,14 @@ export const GoalsTabView: React.FC<GoalsTabViewProps> = ({
               { value: 'completed', label: 'مكتمل', icon: '🟢' },
               { value: 'not_started', label: 'لم يبدأ', icon: '⚪' },
             ]}
-            prefixIcon={<Filter className="w-3.5 h-3.5 text-[#7d8982]" />}
+            prefixIcon={<Filter className="w-3.5 h-3.5 text-[#7d8982] dark:text-slate-400" />}
             size="xs"
-            buttonClassName="rounded-xl py-1 px-2.5 bg-[#f8f7f4] border-[#e3dfd7]"
+            buttonClassName="rounded-xl py-1 px-2.5 bg-[#f8f7f4] dark:bg-slate-800 border-[#e3dfd7] dark:border-slate-700"
           />
 
           <button
             onClick={onNewGoal}
-            className="flex items-center gap-1 px-3.5 py-2 bg-[#174235] hover:bg-[#12352a] text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+            className="flex items-center gap-1 px-3.5 py-2 bg-[#174235] dark:bg-emerald-700 hover:bg-[#12352a] dark:hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer whitespace-nowrap"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>هدف جديد</span>
@@ -77,7 +77,7 @@ export const GoalsTabView: React.FC<GoalsTabViewProps> = ({
 
       {/* Grid of Goals */}
       {filteredGoals.length === 0 ? (
-        <div className="bg-white border border-[#e8e5de] rounded-2xl p-12 text-center text-xs text-[#7d8982]">
+        <div className="bg-white dark:bg-slate-900 border border-[#e8e5de] dark:border-slate-800 rounded-2xl p-12 text-center text-xs text-[#7d8982] dark:text-slate-400">
           لا توجد أهداف مطابقة للمحددات الحالية.
         </div>
       ) : (
@@ -89,16 +89,16 @@ export const GoalsTabView: React.FC<GoalsTabViewProps> = ({
             return (
               <div
                 key={goal.id}
-                className="bg-white border border-[#e8e5de] hover:border-[#174235]/40 rounded-2xl p-5 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between space-y-4 group"
+                className="bg-white dark:bg-slate-900 border border-[#e8e5de] dark:border-slate-800 hover:border-[#174235]/40 dark:hover:border-emerald-500/50 rounded-2xl p-5 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between space-y-4 group"
               >
                 <div className="space-y-2.5">
                   <div className="flex items-center justify-between text-xs">
                     <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
                       goal.status === 'completed'
-                        ? 'bg-[#ebf4f0] text-[#174235] border border-[#cfe3d9]'
+                        ? 'bg-[#ebf4f0] dark:bg-emerald-950/70 text-[#174235] dark:text-emerald-300 border border-[#cfe3d9] dark:border-emerald-800'
                         : goal.status === 'in_progress'
-                        ? 'bg-[#fef7ea] text-[#916b1e] border border-[#f3e5c8]'
-                        : 'bg-[#f3f0e8] text-[#555047]'
+                        ? 'bg-[#fef7ea] dark:bg-amber-950/60 text-[#916b1e] dark:text-amber-300 border border-[#f3e5c8] dark:border-amber-900'
+                        : 'bg-[#f3f0e8] dark:bg-slate-800 text-[#555047] dark:text-slate-300 border border-[#e4dfd5] dark:border-slate-700'
                     }`}>
                       {goal.status === 'completed' ? '✓ مكتمل' : goal.status === 'in_progress' ? '⏳ قيد التحقيق' : '○ لم يبدأ'}
                     </span>
@@ -106,14 +106,14 @@ export const GoalsTabView: React.FC<GoalsTabViewProps> = ({
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => onEditGoal(goal)}
-                        className="p-1 text-[#838f87] hover:text-[#1a2420] rounded cursor-pointer"
+                        className="p-1 text-[#838f87] dark:text-slate-400 hover:text-[#1a2420] dark:hover:text-slate-100 rounded cursor-pointer"
                         title="تعديل الهدف"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => onDeleteGoal(goal.id)}
-                        className="p-1 text-[#838f87] hover:text-rose-600 rounded cursor-pointer"
+                        className="p-1 text-[#838f87] dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded cursor-pointer"
                         title="حذف الهدف"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -125,12 +125,12 @@ export const GoalsTabView: React.FC<GoalsTabViewProps> = ({
                     {/* Ancestor tags */}
                     <div className="flex flex-wrap items-center gap-1 mb-1.5">
                       {parentPillar && (
-                        <span className="text-[10px] px-2 py-0.5 rounded bg-[#f4f2ec] text-[#48534d] font-medium truncate max-w-[140px]">
+                        <span className="text-[10px] px-2 py-0.5 rounded bg-[#f4f2ec] dark:bg-slate-800 text-[#48534d] dark:text-slate-300 font-medium truncate max-w-[140px] border border-[#e5e1d7] dark:border-slate-700">
                           🏛️ {parentPillar.title}
                         </span>
                       )}
                       {parentVision && (
-                        <span className="text-[10px] px-2 py-0.5 rounded bg-[#ebf4f0] text-[#174235] font-medium truncate max-w-[150px]">
+                        <span className="text-[10px] px-2 py-0.5 rounded bg-[#ebf4f0] dark:bg-emerald-950/70 text-[#174235] dark:text-emerald-300 font-medium truncate max-w-[150px] border border-[#d2e4db] dark:border-emerald-800">
                           👁️ {parentVision.title}
                         </span>
                       )}
@@ -138,36 +138,36 @@ export const GoalsTabView: React.FC<GoalsTabViewProps> = ({
 
                     <h3
                       onClick={() => onSelectGoal(goal.id, goal.vision_id || undefined, goal.pillar_id)}
-                      className="font-bold text-sm text-[#1a2420] group-hover:text-[#174235] transition-colors cursor-pointer"
+                      className="font-bold text-sm text-[#1a2420] dark:text-slate-100 group-hover:text-[#174235] dark:group-hover:text-emerald-400 transition-colors cursor-pointer"
                     >
                       {goal.title}
                     </h3>
                     {goal.description && (
-                      <p className="text-xs text-[#636e67] mt-1 line-clamp-2 leading-relaxed">
+                      <p className="text-xs text-[#636e67] dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">
                         {goal.description}
                       </p>
                     )}
                   </div>
 
                   {goal.target_date && (
-                    <div className="flex items-center gap-1 text-[11px] text-[#7d8982] font-mono">
-                      <Calendar className="w-3 h-3 text-[#9aa59e]" />
+                    <div className="flex items-center gap-1 text-[11px] text-[#7d8982] dark:text-slate-400 font-mono">
+                      <Calendar className="w-3 h-3 text-[#9aa59e] dark:text-slate-500" />
                       <span>تاريخ الاستحقاق: {goal.target_date}</span>
                     </div>
                   )}
                 </div>
 
                 {/* Progress rollup */}
-                <div className="pt-3 border-t border-[#f0eee9] space-y-2">
+                <div className="pt-3 border-t border-[#f0eee9] dark:border-slate-800 space-y-2">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-[11px] font-semibold text-[#738078]">التقدم (من مشاريعه):</span>
-                    <span className="text-[11px] font-mono font-bold text-[#174235]">{goal.progress}%</span>
+                    <span className="text-[11px] font-semibold text-[#738078] dark:text-slate-400">التقدم (من مشاريعه):</span>
+                    <span className="text-[11px] font-mono font-bold text-[#174235] dark:text-emerald-400">{goal.progress}%</span>
                   </div>
                   <ProgressBar progress={goal.progress} variant="both" maxStars={10} size="sm" showPercentage={false} />
 
                   <button
                     onClick={() => onSelectGoal(goal.id, goal.vision_id || undefined, goal.pillar_id)}
-                    className="w-full mt-2 py-2 px-3 bg-[#f8f7f4] hover:bg-[#ebf4f0] text-[#174235] rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-[#e7e3db] group-hover:border-[#cfe3d9] cursor-pointer"
+                    className="w-full mt-2 py-2 px-3 bg-[#f8f7f4] dark:bg-slate-800 hover:bg-[#ebf4f0] dark:hover:bg-slate-700 text-[#174235] dark:text-emerald-300 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-[#e7e3db] dark:border-slate-700 group-hover:border-[#cfe3d9] dark:group-hover:border-emerald-600 cursor-pointer"
                   >
                     <span>الدخول وتصفح المشاريع</span>
                     <ChevronLeft className="w-3.5 h-3.5" />

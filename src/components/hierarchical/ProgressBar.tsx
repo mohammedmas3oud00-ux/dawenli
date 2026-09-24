@@ -24,10 +24,10 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   const textSize = size === 'sm' ? 'text-[10px]' : 'text-xs';
 
   const getBarColor = (pct: number) => {
-    if (pct >= 100) return 'bg-[#174235]';
-    if (pct >= 60) return 'bg-[#1f5645]';
-    if (pct >= 30) return 'bg-[#317862]';
-    return 'bg-[#7aa696]';
+    if (pct >= 100) return 'bg-[#174235] dark:bg-emerald-500';
+    if (pct >= 60) return 'bg-[#1f5645] dark:bg-emerald-600';
+    if (pct >= 30) return 'bg-[#317862] dark:bg-emerald-700';
+    return 'bg-[#7aa696] dark:bg-emerald-800';
   };
 
   return (
@@ -39,15 +39,15 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
               key={i}
               className={`inline-block transition-colors text-xs ${
                 i < filledStars
-                  ? 'text-[#c29329] font-bold'
-                  : 'text-[#d8d5cd]'
+                  ? 'text-[#c29329] dark:text-amber-400 font-bold'
+                  : 'text-[#d8d5cd] dark:text-slate-700'
               }`}
             >
               ★
             </span>
           ))}
           {showPercentage && (
-            <span className={`font-mono font-bold ml-1.5 text-[#174235] ${textSize}`}>
+            <span className={`font-mono font-bold ml-1.5 text-[#174235] dark:text-emerald-400 ${textSize}`}>
               {clampedProgress}%
             </span>
           )}
@@ -55,7 +55,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
       )}
 
       {(variant === 'bar' || variant === 'both') && (
-        <div className={`w-full bg-[#ebe8e1] rounded-full overflow-hidden ${barHeight}`}>
+        <div className={`w-full bg-[#ebe8e1] dark:bg-slate-700 rounded-full overflow-hidden ${barHeight}`}>
           <div
             className={`${getBarColor(clampedProgress)} ${barHeight} rounded-full transition-all duration-300 ease-out`}
             style={{ width: `${clampedProgress}%` }}
