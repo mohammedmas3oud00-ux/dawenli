@@ -73,10 +73,10 @@ export const NextBestTaskSpotlight: React.FC<NextBestTaskSpotlightProps> = ({
   return (
     <section
       aria-label="أفضل خطوة تالية مقترحة"
-      className="bg-linear-to-br from-[#fbfaf7] to-[#f4f7f4] dark:from-[#131d18] dark:to-[#17261f] border border-[#dce6e0] dark:border-[#223329] rounded-2xl p-5 sm:p-6 shadow-xs relative overflow-hidden transition-colors"
+      className="bg-linear-to-br from-[#fbfaf7] to-[#f4f7f4] dark:from-[#131d18] dark:to-[#17261f] border border-[#dce6e0] dark:border-[#223329] rounded-2xl p-5 sm:p-6 shadow-xs relative transition-colors"
     >
       {/* Top Bar: Header & Interactive Filters */}
-      <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#e5ece7] dark:border-[#223329]">
+      <div className="relative z-30 flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-[#e5ece7] dark:border-[#223329]">
         
         {/* Title & Badge */}
         <div className="flex items-center gap-3">
@@ -98,8 +98,8 @@ export const NextBestTaskSpotlight: React.FC<NextBestTaskSpotlightProps> = ({
           </div>
         </div>
 
-        {/* Energy & Time Quick Toggles */}
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Energy, Time, and Pillar Filter Toggles */}
+        <div className="flex flex-wrap items-center gap-2.5">
           
           {/* Available Minutes Selector */}
           <div className="flex items-center bg-white dark:bg-[#1a2620] border border-[#d6dfd9] dark:border-[#283d31] rounded-xl p-0.5 shadow-2xs">
@@ -161,9 +161,9 @@ export const NextBestTaskSpotlight: React.FC<NextBestTaskSpotlightProps> = ({
             ))}
           </div>
 
-          {/* Pillar Filter */}
+          {/* Pillar Filter (Visible and prominent on all screen sizes) */}
           {pillars.length > 0 && (
-            <div className="w-40 hidden sm:block">
+            <div className="min-w-[130px] sm:w-44 grow sm:grow-0">
               <CustomSelect
                 value={selectedPillarFilter}
                 onChange={(val) => {
@@ -175,8 +175,8 @@ export const NextBestTaskSpotlight: React.FC<NextBestTaskSpotlightProps> = ({
                   ...pillars.map((p) => ({ value: p.id, label: p.title })),
                 ]}
                 prefixIcon={<Layers className="w-3.5 h-3.5 text-[#174235] dark:text-emerald-400" />}
-                size="xs"
-                buttonClassName="py-1 px-2.5 text-xs rounded-xl"
+                size="sm"
+                buttonClassName="py-1 px-2.5 text-xs rounded-xl shadow-2xs bg-white dark:bg-[#1a2620] border-[#d6dfd9] dark:border-[#283d31]"
               />
             </div>
           )}

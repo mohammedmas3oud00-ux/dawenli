@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Pillar, Vision, ValueGoal, Project, Task } from '../../types/hierarchical';
 import { CustomSelect } from './CustomSelect';
+import { Sparkles, Loader2, CheckSquare } from 'lucide-react';
+import { generateAiTaskBreakdown, AiTaskSuggestion } from '../../services/aiService';
 
 // ---------------------------------------------------------
 // 1. PILLAR MODAL
@@ -577,6 +579,9 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
   const [startDate, setStartDate] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [goalId, setGoalId] = useState(goals[0]?.id || '');
+  const [isBreakingDown, setIsBreakingDown] = useState(false);
+  const [suggestedTasks, setSuggestedTasks] = useState<AiTaskSuggestion[]>([]);
+  const [selectedTaskIndices, setSelectedTaskIndices] = useState<number[]>([]);
 
   useEffect(() => {
     if (initialProject) {
@@ -586,6 +591,8 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
       setStartDate(initialProject.start_date || '');
       setDueDate(initialProject.due_date || '');
       setGoalId(initialProject.goal_id);
+      setSuggestedTasks([]);
+      setSelectedTaskIndices([]);
     } else {
       const today = new Date().toISOString().split('T')[0];
       setTitle('');
@@ -593,6 +600,8 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
       setStatus('in_progress');
       setStartDate(today);
       setDueDate(today);
+      setSuggestedTasks([]);
+      setSelectedTaskIndices([]);
       if (goals.length > 0) setGoalId(goals[0].id);
     }
   }, [initialProject, isOpen, goals]);
@@ -605,19 +614,36 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
+  const handleAiBreakdown = async () => {
+    if (!title.trim()) return;
+    setIsBreakingDown(true);
+    try {
+      const tasks = await generateAiTaskBreakdown(title.trim(), description.trim());
+      setSuggestedTasks(tasks);
+      setSelectedTaskIndices(tasks.map((_, i) => i));
+    } catch (err) {
+      console.warn('AI breakdown failed in modal:', err);
+    } finally {
+      setIsBreakingDown(false);
+    }
+  };
+
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
 
-    onSave({
+    const chosenTasks = selectedTaskIndices.map((i) => suggestedTasks[i]);
+
+    (onSave as any)({
       title: title.trim(),
       description: description.trim(),
       status,
       start_date: startDate,
       due_date: dueDate,
       goal_id: goalId,
+      generatedTasks: chosenTasks,
     });
     onClose();
   };
@@ -727,6 +753,81 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
               placeholder="وصف تفصيلي لمخرجات المشروع..."
               className="w-full p-2.5 bg-[#faf8f5] dark:bg-[#121c17] border border-[#d8d4cc] dark:border-[#283d31] rounded-xl text-[#1a2420] dark:text-white focus:border-[#174235] dark:focus:border-emerald-500 focus-visible:outline-hidden"
             />
+          </div>
+
+          {/* AI Task Breakdown Section */}
+          <div className="bg-[#f5f9f6] dark:bg-[#15231b] border border-[#cfe0d5] dark:border-[#243a2c] rounded-xl p-3.5 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-[#174235] dark:text-emerald-400">
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <span>تفكيك المشروع لمهام ذكية (AI Task Breakdown)</span>
+              </div>
+              <button
+                type="button"
+                disabled={isBreakingDown || !title.trim()}
+                onClick={handleAiBreakdown}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  isBreakingDown || !title.trim()
+                    ? 'opacity-50 cursor-not-allowed bg-slate-200 dark:bg-slate-800 text-slate-500'
+                    : 'bg-[#174235] dark:bg-emerald-600 hover:bg-[#12362b] text-white shadow-2xs'
+                }`}
+              >
+                {isBreakingDown ? (
+                  <>
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    <span>جاري التفكيك...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-3 h-3 text-amber-300" />
+                    <span>تفكيك ذكي بالـ AI</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {suggestedTasks.length > 0 && (
+              <div className="space-y-1.5 pt-1">
+                <p className="text-[11px] text-[#55695e] dark:text-[#9bb0a3]">
+                  حدد المهام المقترحة لإنشائها تلقائياً داخل هذا المشروع:
+                </p>
+                {suggestedTasks.map((st, idx) => {
+                  const isChecked = selectedTaskIndices.includes(idx);
+                  return (
+                    <label
+                      key={idx}
+                      className={`flex items-center justify-between p-2 rounded-lg border text-xs cursor-pointer transition-colors ${
+                        isChecked
+                          ? 'bg-white dark:bg-[#18271f] border-[#b0d4bf] dark:border-[#284f37]'
+                          : 'bg-white/60 dark:bg-[#121c17] border-transparent opacity-60'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => {
+                            setSelectedTaskIndices((prev) =>
+                              prev.includes(idx) ? prev.filter((i) => i !== idx) : [...prev, idx]
+                            );
+                          }}
+                          className="w-3.5 h-3.5 text-[#174235] rounded accent-[#174235]"
+                        />
+                        <span className="font-semibold text-[#1a2420] dark:text-white">
+                          {st.title}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-[11px] font-mono text-[#718278] dark:text-[#9bb0a3]">
+                        <span>{st.estimated_hours || 1} س</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300">
+                          {st.priority || 'متوسط'}
+                        </span>
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <div className="flex justify-end gap-2 pt-2 border-t border-[#f0eee9] dark:border-[#223028]">

@@ -222,8 +222,33 @@ export type SidebarTab =
   | 'timeblocking'
   | 'inbox'
   | 'habits'
+  | 'journal'
   | 'vaults'
   | 'reviews';
+
+// -------------------------------------------------------------
+// DAILY JOURNAL & VOICE DIARY TYPES
+// -------------------------------------------------------------
+export type MoodType = 'great' | 'good' | 'calm' | 'neutral' | 'tired' | 'stressed';
+
+export interface JournalEntry {
+  id: string;
+  user_id?: string;
+  date: string; // YYYY-MM-DD
+  title: string;
+  content: string;
+  mood?: MoodType;
+  energy_level?: EnergyLevel;
+  gratitude?: string[];
+  wins?: string[];
+  ai_summary?: string;
+  ai_insights?: string;
+  extracted_tasks?: { title: string; priority?: 'high' | 'medium' | 'low'; estimated_hours?: number }[];
+  voice_recorded?: boolean;
+  tags: string[];
+  created_at: string;
+  updated_at?: string;
+}
 
 // -------------------------------------------------------------
 // FOCUS & TIME BLOCKING TYPES
@@ -270,6 +295,9 @@ export interface TimeBlock {
   color?: string;
   is_completed: boolean;
   notes?: string;
+  calendar_event_id?: string | null;
+  calendar_html_link?: string | null;
+  calendar_synced_at?: string | null;
   created_at: string;
 }
 

@@ -21,9 +21,11 @@ import {
   Sparkles,
   CheckCircle2,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Loader2
 } from 'lucide-react';
 import { CustomSelect } from './CustomSelect';
+import { triageInboxIdea, AiInboxTriage } from '../../services/aiService';
 
 interface InboxTabViewProps {
   inboxItems: InboxItem[];
@@ -62,12 +64,38 @@ export const InboxTabView: React.FC<InboxTabViewProps> = ({
   const [convertTargetType, setConvertTargetType] = useState<'task' | 'vault' | 'habit'>('task');
   const [selectedProjectId, setSelectedProjectId] = useState<string>(projects[0]?.id || '');
   const [selectedPillarId, setSelectedPillarId] = useState<string>(pillars[0]?.id || '');
+  const [isTriaging, setIsTriaging] = useState<string | null>(null);
+  const [aiTriageResult, setAiTriageResult] = useState<AiInboxTriage | null>(null);
+
+  const handleAiTriage = async (item: InboxItem) => {
+    setIsTriaging(item.id);
+    try {
+      const res = await triageInboxIdea(item.title, item.content);
+      setAiTriageResult(res);
+      setConvertingItem(item);
+      setConvertTargetType(res.recommended_destination === 'project' ? 'task' : res.recommended_destination);
+
+      if (res.suggested_pillar_title && pillars.length > 0) {
+        const match = pillars.find(
+          (p) =>
+            p.title.toLowerCase().includes(res.suggested_pillar_title.toLowerCase()) ||
+            res.suggested_pillar_title.toLowerCase().includes(p.title.toLowerCase())
+        );
+        if (match) setSelectedPillarId(match.id);
+      }
+    } catch (err) {
+      console.warn('AI Triage error:', err);
+    } finally {
+      setIsTriaging(null);
+    }
+  };
 
   // Escape key handler for convert modal
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && convertingItem) {
         setConvertingItem(null);
+        setAiTriageResult(null);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -319,9 +347,26 @@ export const InboxTabView: React.FC<InboxTabViewProps> = ({
                 <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
                   {!isProcessed && (
                     <div className="flex items-center bg-[#f4f2ec] dark:bg-[#192620] rounded-lg p-0.5 text-xs">
+                      {/* AI Triage Button */}
+                      <button
+                        type="button"
+                        disabled={isTriaging === item.id}
+                        onClick={() => handleAiTriage(item)}
+                        className="px-2.5 py-1 text-xs font-bold text-amber-700 dark:text-amber-300 hover:bg-amber-100/60 dark:hover:bg-amber-950/40 rounded-md transition-all cursor-pointer flex items-center gap-1"
+                        title="تحليل واقتراح أفضل مسار بالذكاء الاصطناعي"
+                      >
+                        {isTriaging === item.id ? (
+                          <Loader2 className="w-3 h-3 animate-spin text-amber-600" />
+                        ) : (
+                          <Sparkles className="w-3 h-3 text-amber-500" />
+                        )}
+                        <span>AI فرز</span>
+                      </button>
+
                       <button
                         type="button"
                         onClick={() => {
+                          setAiTriageResult(null);
                           setConvertingItem(item);
                           setConvertTargetType('task');
                         }}
@@ -334,6 +379,7 @@ export const InboxTabView: React.FC<InboxTabViewProps> = ({
                       <button
                         type="button"
                         onClick={() => {
+                          setAiTriageResult(null);
                           setConvertingItem(item);
                           setConvertTargetType('vault');
                         }}
@@ -346,6 +392,7 @@ export const InboxTabView: React.FC<InboxTabViewProps> = ({
                       <button
                         type="button"
                         onClick={() => {
+                          setAiTriageResult(null);
                           setConvertingItem(item);
                           setConvertTargetType('habit');
                         }}
@@ -402,6 +449,34 @@ export const InboxTabView: React.FC<InboxTabViewProps> = ({
               <span className="text-[11px] text-[#78857e] dark:text-[#8ea095] block">العنصر المراد فرزه:</span>
               <p className="font-bold text-[#1a2420] dark:text-white mt-0.5">{convertingItem.title}</p>
             </div>
+
+            {/* AI Triage Recommendation Card if available */}
+            {aiTriageResult && (
+              <div className="p-3 bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl space-y-2 text-xs">
+                <div className="flex items-center gap-1.5 font-bold text-emerald-800 dark:text-emerald-300">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                  <span>توجيه ذكي مقترح بالذكاء الاصطناعي:</span>
+                </div>
+                <p className="text-emerald-900 dark:text-emerald-200 text-[11px] leading-relaxed">
+                  {aiTriageResult.reasoning}
+                </p>
+                {aiTriageResult.actionable_steps && aiTriageResult.actionable_steps.length > 0 && (
+                  <div className="pt-1 border-t border-emerald-200/60 dark:border-emerald-800/60">
+                    <span className="text-[10px] font-bold text-emerald-800 dark:text-emerald-400 block mb-0.5">
+                      الخطوات التنفيذية المقترحة:
+                    </span>
+                    <ul className="space-y-0.5 text-[11px] text-emerald-900 dark:text-emerald-200">
+                      {aiTriageResult.actionable_steps.map((st, idx) => (
+                        <li key={idx} className="flex items-center gap-1">
+                          <span className="text-emerald-600">✓</span>
+                          <span>{st}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="space-y-3">
               <div>

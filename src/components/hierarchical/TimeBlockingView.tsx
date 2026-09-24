@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   Clock, 
   Plus, 
@@ -10,10 +10,36 @@ import {
   X, 
   Edit3,
   Check,
-  LayoutTemplate
+  LayoutTemplate,
+  Calendar as CalendarIcon,
+  Sparkles,
+  ExternalLink,
+  RefreshCw,
+  LogOut,
+  AlertCircle,
+  CalendarCheck2
 } from 'lucide-react';
 import { TimeBlock, TimeBlockCategory, Task, Project, Pillar } from '../../types/hierarchical';
 import { CustomSelect } from './CustomSelect';
+import { ConfirmModal } from '../ConfirmModal';
+import { 
+  initCalendarAuth, 
+  signInWithGoogleCalendar, 
+  logoutGoogleCalendar, 
+  getCalendarAccessToken,
+  CALENDAR_SCOPES 
+} from '../../services/calendarAuth';
+import { 
+  fetchCalendarEventsForDay, 
+  createGoogleCalendarEvent, 
+  deleteGoogleCalendarEvent, 
+  GoogleCalendarEvent 
+} from '../../services/googleCalendarService';
+import { 
+  generateAiSmartSchedule, 
+  AiScheduleBlockSuggestion 
+} from '../../services/aiService';
+import { User } from 'firebase/auth';
 
 interface TimeBlockingViewProps {
   tasks: Task[];
@@ -113,17 +139,31 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
   // Unscheduled tasks filter
   const [taskSearch, setTaskSearch] = useState<string>('');
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isModalOpen) {
-        setIsModalOpen(false);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isModalOpen]);
+  // Google Calendar Integration States
+  const [calendarUser, setCalendarUser] = useState<User | null>(null);
+  const [calendarToken, setCalendarToken] = useState<string | null>(null);
+  const [isConnectingCalendar, setIsConnectingCalendar] = useState<boolean>(false);
+  const [calendarEvents, setCalendarEvents] = useState<GoogleCalendarEvent[]>([]);
+  const [isFetchingCalendar, setIsFetchingCalendar] = useState<boolean>(false);
+  const [syncingBlockId, setSyncingBlockId] = useState<string | null>(null);
+  const [isSyncingAll, setIsSyncingAll] = useState<boolean>(false);
+  const [calendarStatusMsg, setCalendarStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Update live current time every minute
+  // Mandatory Confirm Modal for Destructive Calendar Actions
+  const [confirmCalendarDelete, setConfirmCalendarDelete] = useState<{
+    isOpen: boolean;
+    blockId: string;
+    eventId: string;
+    eventTitle: string;
+  } | null>(null);
+
+  // AI Smart Schedule States
+  const [isAiModalOpen, setIsAiModalOpen] = useState<boolean>(false);
+  const [isGeneratingAiSchedule, setIsGeneratingAiSchedule] = useState<boolean>(false);
+  const [aiSuggestions, setAiSuggestions] = useState<AiScheduleBlockSuggestion[]>([]);
+  const [aiErrorMsg, setAiErrorMsg] = useState<string | null>(null);
+
+  // Update live current time every 30 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       const now = new Date();
@@ -131,6 +171,306 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
     }, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  // Listen to Firebase Auth state for Google Calendar
+  useEffect(() => {
+    const unsubscribe = initCalendarAuth(
+      (user, token) => {
+        setCalendarUser(user);
+        setCalendarToken(token);
+      },
+      () => {
+        setCalendarUser(null);
+        setCalendarToken(null);
+      }
+    );
+    return () => unsubscribe();
+  }, []);
+
+  // Fetch calendar events when date changes or token becomes available
+  const loadCalendarEvents = useCallback(async (token: string, dateStr: string) => {
+    setIsFetchingCalendar(true);
+    try {
+      const events = await fetchCalendarEventsForDay(token, dateStr);
+      setCalendarEvents(events);
+    } catch (err: any) {
+      console.warn('Failed to load Google Calendar events:', err);
+    } finally {
+      setIsFetchingCalendar(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const token = calendarToken || getCalendarAccessToken();
+    if (token) {
+      loadCalendarEvents(token, selectedDate);
+    } else {
+      setCalendarEvents([]);
+    }
+  }, [calendarToken, selectedDate, loadCalendarEvents]);
+
+  // Handle Google Calendar Sign-in
+  const handleConnectGoogleCalendar = async () => {
+    setIsConnectingCalendar(true);
+    setCalendarStatusMsg(null);
+    try {
+      const res = await signInWithGoogleCalendar();
+      setCalendarUser(res.user);
+      setCalendarToken(res.accessToken);
+      setCalendarStatusMsg({
+        type: 'success',
+        text: `تم ربط تقويم Google بنجاح بالحساب (${res.user.email})`,
+      });
+      loadCalendarEvents(res.accessToken, selectedDate);
+    } catch (error: any) {
+      setCalendarStatusMsg({
+        type: 'error',
+        text: error.message || 'فشل الاتصال بتقويم Google. يرجى المحاولة مرة أخرى.',
+      });
+    } finally {
+      setIsConnectingCalendar(false);
+    }
+  };
+
+  // Handle Google Calendar Sign-out
+  const handleDisconnectGoogleCalendar = async () => {
+    await logoutGoogleCalendar();
+    setCalendarUser(null);
+    setCalendarToken(null);
+    setCalendarEvents([]);
+    setCalendarStatusMsg({
+      type: 'success',
+      text: 'تم فصل الربط مع تقويم Google',
+    });
+  };
+
+  // Sync a single block to Google Calendar
+  const handleSyncBlockToGoogle = async (block: TimeBlock) => {
+    const token = calendarToken || getCalendarAccessToken();
+    if (!token) {
+      handleConnectGoogleCalendar();
+      return;
+    }
+
+    setSyncingBlockId(block.id);
+    setCalendarStatusMsg(null);
+    try {
+      const linkedTask = block.task_id ? tasks.find((t) => t.id === block.task_id) : undefined;
+      const linkedProject = block.project_id ? projects.find((p) => p.id === block.project_id) : undefined;
+
+      const createdEvent = await createGoogleCalendarEvent(
+        token,
+        block,
+        linkedTask?.title,
+        linkedProject?.title
+      );
+
+      // Update block with Google Calendar reference
+      onSaveTimeBlock({
+        ...block,
+        calendar_event_id: createdEvent.id,
+        calendar_html_link: createdEvent.htmlLink || null,
+        calendar_synced_at: new Date().toISOString(),
+      });
+
+      setCalendarStatusMsg({
+        type: 'success',
+        text: `تمت إضافة "${block.title}" إلى تقويم Google بنجاح!`,
+      });
+
+      // Refresh calendar events
+      loadCalendarEvents(token, selectedDate);
+    } catch (err: any) {
+      setCalendarStatusMsg({
+        type: 'error',
+        text: err.message || 'فشلت المزامنة مع تقويم Google',
+      });
+    } finally {
+      setSyncingBlockId(null);
+    }
+  };
+
+  // Request to delete / unsync from Google Calendar (Triggers MANDATORY confirmation modal)
+  const handleRequestRemoveFromGoogle = (block: TimeBlock) => {
+    if (!block.calendar_event_id) return;
+    setConfirmCalendarDelete({
+      isOpen: true,
+      blockId: block.id,
+      eventId: block.calendar_event_id,
+      eventTitle: block.title,
+    });
+  };
+
+  // Confirm delete from Google Calendar
+  const handleExecuteCalendarDelete = async () => {
+    if (!confirmCalendarDelete) return;
+    const token = calendarToken || getCalendarAccessToken();
+    const { blockId, eventId, eventTitle } = confirmCalendarDelete;
+    setConfirmCalendarDelete(null);
+
+    if (!token) return;
+
+    setSyncingBlockId(blockId);
+    try {
+      await deleteGoogleCalendarEvent(token, eventId);
+      const targetBlock = timeBlocks.find((b) => b.id === blockId);
+      if (targetBlock) {
+        onSaveTimeBlock({
+          ...targetBlock,
+          calendar_event_id: null,
+          calendar_html_link: null,
+          calendar_synced_at: null,
+        });
+      }
+      setCalendarStatusMsg({
+        type: 'success',
+        text: `تم حذف الموعد "${eventTitle}" من تقويم Google بنجاح`,
+      });
+      loadCalendarEvents(token, selectedDate);
+    } catch (err: any) {
+      setCalendarStatusMsg({
+        type: 'error',
+        text: err.message || 'فشل حذف الموعد من تقويم Google',
+      });
+    } finally {
+      setSyncingBlockId(null);
+    }
+  };
+
+  // Sync all unsynced blocks of today to Google Calendar
+  const handleSyncAllToGoogle = async () => {
+    const token = calendarToken || getCalendarAccessToken();
+    if (!token) {
+      handleConnectGoogleCalendar();
+      return;
+    }
+
+    const unsynced = dayBlocks.filter((b) => !b.calendar_event_id);
+    if (unsynced.length === 0) {
+      setCalendarStatusMsg({
+        type: 'success',
+        text: 'جميع كتل اليوم متزامنة بالفعل مع تقويم Google!',
+      });
+      return;
+    }
+
+    setIsSyncingAll(true);
+    setCalendarStatusMsg(null);
+    let syncedCount = 0;
+
+    try {
+      for (const block of unsynced) {
+        const linkedTask = block.task_id ? tasks.find((t) => t.id === block.task_id) : undefined;
+        const linkedProject = block.project_id ? projects.find((p) => p.id === block.project_id) : undefined;
+
+        const createdEvent = await createGoogleCalendarEvent(
+          token,
+          block,
+          linkedTask?.title,
+          linkedProject?.title
+        );
+
+        onSaveTimeBlock({
+          ...block,
+          calendar_event_id: createdEvent.id,
+          calendar_html_link: createdEvent.htmlLink || null,
+          calendar_synced_at: new Date().toISOString(),
+        });
+        syncedCount++;
+      }
+
+      setCalendarStatusMsg({
+        type: 'success',
+        text: `تمت مزامنة ${syncedCount} كتلة زمنية مع تقويم Google بنجاح!`,
+      });
+      loadCalendarEvents(token, selectedDate);
+    } catch (err: any) {
+      setCalendarStatusMsg({
+        type: 'error',
+        text: err.message || 'حدث خطأ أثناء مزامنة بعض الكتل',
+      });
+    } finally {
+      setIsSyncingAll(false);
+    }
+  };
+
+  // Import a Google Calendar event into دوّنلي as a TimeBlock
+  const handleImportCalendarEvent = (event: GoogleCalendarEvent) => {
+    let startTime = '09:00';
+    let endTime = '10:00';
+
+    if (event.start?.dateTime && event.end?.dateTime) {
+      const s = new Date(event.start.dateTime);
+      const e = new Date(event.end.dateTime);
+      startTime = `${s.getHours().toString().padStart(2, '0')}:${s.getMinutes().toString().padStart(2, '0')}`;
+      endTime = `${e.getHours().toString().padStart(2, '0')}:${e.getMinutes().toString().padStart(2, '0')}`;
+    }
+
+    const newBlock: TimeBlock = {
+      id: `tb-gcal-${Date.now()}`,
+      date: selectedDate,
+      start_time: startTime,
+      end_time: endTime,
+      title: event.summary || 'موعد من تقويم Google',
+      category: 'meeting',
+      is_completed: false,
+      notes: event.description || 'مستورد من تقويم Google',
+      calendar_event_id: event.id,
+      calendar_html_link: event.htmlLink || null,
+      calendar_synced_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+    };
+
+    onSaveTimeBlock(newBlock);
+    setCalendarStatusMsg({
+      type: 'success',
+      text: `تم استيراد "${event.summary}" ككتلة زمنية في جدول اليوم!`,
+    });
+  };
+
+  // AI Smart Schedule Generator
+  const handleTriggerAiSchedule = async () => {
+    setIsAiModalOpen(true);
+    setIsGeneratingAiSchedule(true);
+    setAiErrorMsg(null);
+    try {
+      const suggestions = await generateAiSmartSchedule(unscheduledTasks, selectedDate);
+      if (suggestions && suggestions.length > 0) {
+        setAiSuggestions(suggestions);
+      } else {
+        setAiErrorMsg('لم يتم استخراج كتل مقترحة، يرجى النقر على زر إعادة المحاولة.');
+      }
+    } catch (err: any) {
+      console.warn('AI smart schedule error:', err);
+      setAiErrorMsg('تعذر التخطيط الذكي حالياً، يرجى النقر على إعادة المحاولة بعد لحظات.');
+    } finally {
+      setIsGeneratingAiSchedule(false);
+    }
+  };
+
+  // Apply AI Schedule suggestions
+  const handleApplyAiSchedule = () => {
+    aiSuggestions.forEach((sug, i) => {
+      const block: TimeBlock = {
+        id: `tb-ai-${Date.now()}-${i}`,
+        date: selectedDate,
+        start_time: sug.start_time,
+        end_time: sug.end_time,
+        title: sug.title,
+        category: sug.category,
+        notes: sug.notes,
+        is_completed: false,
+        created_at: new Date().toISOString(),
+      };
+      onSaveTimeBlock(block);
+    });
+
+    setIsAiModalOpen(false);
+    setCalendarStatusMsg({
+      type: 'success',
+      text: `تم تطبيق ${aiSuggestions.length} كتل مقترحة بالذكاء الاصطناعي على جدول اليوم!`,
+    });
+  };
 
   // Filter blocks for selected date & sort chronologically
   const dayBlocks = useMemo(() => {
@@ -200,6 +540,9 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
       pillar_id: matchedProject ? (matchedProject as any).pillar_id : null,
       is_completed: editingBlock ? editingBlock.is_completed : false,
       notes: formNotes.trim() || undefined,
+      calendar_event_id: editingBlock?.calendar_event_id,
+      calendar_html_link: editingBlock?.calendar_html_link,
+      calendar_synced_at: editingBlock?.calendar_synced_at,
       created_at: editingBlock ? editingBlock.created_at : new Date().toISOString(),
     };
 
@@ -288,29 +631,104 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       
-      {/* 1. Header with Date Navigator & Stats */}
+      {/* 1. Header with Date Navigator, Google Calendar integration & AI */}
       <div className="bg-white dark:bg-[#131d18] border border-[#e8e5de] dark:border-[#26372d] rounded-2xl p-5 sm:p-6 shadow-2xs transition-colors">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           
-          {/* Title */}
+          {/* Title and Intro */}
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="text-xl">📅</span>
               <h1 className="text-lg sm:text-xl font-bold text-[#1a2420] dark:text-white">
-                حجب الوقت اليومي (Time Blocking)
+                حجب الوقت والتقويم (Time Blocking & Calendar)
               </h1>
               <span className="text-[11px] px-2.5 py-0.5 rounded-md font-bold bg-[#ebf4f0] dark:bg-[#192b22] text-[#174235] dark:text-emerald-400 border border-[#cfe3d9] dark:border-[#2d4034] font-mono tabular-nums">
                 {dayBlocks.length} كتل مجدولة
               </span>
+              {calendarUser && (
+                <span className="inline-flex items-center gap-1 text-[11px] px-2.5 py-0.5 rounded-md font-bold bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
+                  <CalendarCheck2 className="w-3 h-3 text-sky-600" />
+                  <span>متصل بتقويم Google</span>
+                </span>
+              )}
             </div>
             <p className="text-xs text-[#636e67] dark:text-[#9bb0a3]">
-              خصص لكل ساعة من يومك نية واضحة ومسبقة لحماية تركيزك العميق ومنع التسويف.
+              خصص لكل ساعة من يومك نية واضحة مسبقة لحماية تركيزك العميق مع مزامنة كاملة لتقويم Google.
             </p>
           </div>
 
-          {/* Date Selector and Navigation Controls */}
+          {/* Action Bar (Google Calendar, AI, Template, Add Block) */}
           <div className="flex flex-wrap items-center gap-2">
             
+            {/* Google Calendar Connect / Sync Button */}
+            {!calendarUser ? (
+              <button
+                type="button"
+                onClick={handleConnectGoogleCalendar}
+                disabled={isConnectingCalendar}
+                className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-[#192620] hover:bg-[#faf8f5] dark:hover:bg-[#203026] text-[#2d3a32] dark:text-[#d4e2d8] border border-[#d8d4cc] dark:border-[#2d4034] rounded-xl text-xs font-bold shadow-2xs transition-all cursor-pointer disabled:opacity-60"
+                title="ربط ومزامنة جدولك مع Google Calendar"
+              >
+                {isConnectingCalendar ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#174235] dark:text-emerald-400" />
+                ) : (
+                  <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                  </svg>
+                )}
+                <span>ربط تقويم Google</span>
+              </button>
+            ) : (
+              <div className="flex items-center gap-1.5 bg-[#f5f9f7] dark:bg-[#162720] border border-[#cfe3d8] dark:border-[#253e31] p-1 rounded-xl">
+                <button
+                  type="button"
+                  onClick={handleSyncAllToGoogle}
+                  disabled={isSyncingAll}
+                  className="flex items-center gap-1.5 px-2.5 py-1 bg-[#174235] dark:bg-emerald-600 hover:bg-[#12362b] dark:hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all cursor-pointer disabled:opacity-60"
+                  title="مزامنة كافة كتل اليوم مع تقويم Google"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isSyncingAll ? 'animate-spin' : ''}`} />
+                  <span>مزامنة الكتل للتقويم</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => calendarToken && loadCalendarEvents(calendarToken, selectedDate)}
+                  disabled={isFetchingCalendar}
+                  className="p-1.5 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg text-[#55645b] dark:text-[#8ea095] transition-colors cursor-pointer"
+                  title="تحديث أحداث التقويم"
+                  aria-label="تحديث أحداث التقويم"
+                >
+                  <CalendarIcon className="w-3.5 h-3.5" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleDisconnectGoogleCalendar}
+                  className="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg text-rose-600 dark:text-rose-400 transition-colors cursor-pointer"
+                  title="تسجيل الخروج وفصل التقويم"
+                  aria-label="تسجيل الخروج من التقويم"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+
+            {/* AI Smart Planner Button */}
+            <button
+              type="button"
+              onClick={handleTriggerAiSchedule}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white rounded-xl text-xs font-bold shadow-2xs transition-all cursor-pointer"
+              title="توليد جدول ذكي بالذكاء الاصطناعي بناءً على مهامك"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-200" />
+              <span>جدول ذكي (AI)</span>
+            </button>
+
+            {/* Date Navigator */}
             <div className="flex items-center bg-[#faf8f4] dark:bg-[#192620] border border-[#d8d4cc] dark:border-[#2d4034] rounded-xl p-0.5 shadow-2xs">
               <button
                 type="button"
@@ -357,26 +775,52 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
             <button
               type="button"
               onClick={() => handleOpenAddModal()}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-[#174235] dark:bg-emerald-600 hover:bg-[#12362b] dark:hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer transition-all"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#174235] dark:bg-emerald-600 hover:bg-[#12362b] dark:hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer transition-all"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>كتلة زمنية جديدة</span>
+              <span>كتلة جديدة</span>
             </button>
 
             {/* Preset Template button */}
             <button
               type="button"
               onClick={handleApplyTemplate}
-              className="flex items-center gap-1.5 px-3 py-2 bg-[#f4f2ed] dark:bg-[#192620] hover:bg-[#eae6dd] dark:hover:bg-[#203026] text-[#4d5c52] dark:text-[#b4c7bd] border border-[#dcd7cc] dark:border-[#2d4034] rounded-xl text-xs font-bold transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#f4f2ed] dark:bg-[#192620] hover:bg-[#eae6dd] dark:hover:bg-[#203026] text-[#4d5c52] dark:text-[#b4c7bd] border border-[#dcd7cc] dark:border-[#2d4034] rounded-xl text-xs font-bold transition-all cursor-pointer"
               title="تطبيق قالب يوم قياسي جاهز"
             >
               <LayoutTemplate className="w-3.5 h-3.5 text-[#174235] dark:text-emerald-400" />
-              <span className="hidden sm:inline">قالب يوم قياسي</span>
+              <span className="hidden sm:inline">قالب قياسي</span>
             </button>
 
           </div>
 
         </div>
+
+        {/* Calendar Notification / Status Banner */}
+        {calendarStatusMsg && (
+          <div className={`mt-3 p-3 rounded-xl text-xs flex items-center justify-between gap-3 animate-in fade-in duration-200 ${
+            calendarStatusMsg.type === 'success'
+              ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+              : 'bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
+          }`}>
+            <div className="flex items-center gap-2">
+              {calendarStatusMsg.type === 'success' ? (
+                <Check className="w-4 h-4 text-emerald-600" />
+              ) : (
+                <AlertCircle className="w-4 h-4 text-rose-600" />
+              )}
+              <span>{calendarStatusMsg.text}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setCalendarStatusMsg(null)}
+              className="p-1 hover:bg-black/5 rounded-lg cursor-pointer"
+              aria-label="إغلاق التنبيه"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
 
         {/* Live Active Block Banner if running right now */}
         {activeBlockNow && (
@@ -427,9 +871,9 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
             </span>
           </div>
           <div>
-            <span className="text-[#7d8b82] dark:text-[#8ea095] text-[11px] block">نسبة الالتزام بالجدول:</span>
-            <span className="font-bold text-[#1a2420] dark:text-white text-sm font-mono tabular-nums">
-              {dayBlocks.length > 0 ? Math.round((dayBlocks.filter((b) => b.is_completed).length / dayBlocks.length) * 100) : 0}%
+            <span className="text-[#7d8b82] dark:text-[#8ea095] text-[11px] block">حالة مزامنة التقويم:</span>
+            <span className="font-bold text-sky-700 dark:text-sky-400 text-sm font-mono tabular-nums">
+              {dayBlocks.filter((b) => b.calendar_event_id).length} متزامنة مع Google
             </span>
           </div>
         </div>
@@ -442,10 +886,25 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
         {/* Left 2 Cols: Timeline Schedule */}
         <div className="lg:col-span-2 space-y-4">
           <div className="bg-white dark:bg-[#131d18] border border-[#e8e5de] dark:border-[#26372d] rounded-2xl p-5 shadow-2xs transition-colors">
-            <h2 className="text-sm font-bold text-[#1a2420] dark:text-white mb-4 flex items-center gap-2">
-              <Clock className="w-4 h-4 text-[#174235] dark:text-emerald-400" />
-              <span>الجدول الزمني ليوم {new Date(selectedDate).toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
-            </h2>
+            
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-bold text-[#1a2420] dark:text-white flex items-center gap-2">
+                <Clock className="w-4 h-4 text-[#174235] dark:text-emerald-400" />
+                <span>الجدول الزمني ليوم {new Date(selectedDate).toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+              </h2>
+
+              {calendarUser && dayBlocks.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleSyncAllToGoogle}
+                  disabled={isSyncingAll}
+                  className="text-xs text-sky-700 dark:text-sky-400 hover:underline flex items-center gap-1 font-bold cursor-pointer"
+                >
+                  <RefreshCw className={`w-3 h-3 ${isSyncingAll ? 'animate-spin' : ''}`} />
+                  <span>مزامنة كتل اليوم لتقويم Google</span>
+                </button>
+              )}
+            </div>
 
             {dayBlocks.length > 0 ? (
               <div className="space-y-3 relative">
@@ -454,6 +913,7 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
                   const isCurrent = isToday && block.start_time <= currentTimeStr && block.end_time > currentTimeStr;
                   const linkedTask = block.task_id ? tasks.find((t) => t.id === block.task_id) : undefined;
                   const linkedProject = block.project_id ? projects.find((p) => p.id === block.project_id) : undefined;
+                  const isSyncingThis = syncingBlockId === block.id;
 
                   return (
                     <div
@@ -493,6 +953,24 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
                               <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md bg-white/60 dark:bg-black/20 ${cfg.text}`}>
                                 <span>{cfg.icon}</span> {cfg.label}
                               </span>
+
+                              {/* Google Calendar Sync Tag */}
+                              {block.calendar_event_id && (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-sky-100 dark:bg-sky-900/40 text-sky-800 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
+                                  <span>📅 متزامن مع تقويم Google</span>
+                                  {block.calendar_html_link && (
+                                    <a
+                                      href={block.calendar_html_link}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="hover:text-sky-600 dark:hover:text-sky-200 ml-0.5"
+                                      title="فتح الموعد في Google Calendar"
+                                    >
+                                      <ExternalLink className="w-3 h-3" />
+                                    </a>
+                                  )}
+                                </span>
+                              )}
 
                               {isCurrent && (
                                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#174235] dark:bg-emerald-600 text-white">
@@ -535,6 +1013,36 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
 
                         {/* Actions */}
                         <div className="flex items-center gap-1.5 shrink-0">
+                          
+                          {/* Google Calendar Sync / Desync Action */}
+                          {calendarUser && (
+                            <>
+                              {!block.calendar_event_id ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleSyncBlockToGoogle(block)}
+                                  disabled={isSyncingThis}
+                                  className="p-1.5 bg-white dark:bg-[#18261e] hover:bg-sky-50 dark:hover:bg-sky-950/40 text-sky-700 dark:text-sky-300 rounded-lg border border-black/10 dark:border-white/10 transition-colors cursor-pointer"
+                                  title="مزامنة هذه الكتلة إلى Google Calendar"
+                                  aria-label="مزامنة مع Google Calendar"
+                                >
+                                  <RefreshCw className={`w-3.5 h-3.5 ${isSyncingThis ? 'animate-spin' : ''}`} />
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => handleRequestRemoveFromGoogle(block)}
+                                  disabled={isSyncingThis}
+                                  className="p-1.5 bg-white dark:bg-[#18261e] hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-700 dark:text-amber-300 rounded-lg border border-black/10 dark:border-white/10 transition-colors cursor-pointer"
+                                  title="إلغاء المزامنة وحذف الموعد من Google Calendar"
+                                  aria-label="إلغاء المزامنة من Google Calendar"
+                                >
+                                  <CalendarIcon className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </>
+                          )}
+
                           {linkedTask && onStartFocusOnTask && (
                             <button
                               type="button"
@@ -582,31 +1090,135 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
                   لا توجد كتل زمنية مجدولة لهذا اليوم حتى الآن
                 </h3>
                 <p className="text-xs text-[#637269] dark:text-[#9bb0a3] max-w-sm mx-auto">
-                  ابدأ بجدولة أول ساعة من يومك، أو اسحب المهام غير المجدولة من القائمة الجانبية.
+                  ابدأ بجدولة أول ساعة من يومك، أو استخدم الجدولة الذكية بالذكاء الاصطناعي لتخطيط يومك تلقائياً.
                 </p>
-                <div className="pt-2 flex items-center justify-center gap-2">
+                <div className="pt-2 flex flex-wrap items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleTriggerAiSchedule}
+                    className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-700 text-white rounded-xl text-xs font-bold hover:opacity-95 transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-amber-200" />
+                    <span>جدول ذكي بالذكاء الاصطناعي (AI)</span>
+                  </button>
                   <button
                     type="button"
                     onClick={() => handleOpenAddModal('09:00')}
                     className="px-4 py-2 bg-[#174235] dark:bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-[#12362b] dark:hover:bg-emerald-700 transition-colors cursor-pointer"
                   >
-                    إضافة كتلة زمنية
+                    إضافة كتلة يدوية
                   </button>
                   <button
                     type="button"
                     onClick={handleApplyTemplate}
                     className="px-4 py-2 bg-[#f4f2ed] dark:bg-[#192620] text-[#4d5c52] dark:text-[#b4c7bd] border border-[#d8d4cc] dark:border-[#2d4034] rounded-xl text-xs font-bold hover:bg-[#eae6dd] dark:hover:bg-[#203026] transition-colors cursor-pointer"
                   >
-                    تطبيق قالب يوم قياسي
+                    تطبيق قالب قياسي
                   </button>
                 </div>
               </div>
             )}
           </div>
+
+          {/* Google Calendar Day Events (External Events) */}
+          {calendarUser && (
+            <div className="bg-white dark:bg-[#131d18] border border-sky-200 dark:border-sky-900/40 rounded-2xl p-5 shadow-2xs space-y-3 transition-colors">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold text-sky-950 dark:text-sky-300 flex items-center gap-2">
+                  <CalendarIcon className="w-4 h-4 text-sky-600" />
+                  <span>مواعيد وأحداث تقويم Google ليوم {selectedDate}</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-sky-100 dark:bg-sky-900/40 text-sky-800 dark:text-sky-300 font-mono font-bold">
+                    {calendarEvents.length}
+                  </span>
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => calendarToken && loadCalendarEvents(calendarToken, selectedDate)}
+                  disabled={isFetchingCalendar}
+                  className="text-xs text-sky-700 dark:text-sky-400 hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <RefreshCw className={`w-3 h-3 ${isFetchingCalendar ? 'animate-spin' : ''}`} />
+                  <span>تحديث الأحداث</span>
+                </button>
+              </div>
+
+              {calendarEvents.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                  {calendarEvents.map((evt) => {
+                    const isAlreadyImported = dayBlocks.some((b) => b.calendar_event_id === evt.id);
+                    let timeLabel = 'طوال اليوم';
+                    if (evt.start?.dateTime && evt.end?.dateTime) {
+                      const s = new Date(evt.start.dateTime);
+                      const e = new Date(evt.end.dateTime);
+                      timeLabel = `${s.getHours().toString().padStart(2, '0')}:${s.getMinutes().toString().padStart(2, '0')} - ${e.getHours().toString().padStart(2, '0')}:${e.getMinutes().toString().padStart(2, '0')}`;
+                    }
+
+                    return (
+                      <div
+                        key={evt.id}
+                        className="p-3 bg-sky-50/60 dark:bg-[#162520] border border-sky-100 dark:border-sky-900/30 rounded-xl flex items-start justify-between gap-2"
+                      >
+                        <div className="min-w-0 space-y-0.5">
+                          <span className="text-[10px] font-mono font-bold text-sky-700 dark:text-sky-400 block tabular-nums">
+                            {timeLabel}
+                          </span>
+                          <h4 className="text-xs font-bold text-[#1a2420] dark:text-white truncate">
+                            {evt.summary || 'بدون عنوان'}
+                          </h4>
+                          {evt.description && (
+                            <p className="text-[11px] text-[#617167] dark:text-[#9bb0a3] line-clamp-1">
+                              {evt.description}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="shrink-0 flex items-center gap-1">
+                          {isAlreadyImported ? (
+                            <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-100 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md">
+                              مضاف بالجدول
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleImportCalendarEvent(evt)}
+                              className="px-2 py-1 bg-white dark:bg-[#192620] hover:bg-sky-100 dark:hover:bg-sky-900/40 text-sky-800 dark:text-sky-300 border border-sky-200 dark:border-sky-800 rounded-lg text-[10px] font-bold transition-colors cursor-pointer"
+                              title="إدراج هذا الموعد ككتلة في دوّنلي"
+                            >
+                              + إدراج ككتلة
+                            </button>
+                          )}
+                          {evt.htmlLink && (
+                            <a
+                              href={evt.htmlLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-1 text-slate-400 hover:text-sky-600 rounded"
+                              title="فتح في Google Calendar"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-4 text-xs text-[#718278] dark:text-[#8ea095]">
+                  {isFetchingCalendar
+                    ? 'جاري فحص وجلب مواعيد Google Calendar لهذا اليوم...'
+                    : 'لا توجد مواعيد مسجلة في تقويم Google لهذا اليوم'}
+                </div>
+              )}
+            </div>
+          )}
+
         </div>
 
-        {/* Right Col: Unscheduled Tasks Drawer */}
+        {/* Right Col: Unscheduled Tasks Drawer & AI Suggestion */}
         <div className="space-y-4">
+          
+          {/* Unscheduled Tasks */}
           <div className="bg-white dark:bg-[#131d18] border border-[#e8e5de] dark:border-[#26372d] rounded-2xl p-5 shadow-2xs space-y-3 transition-colors">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold text-[#1a2420] dark:text-white flex items-center gap-1.5">
@@ -615,6 +1227,15 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
                   {unscheduledTasks.length}
                 </span>
               </h3>
+
+              <button
+                type="button"
+                onClick={handleTriggerAiSchedule}
+                className="text-[11px] text-emerald-700 dark:text-emerald-400 hover:underline flex items-center gap-1 font-bold cursor-pointer"
+              >
+                <Sparkles className="w-3 h-3 text-amber-500" />
+                <span>تخطيط ذكي (AI)</span>
+              </button>
             </div>
 
             <p className="text-[11px] text-[#637269] dark:text-[#9bb0a3]">
@@ -678,6 +1299,18 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
             </div>
 
           </div>
+
+          {/* AI Features Guide Card */}
+          <div className="bg-gradient-to-br from-[#174235]/5 to-emerald-500/10 dark:from-emerald-950/20 dark:to-teal-950/30 border border-emerald-200/60 dark:border-emerald-800/40 rounded-2xl p-4 space-y-2">
+            <div className="flex items-center gap-2 text-xs font-bold text-[#174235] dark:text-emerald-400">
+              <Sparkles className="w-4 h-4 text-amber-500" />
+              <span>ذكاء دوّنلي الاصطناعي (AI)</span>
+            </div>
+            <p className="text-[11px] text-[#55645b] dark:text-[#9bb0a3] leading-relaxed">
+              يدعم نظام دوّنلي نموذج <strong>Gemini 3.8 Flash</strong> لتحليل أهدافك، تفكيك المشاريع لمهام تنفيذية، وصياغة جداول كتل الوقت اليومية المتوازنة بذكاء.
+            </p>
+          </div>
+
         </div>
 
       </div>
@@ -833,6 +1466,168 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
 
           </div>
         </div>
+      )}
+
+      {/* 4. AI Schedule Generator Modal */}
+      {isAiModalOpen && (
+        <div 
+          className="fixed inset-0 z-50 bg-slate-900/50 dark:bg-black/60 backdrop-blur-2xs flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="bg-white dark:bg-[#131d18] border border-[#d8d4cc] dark:border-[#26372d] rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150 transition-colors">
+            
+            <div className="px-6 py-4 bg-gradient-to-r from-emerald-800 to-teal-900 text-white flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-amber-300" />
+                <h3 className="text-sm font-bold">
+                  المخطط الزمني الذكي (Gemini AI Daily Planner)
+                </h3>
+              </div>
+              <div className="flex items-center gap-2">
+                {!isGeneratingAiSchedule && (
+                  <button
+                    type="button"
+                    onClick={handleTriggerAiSchedule}
+                    className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                    title="إعادة التخطيط بالذكاء الاصطناعي"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>إعادة التخطيط</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setIsAiModalOpen(false)}
+                  className="p-1 rounded-lg text-white/80 hover:text-white hover:bg-white/10 cursor-pointer"
+                  aria-label="إغلاق"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+              
+              {isGeneratingAiSchedule ? (
+                <div className="py-12 text-center space-y-3">
+                  <div className="inline-flex p-3 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 animate-bounce">
+                    <Sparkles className="w-6 h-6" />
+                  </div>
+                  <h4 className="text-sm font-bold text-[#1a2420] dark:text-white">
+                    جاري التخطيط الذكي ليومك...
+                  </h4>
+                  <p className="text-xs text-[#617167] dark:text-[#9bb0a3] max-w-sm mx-auto">
+                    يقوم نموذج Gemini بتحليل مهامك ذات الأولوية وتوزيعها على فترات التركيز العميق والاستراحات بما يحقق أعلى إنتاجية.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {aiErrorMsg && (
+                    <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl text-xs text-amber-800 dark:text-amber-300 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 shrink-0" />
+                        <span>{aiErrorMsg}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleTriggerAiSchedule}
+                        className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold shrink-0 cursor-pointer"
+                      >
+                        إعادة المحاولة
+                      </button>
+                    </div>
+                  )}
+
+                  {aiSuggestions.length > 0 ? (
+                    <>
+                      <div className="flex items-center justify-between text-xs text-[#55645b] dark:text-[#9bb0a3] pb-1 border-b border-[#f0eee9] dark:border-[#223028]">
+                        <span>الكتل الزمنية المقترحة ({aiSuggestions.length}):</span>
+                        <span>التاريخ: {selectedDate}</span>
+                      </div>
+
+                      <div className="space-y-2.5">
+                        {aiSuggestions.map((sug, idx) => {
+                          const cfg = CATEGORY_CONFIG[sug.category] || CATEGORY_CONFIG.deep_work;
+                          return (
+                            <div
+                              key={idx}
+                              className={`p-3 rounded-xl border ${cfg.bg} ${cfg.border} space-y-1`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-mono font-bold bg-white/80 dark:bg-black/30 px-2 py-0.5 rounded text-[#1a2420] dark:text-white tabular-nums">
+                                  {sug.start_time} - {sug.end_time}
+                                </span>
+                                <span className={`text-[11px] font-bold ${cfg.text}`}>
+                                  {cfg.icon} {cfg.label}
+                                </span>
+                              </div>
+                              <h4 className="text-xs font-bold text-[#1a2420] dark:text-white">
+                                {sug.title}
+                              </h4>
+                              {sug.notes && (
+                                <p className="text-[11px] text-[#617167] dark:text-[#9bb0a3] italic">
+                                  {sug.notes}
+                                </p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      <div className="pt-3 border-t border-[#f0eee9] dark:border-[#223028] flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setIsAiModalOpen(false)}
+                          className="px-4 py-2 bg-[#f4f2ed] dark:bg-[#192620] hover:bg-[#eae6dd] dark:hover:bg-[#203026] text-[#55645b] dark:text-[#8ea095] rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                        >
+                          إلغاء
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleApplyAiSchedule}
+                          className="px-5 py-2 bg-[#174235] dark:bg-emerald-600 hover:bg-[#12362b] dark:hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                          <span>تطبيق الجدول بالكامل في دوّنلي</span>
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="py-8 text-center space-y-3">
+                      <p className="text-xs text-[#617167] dark:text-[#9bb0a3]">
+                        لا توجد كتل مقترحة في الوقت الحالي.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={handleTriggerAiSchedule}
+                        className="px-4 py-2 bg-[#174235] dark:bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-[#12362b] cursor-pointer"
+                      >
+                        إعادة التوليد الآن
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* 5. MANDATORY Confirmation Modal for Google Calendar Deletion */}
+      {confirmCalendarDelete && (
+        <ConfirmModal
+          isOpen={confirmCalendarDelete.isOpen}
+          title="تأكيد حذف الموعد من تقويم Google"
+          message={`هل أنت متأكد من حذف الموعد "${confirmCalendarDelete.eventTitle}" نهائياً من حساب Google Calendar الخاص بك؟ لا يمكن التراجع عن هذه الخطوة في التقويم.`}
+          confirmText="نعم، احذف الموعد من التقويم"
+          cancelText="إلغاء"
+          variant="danger"
+          onConfirm={handleExecuteCalendarDelete}
+          onCancel={() => setConfirmCalendarDelete(null)}
+        />
       )}
 
     </div>

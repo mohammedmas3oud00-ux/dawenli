@@ -15,7 +15,8 @@ import {
   Target,
   FolderKanban,
   FileCheck2,
-  Bookmark
+  Bookmark,
+  PenLine
 } from 'lucide-react';
 import { SidebarTab } from '../../types/hierarchical';
 import { useTheme } from '../../utils/theme';
@@ -35,6 +36,7 @@ interface SidebarProps {
     vaults?: number;
     focus?: number;
     timeBlocks?: number;
+    journal?: number;
   };
   isOpenMobile: boolean;
   onCloseMobile: () => void;
@@ -100,6 +102,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
       sublabel: 'العادات اليومية ونسب الالتزام',
       icon: <Repeat className="w-4 h-4" />,
       badge: counts.habits || 0,
+    },
+    {
+      id: 'journal',
+      label: 'اليوميات والمذكرات',
+      sublabel: 'تدوين صوتي وتأملات بالـ AI',
+      icon: <PenLine className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />,
+      badge: counts.journal || 0,
     },
   ];
 

@@ -24,9 +24,12 @@ import {
   Layers, 
   Activity,
   Lightbulb,
-  ArrowRight
+  ArrowRight,
+  Bot,
+  Loader2
 } from 'lucide-react';
 import { CustomSelect } from './CustomSelect';
+import { generateAiCoachReview, AiCoachInsight } from '../../services/aiService';
 
 interface ReviewModalProps {
   isOpen: boolean;
@@ -77,6 +80,31 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
 
   const [activeTab, setActiveTab] = useState<'reflection' | 'smart_audit'>('reflection');
   const [isGeneratingAudit, setIsGeneratingAudit] = useState(false);
+  const [aiCoachLoading, setAiCoachLoading] = useState(false);
+  const [aiCoachInsight, setAiCoachInsight] = useState<AiCoachInsight | null>(null);
+
+  const handleConsultAiCoach = async () => {
+    setAiCoachLoading(true);
+    try {
+      const insight = await generateAiCoachReview(
+        {
+          completedTasks: tasks.filter(t => t.status === 'done').length,
+          totalTasks: tasks.length,
+          activeProjects: projects.filter(p => p.status === 'in_progress').length,
+          overallTaskProgress: Math.round(
+            (tasks.filter(t => t.status === 'done').length / Math.max(1, tasks.length)) * 100
+          ),
+          totalLoggedHours: tasks.reduce((sum, t) => sum + ((t as any).logged_hours || (t as any).estimated_hours || 1), 0),
+        },
+        pillars.map(p => p.title)
+      );
+      setAiCoachInsight(insight);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setAiCoachLoading(false);
+    }
+  };
 
   // Helper default titles
   const getDefaultTitle = (freq: ReviewFrequency, d: string) => {
@@ -492,6 +520,61 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                   الملخص التحليلي التلقائي:
                 </span>
                 <p className="font-medium">{smartSummary}</p>
+              </div>
+
+              {/* AI Coach Review (Gemini 3.8 Flash) */}
+              <div className="bg-gradient-to-br from-emerald-50 to-teal-50/50 dark:from-[#14231b] dark:to-[#172c22] border border-emerald-200 dark:border-[#264434] rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Bot className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
+                    <span className="font-bold text-xs text-[#174235] dark:text-emerald-300">
+                      المستشار الاستراتيجي الذكي (Gemini AI Coach)
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleConsultAiCoach}
+                    disabled={aiCoachLoading}
+                    className="px-3 py-1.5 bg-[#174235] dark:bg-emerald-600 hover:bg-[#12362b] dark:hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
+                  >
+                    {aiCoachLoading ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>جاري التحليل...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3.5 h-3.5 text-amber-200" />
+                        <span>{aiCoachInsight ? 'تحديث الاستشارة الذكية' : 'استشارة الموجه الذكي'}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {aiCoachInsight ? (
+                  <div className="space-y-2.5 pt-1">
+                    <p className="text-xs text-[#24332a] dark:text-[#d6e5dc] leading-relaxed font-medium bg-white/70 dark:bg-black/20 p-3 rounded-lg border border-emerald-100 dark:border-emerald-900/30">
+                      "{aiCoachInsight.coach_advice}"
+                    </p>
+                    {aiCoachInsight.action_recommendations?.length > 0 && (
+                      <div className="text-[11px] text-[#3d4f43] dark:text-[#b4c9be] space-y-1">
+                        <span className="font-bold text-emerald-800 dark:text-emerald-300 block">
+                          توصيات مقترحة للأسبوع المقبل:
+                        </span>
+                        {aiCoachInsight.action_recommendations.map((rec, i) => (
+                          <div key={i} className="flex items-start gap-1.5">
+                            <span className="text-emerald-600 dark:text-emerald-400 font-bold">•</span>
+                            <span>{rec}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-[#617167] dark:text-[#9bb0a3]">
+                    انقر على "استشارة الموجه الذكي" لتحليل إنجازك الأسبوعي وساعات العمل المسجلة ونسب تقدم المشاريع وتقديم نصائح وتوجيهات مصممة خصيصاً لك.
+                  </p>
+                )}
               </div>
 
               {/* Strengths & Bottlenecks 2-col */}

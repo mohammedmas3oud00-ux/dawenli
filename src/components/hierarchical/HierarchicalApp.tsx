@@ -14,7 +14,8 @@ import {
   Habit,
   VaultItem,
   FocusSessionRecord,
-  TimeBlock
+  TimeBlock,
+  JournalEntry
 } from '../../types/hierarchical';
 import { 
   loadHierarchicalState, 
@@ -64,11 +65,14 @@ import {
 } from './EntityFormModals';
 import { QuickAddModal } from './QuickAddModal';
 import { SqlSchemaModal } from './SqlSchemaModal';
+import { JournalTabView } from './JournalTabView';
+import { VoiceJournalModal } from './VoiceJournalModal';
+import { loadJournalEntries, saveJournalEntries } from '../../utils/journalStore';
 import { ConfirmModal } from '../ConfirmModal';
 import { ToastContainer, ToastMessage } from './ToastNotification';
 import { MobileBottomNav } from './MobileBottomNav';
 import { useTheme } from '../../utils/theme';
-import { Database, RotateCcw, Plus, Menu, Sun, Moon } from 'lucide-react';
+import { Database, RotateCcw, Plus, Menu, Sun, Moon, Mic, PenLine } from 'lucide-react';
 
 export const HierarchicalApp: React.FC = () => {
   const { toggleTheme, isDark } = useTheme();
@@ -129,6 +133,10 @@ export const HierarchicalApp: React.FC = () => {
   // Modals state
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [isSqlModalOpen, setIsSqlModalOpen] = useState(false);
+  const [isVoiceJournalModalOpen, setIsVoiceJournalModalOpen] = useState(false);
+
+  // Journal Entries state
+  const [journalEntries, setJournalEntries] = useState<JournalEntry[]>(() => loadJournalEntries());
 
   // Review Modals State
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
@@ -498,7 +506,27 @@ export const HierarchicalApp: React.FC = () => {
         due_date: projectData.due_date || today,
         created_at: new Date().toISOString(),
       };
-      applyStateUpdate(pillars, visions, goals, [...projects, newP], tasks);
+
+      const generatedSubtasks = (projectData as any).generatedTasks;
+      let newTasksToAdd: Task[] = [];
+      if (Array.isArray(generatedSubtasks) && generatedSubtasks.length > 0) {
+        newTasksToAdd = generatedSubtasks.map((st: any, idx: number) => ({
+          id: `task-${Date.now()}-${idx}`,
+          project_id: newP.id,
+          title: st.title || 'مهمة فرعية',
+          description: st.description || '',
+          priority: (st.priority as any) || 'medium',
+          status: 'todo',
+          due_date: newP.due_date || null,
+          completed_at: null,
+          created_at: new Date().toISOString(),
+        }));
+      }
+
+      applyStateUpdate(pillars, visions, goals, [...projects, newP], [...tasks, ...newTasksToAdd]);
+      if (newTasksToAdd.length > 0) {
+        showToast('success', 'تم إنشاء المشروع وتفكيكه لمهام بنجاح', `تمت إضافة ${newTasksToAdd.length} مهام`);
+      }
     }
     setEditingProject(null);
   };
@@ -520,6 +548,77 @@ export const HierarchicalApp: React.FC = () => {
         }
         setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
         showToast('info', 'تم حذف المشروع بنجاح');
+      },
+    });
+  };
+
+  // Journal Handlers
+  const handleSaveJournalEntry = (
+    entryData: Partial<JournalEntry>,
+    createTasks?: { title: string; priority?: 'high' | 'medium' | 'low'; estimated_hours?: number; projectId?: string }[]
+  ) => {
+    let updated: JournalEntry[];
+    if (entryData.id) {
+      updated = journalEntries.map((e) =>
+        e.id === entryData.id ? ({ ...e, ...entryData } as JournalEntry) : e
+      );
+      showToast('success', 'تم تحديث التدوينة بنجاح');
+    } else {
+      const newEntry: JournalEntry = {
+        id: `journal-${Date.now()}`,
+        date: entryData.date || new Date().toISOString().split('T')[0],
+        title: entryData.title || `خاطرة ${new Date().toLocaleDateString('ar-SA')}`,
+        content: entryData.content || '',
+        mood: entryData.mood || 'good',
+        energy_level: entryData.energy_level || 'medium',
+        gratitude: entryData.gratitude || [],
+        wins: entryData.wins || [],
+        ai_summary: entryData.ai_summary,
+        ai_insights: entryData.ai_insights,
+        extracted_tasks: entryData.extracted_tasks || [],
+        voice_recorded: !!entryData.voice_recorded,
+        tags: entryData.tags || ['يوميات'],
+        created_at: new Date().toISOString(),
+      };
+      updated = [newEntry, ...journalEntries];
+      showToast('success', 'تم حفظ التدوينة في اليوميات');
+    }
+
+    setJournalEntries(updated);
+    saveJournalEntries(updated);
+
+    // If there are tasks to create from the voice journal
+    if (createTasks && createTasks.length > 0) {
+      const targetProjId = createTasks[0].projectId || projects[0]?.id || 'proj-1';
+      const newTasksToAdd: Task[] = createTasks.map((t, idx) => ({
+        id: `task-${Date.now()}-${idx}`,
+        project_id: t.projectId || targetProjId,
+        title: t.title,
+        description: 'مستخلصة تلقائياً من تدوين اليوميات الصوتي بالذكاء الاصطناعي',
+        priority: (t.priority as any) || 'medium',
+        status: 'todo',
+        due_date: new Date().toISOString().split('T')[0],
+        completed_at: null,
+        created_at: new Date().toISOString(),
+      }));
+      applyStateUpdate(pillars, visions, goals, projects, [...tasks, ...newTasksToAdd]);
+      showToast('info', 'تمت إضافة المهام المستخلصة', `تم إدراج ${newTasksToAdd.length} مهام في مشروعك`);
+    }
+  };
+
+  const handleDeleteJournalEntry = (entryId: string) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: 'حذف التدوينة',
+      message: 'هل أنت متأكد من حذف هذه الخاطرة من سجل يومياتك؟',
+      confirmText: 'حذف',
+      variant: 'danger',
+      onConfirm: () => {
+        const updated = journalEntries.filter((e) => e.id !== entryId);
+        setJournalEntries(updated);
+        saveJournalEntries(updated);
+        setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+        showToast('info', 'تم حذف التدوينة بنجاح');
       },
     });
   };
@@ -979,6 +1078,7 @@ export const HierarchicalApp: React.FC = () => {
           vaults: vaults.length,
           focus: focusSessions.length,
           timeBlocks: timeBlocks.filter(b => b.date === new Date().toISOString().split('T')[0]).length,
+          journal: journalEntries.length,
         }}
         isOpenMobile={isMobileSidebarOpen}
         onCloseMobile={() => setIsMobileSidebarOpen(false)}
@@ -1024,6 +1124,7 @@ export const HierarchicalApp: React.FC = () => {
                     {currentTab === 'projects' && 'المشاريع الحالية'}
                     {currentTab === 'tasks' && 'قائمة المهام'}
                     {currentTab === 'reviews' && 'المراجعة والتقييم'}
+                    {currentTab === 'journal' && 'اليوميات والمذكرات (Daily Journal)'}
                   </span>
                 </div>
               )}
@@ -1032,6 +1133,17 @@ export const HierarchicalApp: React.FC = () => {
             {/* Right section: Quick Add button, theme toggle, and utility actions */}
             <div className="flex items-center gap-2 shrink-0">
               
+              {/* VOICE JOURNAL BUTTON - Next to Quick Add as requested */}
+              <button
+                type="button"
+                onClick={() => setIsVoiceJournalModalOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-2 bg-[#ebf5ef] dark:bg-[#192b22] hover:bg-[#dfeee5] dark:hover:bg-[#20362b] text-[#174235] dark:text-emerald-300 font-bold rounded-xl text-xs shadow-2xs transition-all cursor-pointer border border-[#b9dbcb] dark:border-[#274534]"
+                title="تدوين صوتي ويوميات بالذكاء الاصطناعي (Voice Journal)"
+              >
+                <Mic className="w-4 h-4 text-emerald-600 dark:text-emerald-400 animate-pulse" />
+                <span className="hidden sm:inline whitespace-nowrap">يوميات صوتية (AI)</span>
+              </button>
+
               {/* PRIMARY ACTION BUTTON */}
               <button
                 type="button"
@@ -1390,6 +1502,17 @@ export const HierarchicalApp: React.FC = () => {
               />
             )}
 
+            {/* TAB 13: DAILY JOURNAL TAB (اليوميات والمذكرات والتأملات الصوتية) */}
+            {currentTab === 'journal' && (
+              <JournalTabView
+                entries={journalEntries}
+                projects={projects}
+                onSaveEntry={handleSaveJournalEntry}
+                onDeleteEntry={handleDeleteJournalEntry}
+                onOpenVoiceModal={() => setIsVoiceJournalModalOpen(true)}
+              />
+            )}
+
           </div>
         </main>
       </div>
@@ -1427,6 +1550,14 @@ export const HierarchicalApp: React.FC = () => {
         onAddVision={handleSaveVision}
         onAddPillar={handleSavePillar}
         onAddInboxItem={handleAddInboxItem}
+      />
+
+      {/* Voice Journal AI Modal */}
+      <VoiceJournalModal
+        isOpen={isVoiceJournalModalOpen}
+        onClose={() => setIsVoiceJournalModalOpen(false)}
+        onSaveJournal={handleSaveJournalEntry}
+        projects={projects}
       />
 
       {/* Pillar Modal */}

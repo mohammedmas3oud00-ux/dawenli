@@ -206,17 +206,17 @@ export const HabitsTabView: React.FC<HabitsTabViewProps> = ({
         </div>
 
         {/* Pillar Filter Tabs */}
-        <div className="flex items-center gap-1 text-xs overflow-x-auto pt-2 border-t border-[#f0ede6] dark:border-[#223028] scrollbar-none">
+        <div className="flex items-center gap-1.5 text-xs overflow-x-auto py-2.5 border-t border-[#f0ede6] dark:border-[#223028] scrollbar-none relative z-10">
           <button
             type="button"
             onClick={() => setSelectedPillarFilter('all')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shadow-2xs ${
               selectedPillarFilter === 'all'
-                ? 'bg-[#174235] dark:bg-emerald-600 text-white font-bold'
-                : 'text-[#637068] dark:text-[#9bb0a3] hover:text-[#1a2420] dark:hover:text-white hover:bg-[#f4f2ec] dark:hover:bg-[#1a2620]'
+                ? 'bg-[#174235] dark:bg-emerald-600 text-white'
+                : 'text-[#637068] dark:text-[#9bb0a3] hover:text-[#1a2420] dark:hover:text-white hover:bg-[#f4f2ec] dark:hover:bg-[#1a2620] border border-[#e5e1d7] dark:border-[#27382e]'
             }`}
           >
-            كافة المجالات <span className="font-mono tabular-nums text-[11px]">({habits.length})</span>
+            كافة المجالات <span className="font-mono tabular-nums text-[11px] opacity-90">({habits.length})</span>
           </button>
           {pillars.map((pillar) => {
             const count = habits.filter(h => h.pillar_id === pillar.id).length;
@@ -225,13 +225,13 @@ export const HabitsTabView: React.FC<HabitsTabViewProps> = ({
                 key={pillar.id}
                 type="button"
                 onClick={() => setSelectedPillarFilter(pillar.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer whitespace-nowrap shadow-2xs ${
                   selectedPillarFilter === pillar.id
                     ? 'bg-[#174235] dark:bg-emerald-600 text-white font-bold'
-                    : 'text-[#637068] dark:text-[#9bb0a3] hover:text-[#1a2420] dark:hover:text-white hover:bg-[#f4f2ec] dark:hover:bg-[#1a2620]'
+                    : 'text-[#637068] dark:text-[#9bb0a3] hover:text-[#1a2420] dark:hover:text-white hover:bg-[#f4f2ec] dark:hover:bg-[#1a2620] border border-[#e5e1d7] dark:border-[#27382e]'
                 }`}
               >
-                {pillar.title} <span className="font-mono tabular-nums text-[11px]">({count})</span>
+                {pillar.title} <span className="font-mono tabular-nums text-[11px] opacity-90">({count})</span>
               </button>
             );
           })}
