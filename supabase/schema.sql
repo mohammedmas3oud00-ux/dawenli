@@ -111,52 +111,72 @@ ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tasks ENABLE ROW LEVEL SECURITY;
 
 -- 4.1 Pillars Policies
+DROP POLICY IF EXISTS "Users can view their own pillars" ON public.pillars;
 CREATE POLICY "Users can view their own pillars"
     ON public.pillars FOR SELECT USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can insert their own pillars" ON public.pillars;
 CREATE POLICY "Users can insert their own pillars"
     ON public.pillars FOR INSERT WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can update their own pillars" ON public.pillars;
 CREATE POLICY "Users can update their own pillars"
     ON public.pillars FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can delete their own pillars" ON public.pillars;
 CREATE POLICY "Users can delete their own pillars"
     ON public.pillars FOR DELETE USING (auth.uid() = user_id);
 
 -- 4.2 Visions Policies
+DROP POLICY IF EXISTS "Users can view their own visions" ON public.visions;
 CREATE POLICY "Users can view their own visions"
     ON public.visions FOR SELECT USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can insert their own visions" ON public.visions;
 CREATE POLICY "Users can insert their own visions"
     ON public.visions FOR INSERT WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can update their own visions" ON public.visions;
 CREATE POLICY "Users can update their own visions"
     ON public.visions FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can delete their own visions" ON public.visions;
 CREATE POLICY "Users can delete their own visions"
     ON public.visions FOR DELETE USING (auth.uid() = user_id);
 
 -- 4.3 Value Goals Policies
+DROP POLICY IF EXISTS "Users can view their own goals" ON public.value_goals;
 CREATE POLICY "Users can view their own goals"
     ON public.value_goals FOR SELECT USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can insert their own goals" ON public.value_goals;
 CREATE POLICY "Users can insert their own goals"
     ON public.value_goals FOR INSERT WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can update their own goals" ON public.value_goals;
 CREATE POLICY "Users can update their own goals"
     ON public.value_goals FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can delete their own goals" ON public.value_goals;
 CREATE POLICY "Users can delete their own goals"
     ON public.value_goals FOR DELETE USING (auth.uid() = user_id);
 
 -- 4.4 Projects Policies
+DROP POLICY IF EXISTS "Users can view their own projects" ON public.projects;
 CREATE POLICY "Users can view their own projects"
     ON public.projects FOR SELECT USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can insert their own projects" ON public.projects;
 CREATE POLICY "Users can insert their own projects"
     ON public.projects FOR INSERT WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can update their own projects" ON public.projects;
 CREATE POLICY "Users can update their own projects"
     ON public.projects FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can delete their own projects" ON public.projects;
 CREATE POLICY "Users can delete their own projects"
     ON public.projects FOR DELETE USING (auth.uid() = user_id);
 
 -- 4.5 Tasks Policies
+DROP POLICY IF EXISTS "Users can view their own tasks" ON public.tasks;
 CREATE POLICY "Users can view their own tasks"
     ON public.tasks FOR SELECT USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can insert their own tasks" ON public.tasks;
 CREATE POLICY "Users can insert their own tasks"
     ON public.tasks FOR INSERT WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can update their own tasks" ON public.tasks;
 CREATE POLICY "Users can update their own tasks"
     ON public.tasks FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can delete their own tasks" ON public.tasks;
 CREATE POLICY "Users can delete their own tasks"
     ON public.tasks FOR DELETE USING (auth.uid() = user_id);
 
@@ -344,18 +364,22 @@ CREATE TABLE IF NOT EXISTS public.system_reviews (
 -- RLS for system_reviews
 ALTER TABLE public.system_reviews ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view their own reviews" ON public.system_reviews;
 CREATE POLICY "Users can view their own reviews"
     ON public.system_reviews FOR SELECT
     USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can create their own reviews" ON public.system_reviews;
 CREATE POLICY "Users can create their own reviews"
     ON public.system_reviews FOR INSERT
     WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update their own reviews" ON public.system_reviews;
 CREATE POLICY "Users can update their own reviews"
     ON public.system_reviews FOR UPDATE
     USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can delete their own reviews" ON public.system_reviews;
 CREATE POLICY "Users can delete their own reviews"
     ON public.system_reviews FOR DELETE
     USING (auth.uid() = user_id);
@@ -378,6 +402,7 @@ CREATE TABLE IF NOT EXISTS public.inbox_items (
 );
 
 ALTER TABLE public.inbox_items ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can manage their own inbox" ON public.inbox_items;
 CREATE POLICY "Users can manage their own inbox" ON public.inbox_items FOR ALL USING (auth.uid() = user_id);
 
 -- ==============================================================================
@@ -401,6 +426,7 @@ CREATE TABLE IF NOT EXISTS public.habits (
 );
 
 ALTER TABLE public.habits ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can manage their own habits" ON public.habits;
 CREATE POLICY "Users can manage their own habits" ON public.habits FOR ALL USING (auth.uid() = user_id);
 
 -- ==============================================================================
@@ -424,6 +450,7 @@ CREATE TABLE IF NOT EXISTS public.vault_items (
 );
 
 ALTER TABLE public.vault_items ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can manage their own vaults" ON public.vault_items;
 CREATE POLICY "Users can manage their own vaults" ON public.vault_items FOR ALL USING (auth.uid() = user_id);
 
 
