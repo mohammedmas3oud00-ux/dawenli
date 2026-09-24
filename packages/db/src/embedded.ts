@@ -31,12 +31,15 @@ function findMigrationsDir(): string {
     resolve(process.cwd(), "../../packages/db/migrations"),
     resolve(process.cwd(), "../packages/db/migrations"),
     resolve(process.cwd(), "migrations"),
-    resolve(__dirname, "../migrations"),
-    resolve(__dirname, "../../migrations"),
   ];
 
   for (const c of candidates) {
-    if (existsSync(c) && existsSync(join(c, "0000_init_profiles_hierarchy_habits_reviews.sql"))) {
+    if (
+      existsSync(/* turbopackIgnore: true */ c) &&
+      existsSync(
+        /* turbopackIgnore: true */ join(c, "0000_init_profiles_hierarchy_habits_reviews.sql"),
+      )
+    ) {
       return c;
     }
   }
@@ -57,24 +60,24 @@ function getMigrationStatements(migrationsDir: string): string[] {
 }
 
 async function seedDemoData(client: PGlite): Promise<void> {
-  const check = await client.query("select id from profiles where id = $1", [DEMO_USER_ID]);
-  if (check.rows.length === 0) {
-    // 1. Create auth user (which triggers profile creation)
-    await client.exec(`
+  // Every insert is idempotent, so retrying after an interrupted seed repairs
+  // any partially populated embedded database.
+  // 1. Create auth user (which triggers profile creation)
+  await client.exec(`
       insert into auth.users (id, email, raw_user_meta_data)
       values ('${DEMO_USER_ID}', '${DEMO_USER_EMAIL}', '{"locale":"ar","full_name":"مستخدم تجريبي"}'::jsonb)
       on conflict (id) do nothing;
-    `);
+  `);
 
-    // Ensure profile exists
-    await client.exec(`
+  // Ensure profile exists
+  await client.exec(`
       insert into profiles (id, display_name, timezone, week_starts_on, locale, theme)
       values ('${DEMO_USER_ID}', 'مستخدم تجريبي (Demo)', 'UTC', 0, 'ar', 'system')
       on conflict (id) do nothing;
-    `);
+  `);
 
-    // 2. Areas
-    await client.exec(`
+  // 2. Areas
+  await client.exec(`
       insert into areas (id, user_id, name, color, icon, sort_order)
       values
         ('10000000-0000-0000-0000-000000000001', '${DEMO_USER_ID}', 'العمل والمشاريع', '#3b82f6', 'briefcase', 1),
@@ -82,30 +85,30 @@ async function seedDemoData(client: PGlite): Promise<void> {
         ('10000000-0000-0000-0000-000000000003', '${DEMO_USER_ID}', 'الجانب الإيماني', '#8b5cf6', 'heart', 3),
         ('10000000-0000-0000-0000-000000000004', '${DEMO_USER_ID}', 'التعلم والتطوير', '#f59e0b', 'book-open', 4)
       on conflict (id) do nothing;
-    `);
+  `);
 
-    // 3. Goals
-    await client.exec(`
+  // 3. Goals
+  await client.exec(`
       insert into goals (id, user_id, area_id, title, horizon, priority)
       values
         ('20000000-0000-0000-0000-000000000001', '${DEMO_USER_ID}', '10000000-0000-0000-0000-000000000001', 'إطلاق الإصدار الأول من بوصلة 1.0', 'annual', 5),
         ('20000000-0000-0000-0000-000000000002', '${DEMO_USER_ID}', '10000000-0000-0000-0000-000000000003', 'المحافظة على صلاة الفجر وقراءة ورد القرآن يومياً', 'annual', 5),
         ('20000000-0000-0000-0000-000000000003', '${DEMO_USER_ID}', '10000000-0000-0000-0000-000000000004', 'قراءة 12 كتاباً في القيادة والإنتاجية', 'annual', 4)
       on conflict (id) do nothing;
-    `);
+  `);
 
-    // 4. Projects
-    await client.exec(`
+  // 4. Projects
+  await client.exec(`
       insert into projects (id, user_id, goal_id, area_id, title, description, status, weight)
       values
         ('30000000-0000-0000-0000-000000000001', '${DEMO_USER_ID}', '20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', 'المرحلة 3: إدارة الوقت والمعرفة', 'بناء مؤقت التركيز وملاحظات المعرفة', 'active', 1),
-        ('30000000-0000-0000-0000-000000000002', '${DEMO_USER_ID}', '20000000-0000-0000-0000-000000000004', '10000000-0000-0000-0000-000000000004', 'بناء مكتبة المعرفة والقراءة', 'تلخيص الكتب والمقالات', 'active', 1)
+        ('30000000-0000-0000-0000-000000000002', '${DEMO_USER_ID}', '20000000-0000-0000-0000-000000000003', '10000000-0000-0000-0000-000000000004', 'بناء مكتبة المعرفة والقراءة', 'تلخيص الكتب والمقالات', 'active', 1)
       on conflict (id) do nothing;
-    `);
+  `);
 
-    // 5. Tasks (Q1, Q2, Q3)
-    const todayStr = new Date().toISOString().split("T")[0];
-    await client.exec(`
+  // 5. Tasks (Q1, Q2, Q3)
+  const todayStr = new Date().toISOString().split("T")[0];
+  await client.exec(`
       insert into tasks (id, user_id, project_id, title, status, importance, urgency, impact, difficulty, energy, estimate_minutes, actual_minutes, due_date, scheduled_date, priority_score, eisenhower)
       values
         ('40000000-0000-0000-0000-000000000001', '${DEMO_USER_ID}', '30000000-0000-0000-0000-000000000001', 'مراجعة معمارية المرحلة 3 والتحقق من RLS', 'todo', 5, 5, 5, 3, 'high', 45, 45, '${todayStr}', '${todayStr}', 8.8, 'do_first'),
@@ -113,10 +116,10 @@ async function seedDemoData(client: PGlite): Promise<void> {
         ('40000000-0000-0000-0000-000000000003', '${DEMO_USER_ID}', '30000000-0000-0000-0000-000000000002', 'قراءة ملخص كتاب Building a Second Brain', 'todo', 4, 2, 4, 2, 'medium', 30, NULL, NULL, NULL, 6.2, 'schedule'),
         ('40000000-0000-0000-0000-000000000004', '${DEMO_USER_ID}', '30000000-0000-0000-0000-000000000001', 'تنظيم قائمة البريد ومسودة الاجتماع الأسبوعي', 'todo', 2, 4, 2, 2, 'low', 20, NULL, '${todayStr}', '${todayStr}', 4.8, 'delegate')
       on conflict (id) do nothing;
-    `);
+  `);
 
-    // 6. Habits
-    await client.exec(`
+  // 6. Habits
+  await client.exec(`
       insert into habits (id, user_id, name, frequency, target_count, current_streak, longest_streak, preset)
       values
         ('50000000-0000-0000-0000-000000000001', '${DEMO_USER_ID}', 'الصلوات الخمس في جماعة وفي وقتها', 'daily', 5, 7, 14, 'prayers'),
@@ -124,35 +127,34 @@ async function seedDemoData(client: PGlite): Promise<void> {
         ('50000000-0000-0000-0000-000000000003', '${DEMO_USER_ID}', 'أذكار الصباح والمساء', 'daily', 2, 12, 30, 'adhkar'),
         ('50000000-0000-0000-0000-000000000004', '${DEMO_USER_ID}', 'ممارسة الرياضة 30 دقيقة', 'daily', 1, 3, 10, 'custom')
       on conflict (id) do nothing;
-    `);
+  `);
 
-    // 7. Time entries
-    await client.exec(`
+  // 7. Time entries
+  await client.exec(`
       insert into time_entries (id, user_id, task_id, project_id, duration_minutes, mode, started_at, ended_at, notes)
       values
         ('60000000-0000-0000-0000-000000000001', '${DEMO_USER_ID}', '40000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000001', 25, 'pomodoro', now() - interval '2 hours', now() - interval '95 minutes', 'مراجعة الاختبارات'),
         ('60000000-0000-0000-0000-000000000002', '${DEMO_USER_ID}', '40000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000001', 50, 'deep_work', now() - interval '80 minutes', now() - interval '30 minutes', 'تطبيق الإصلاحات الجراحية')
       on conflict (id) do nothing;
-    `);
+  `);
 
-    // 8. Knowledge Notes & Resources
-    await client.exec(`
+  // 8. Knowledge Notes & Resources
+  await client.exec(`
       insert into notes (id, user_id, title, content, category, is_pinned)
       values
         ('70000000-0000-0000-0000-000000000001', '${DEMO_USER_ID}', 'المعمارية الأساسية لنظام [[بوصلة]]', 'نظام بوصلة يربط بين الرؤية العليا، والأهداف السنوية، والمشاريع، وصولاً إلى [[العمل اليومي]] ومؤقت التركيز.', 'concept', true),
         ('70000000-0000-0000-0000-000000000002', '${DEMO_USER_ID}', 'أفكار لميزات الذكاء الاصطناعي في المرحلة 4', '1. تفكيك المهام الكبيرة إلى خطوات إجرائية صغيرة.\n2. تلخيص الأسبوع واستخراج الدروس المستفادة.', 'idea', false)
       on conflict (id) do nothing;
-    `);
+  `);
 
-    await client.exec(`
+  await client.exec(`
       insert into resources (id, user_id, title, type, author, status, rating)
       values
         ('80000000-0000-0000-0000-000000000001', '${DEMO_USER_ID}', 'Atomic Habits', 'book', 'James Clear', 'completed', 5),
         ('80000000-0000-0000-0000-000000000002', '${DEMO_USER_ID}', 'Building a Second Brain', 'book', 'Tiago Forte', 'in_progress', 5),
         ('80000000-0000-0000-0000-000000000003', '${DEMO_USER_ID}', 'Deep Work', 'book', 'Cal Newport', 'completed', 5)
       on conflict (id) do nothing;
-    `);
-  }
+  `);
 }
 
 let _embeddedClient: PGlite | null = null;

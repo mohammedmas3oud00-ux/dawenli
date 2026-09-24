@@ -39,14 +39,22 @@ describe("prayersPerformed / prayerQualityScore", () => {
 
   it("scores a perfect day at 100 and an empty day at 0", () => {
     expect(
-      prayerQualityScore({ fajr: "jamaah", dhuhr: "jamaah", asr: "jamaah", maghrib: "jamaah", isha: "jamaah" }),
+      prayerQualityScore({
+        fajr: "jamaah",
+        dhuhr: "jamaah",
+        asr: "jamaah",
+        maghrib: "jamaah",
+        isha: "jamaah",
+      }),
     ).toBe(100);
     expect(prayerQualityScore({})).toBe(0);
   });
 
   it("weights on_time and late below jamaah", () => {
     // 1 + 0.9 + 0.5 + 0 + (unlogged 0) = 2.4 / 5 → 48
-    expect(prayerQualityScore({ fajr: "jamaah", dhuhr: "on_time", asr: "late", maghrib: "missed" })).toBe(48);
+    expect(
+      prayerQualityScore({ fajr: "jamaah", dhuhr: "on_time", asr: "late", maghrib: "missed" }),
+    ).toBe(48);
   });
 });
 
@@ -86,4 +94,3 @@ describe("Adhkar helpers", () => {
     expect(adhkarPerformed({})).toBe(0);
   });
 });
-

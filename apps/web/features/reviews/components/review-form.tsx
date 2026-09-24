@@ -95,7 +95,9 @@ export function ReviewForm({ initialReview, locale }: ReviewFormProps) {
                         : "border-muted/60 hover:bg-muted/40"
                     }`}
                   >
-                    <Icon className={`size-6 mb-1 ${isSelected ? m.color : "text-muted-foreground"}`} />
+                    <Icon
+                      className={`size-6 mb-1 ${isSelected ? m.color : "text-muted-foreground"}`}
+                    />
                     <span className="text-xs">{isAr ? m.labelAr : m.labelEn}</span>
                   </button>
                 );
@@ -137,7 +139,9 @@ export function ReviewForm({ initialReview, locale }: ReviewFormProps) {
             <div className="flex items-center gap-1.5">
               <Award className="size-4 text-emerald-500" />
               <Label htmlFor="wins" className="text-sm font-medium">
-                {isAr ? "ماذا أنجزت اليوم؟ (اكتب كل إنجاز في سطر)" : "What did you accomplish today? (one per line)"}
+                {isAr
+                  ? "ماذا أنجزت اليوم؟ (اكتب كل إنجاز في سطر)"
+                  : "What did you accomplish today? (one per line)"}
               </Label>
             </div>
             <Textarea
@@ -158,7 +162,9 @@ export function ReviewForm({ initialReview, locale }: ReviewFormProps) {
             <div className="flex items-center gap-1.5">
               <Lightbulb className="size-4 text-primary" />
               <Label htmlFor="lessons" className="text-sm font-medium">
-                {isAr ? "أهم درس أو فكرة تعلمتها اليوم:" : "Key lesson or reflection learned today:"}
+                {isAr
+                  ? "أهم درس أو فكرة تعلمتها اليوم:"
+                  : "Key lesson or reflection learned today:"}
               </Label>
             </div>
             <Textarea
@@ -197,8 +203,8 @@ export function ReviewForm({ initialReview, locale }: ReviewFormProps) {
                     ? "جارٍ الحفظ..."
                     : "Saving..."
                   : isAr
-                  ? "حفظ المراجعة"
-                  : "Save Review"}
+                    ? "حفظ المراجعة"
+                    : "Save Review"}
               </span>
             </Button>
           </div>

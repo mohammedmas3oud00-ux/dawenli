@@ -11,7 +11,8 @@ export async function createHabitAction(formData: FormData): Promise<void> {
   const user = await requireUser();
   const name = formData.get("name")?.toString()?.trim();
   const rawFreq = formData.get("frequency")?.toString();
-  const frequency: HabitFrequency = rawFreq === "weekly" || rawFreq === "monthly" ? rawFreq : "daily";
+  const frequency: HabitFrequency =
+    rawFreq === "weekly" || rawFreq === "monthly" ? rawFreq : "daily";
   const preset = formData.get("preset")?.toString() || undefined;
 
   if (!name) return;
@@ -53,7 +54,12 @@ export async function logHabitAction(habitId: string, value = 1) {
   return { ok: true };
 }
 
-export async function logPrayerAction(habitId: string, prayer: string, status: string, existingMetadata: Record<string, unknown> = {}) {
+export async function logPrayerAction(
+  habitId: string,
+  prayer: string,
+  status: string,
+  existingMetadata: Record<string, unknown> = {},
+) {
   const user = await requireUser();
   const profile = await getProfileForUser(user);
   const now = new Date();
@@ -185,4 +191,3 @@ export async function seedSpiritualHabitsAction(): Promise<void> {
   revalidatePath("/[locale]/today", "page");
   revalidatePath("/[locale]/dashboard", "page");
 }
-

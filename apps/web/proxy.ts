@@ -34,7 +34,11 @@ export default async function proxy(request: NextRequest) {
   if (!hasSupabaseEnv()) return response;
 
   const user = await refreshSupabaseSession(request, response);
-  const decision = decide(analyseRoute(request.nextUrl.pathname), Boolean(user), request.nextUrl.search);
+  const decision = decide(
+    analyseRoute(request.nextUrl.pathname),
+    Boolean(user),
+    request.nextUrl.search,
+  );
 
   if (decision.action === "allow") return response;
 

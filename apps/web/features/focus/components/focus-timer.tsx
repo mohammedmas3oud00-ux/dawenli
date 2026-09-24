@@ -78,7 +78,8 @@ export function FocusTimer({
               try {
                 const AudioCtx =
                   window.AudioContext ||
-                  (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+                  (window as unknown as { webkitAudioContext: typeof AudioContext })
+                    .webkitAudioContext;
                 const ctx = audioContextRef.current || new AudioCtx();
                 if (ctx.state === "suspended") {
                   void ctx.resume();
@@ -120,7 +121,8 @@ export function FocusTimer({
   const minutes = Math.floor(secondsRemaining / 60);
   const seconds = secondsRemaining % 60;
   const timeFormatted = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-  const progressPercent = ((durationMinutes * 60 - secondsRemaining) / (durationMinutes * 60)) * 100;
+  const progressPercent =
+    ((durationMinutes * 60 - secondsRemaining) / (durationMinutes * 60)) * 100;
 
   const handleMarkTaskDone = async () => {
     if (!selectedTaskId) return;
@@ -147,7 +149,9 @@ export function FocusTimer({
           type="button"
           onClick={() => switchMode("pomodoro")}
           className={`text-xs font-semibold py-2 px-4 rounded-lg transition-all ${
-            mode === "pomodoro" ? "bg-background shadow-xs text-foreground" : "text-muted-foreground hover:text-foreground"
+            mode === "pomodoro"
+              ? "bg-background shadow-xs text-foreground"
+              : "text-muted-foreground hover:text-foreground"
           }`}
         >
           {isAr ? "بومودورو (25 دقيقة)" : "Pomodoro (25m)"}
@@ -156,7 +160,9 @@ export function FocusTimer({
           type="button"
           onClick={() => switchMode("deep")}
           className={`text-xs font-semibold py-2 px-4 rounded-lg transition-all ${
-            mode === "deep" ? "bg-background shadow-xs text-foreground" : "text-muted-foreground hover:text-foreground"
+            mode === "deep"
+              ? "bg-background shadow-xs text-foreground"
+              : "text-muted-foreground hover:text-foreground"
           }`}
         >
           {isAr ? "جلسة عمل عميق (50 دقيقة)" : "Deep Work (50m)"}
@@ -165,7 +171,9 @@ export function FocusTimer({
           type="button"
           onClick={() => switchMode("short_break")}
           className={`text-xs font-semibold py-2 px-4 rounded-lg transition-all ${
-            mode === "short_break" ? "bg-background shadow-xs text-foreground" : "text-muted-foreground hover:text-foreground"
+            mode === "short_break"
+              ? "bg-background shadow-xs text-foreground"
+              : "text-muted-foreground hover:text-foreground"
           }`}
         >
           {isAr ? "استراحة قصيرة (5 دقائق)" : "Short Break (5m)"}
@@ -186,8 +194,12 @@ export function FocusTimer({
             <span className="text-xs text-muted-foreground mt-2 flex items-center gap-1 uppercase tracking-widest font-semibold">
               <Zap className="size-3 text-amber-500" />
               {isRunning
-                ? (isAr ? "جلسة تركيز جارية" : "Focus in progress")
-                : (isAr ? "جاهز للبدء" : "Ready to focus")}
+                ? isAr
+                  ? "جلسة تركيز جارية"
+                  : "Focus in progress"
+                : isAr
+                  ? "جاهز للبدء"
+                  : "Ready to focus"}
             </span>
           </div>
 
@@ -203,7 +215,9 @@ export function FocusTimer({
               }}
             >
               {isRunning ? <Pause className="size-5" /> : <Play className="size-5" />}
-              <span>{isRunning ? (isAr ? "إيقاف مؤقت" : "Pause") : (isAr ? "بدء التركيز" : "Start Focus")}</span>
+              <span>
+                {isRunning ? (isAr ? "إيقاف مؤقت" : "Pause") : isAr ? "بدء التركيز" : "Start Focus"}
+              </span>
             </Button>
 
             <Button
@@ -238,8 +252,12 @@ export function FocusTimer({
                 {savedSuccess ? <Check className="size-4" /> : <Save className="size-4" />}
                 <span>
                   {savedSuccess
-                    ? (isAr ? "تم حفظ الجلسة!" : "Saved!")
-                    : (isAr ? "تسجيل الوقت" : "Log Time")}
+                    ? isAr
+                      ? "تم حفظ الجلسة!"
+                      : "Saved!"
+                    : isAr
+                      ? "تسجيل الوقت"
+                      : "Log Time"}
                 </span>
               </Button>
             )}
@@ -257,7 +275,9 @@ export function FocusTimer({
                 onChange={(e) => setSelectedTaskId(e.target.value)}
                 className="flex-1 text-xs"
               >
-                <option value="">{isAr ? "اختر مهمة من قائمة المهام..." : "Select task to work on..."}</option>
+                <option value="">
+                  {isAr ? "اختر مهمة من قائمة المهام..." : "Select task to work on..."}
+                </option>
                 {tasks.map((t) => (
                   <option key={t.id} value={t.id}>
                     {t.title}

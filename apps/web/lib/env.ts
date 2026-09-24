@@ -5,9 +5,9 @@ import { z } from "zod";
  * misconfiguration surfaces as a clear error on the first request instead.
  */
 const publicSchema = z.object({
-  NEXT_PUBLIC_SUPABASE_URL: z.url(),
+  NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
-  NEXT_PUBLIC_APP_URL: z.url().default("http://localhost:3000"),
+  NEXT_PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),
 });
 
 const serverSchema = z.object({
@@ -49,12 +49,22 @@ export function serverEnv() {
 
 /** True when real public Supabase variables are present (used by health checks and auth proxy). */
 export function hasSupabaseEnv(): boolean {
-  if (process.env.DEMO_MODE === "true") return false;
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return false;
   if (url.includes("<project-ref>") || key.includes("dummy")) return false;
   return true;
+}
+
+/**
+ * The embedded demo is intentionally a local-development convenience only.
+ * It must never provide an authentication bypass in a deployed environment.
+ */
+export function isLocalDemoMode(): boolean {
+  return (
+    process.env.NODE_ENV === "development" &&
+    (process.env.DEMO_MODE === "true" || !hasSupabaseEnv())
+  );
 }
 
 export function hasDatabaseEnv(): boolean {

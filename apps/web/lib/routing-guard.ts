@@ -26,8 +26,7 @@ export function analyseRoute(pathname: string): RouteInfo {
 }
 
 export type GuardDecision =
-  | { action: "allow" }
-  | { action: "redirect"; pathname: string; next?: string };
+  { action: "allow" } | { action: "redirect"; pathname: string; next?: string };
 
 /**
  * Decides where a request should go given the auth state.

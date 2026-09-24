@@ -27,11 +27,15 @@ export function EisenhowerMatrix({ matrix }: EisenhowerMatrixProps) {
               {matrix.q1.length}
             </span>
           </div>
-          <p className="text-xs text-muted-foreground">Crises, deadlined projects, immediate problems</p>
+          <p className="text-xs text-muted-foreground">
+            Crises, deadlined projects, immediate problems
+          </p>
         </CardHeader>
         <CardContent className="pt-3 flex flex-col gap-2 min-h-[140px]">
           {matrix.q1.length === 0 ? (
-            <p className="text-xs text-muted-foreground italic m-auto py-6">No urgent & important tasks</p>
+            <p className="text-xs text-muted-foreground italic m-auto py-6">
+              No urgent & important tasks
+            </p>
           ) : (
             matrix.q1.map((task) => <TaskItem key={task.id} task={task} />)
           )}
@@ -49,11 +53,15 @@ export function EisenhowerMatrix({ matrix }: EisenhowerMatrixProps) {
               {matrix.q2.length}
             </span>
           </div>
-          <p className="text-xs text-muted-foreground">Strategic vision, deep work, health, relationships</p>
+          <p className="text-xs text-muted-foreground">
+            Strategic vision, deep work, health, relationships
+          </p>
         </CardHeader>
         <CardContent className="pt-3 flex flex-col gap-2 min-h-[140px]">
           {matrix.q2.length === 0 ? (
-            <p className="text-xs text-muted-foreground italic m-auto py-6">No strategic tasks scheduled</p>
+            <p className="text-xs text-muted-foreground italic m-auto py-6">
+              No strategic tasks scheduled
+            </p>
           ) : (
             matrix.q2.map((task) => <TaskItem key={task.id} task={task} />)
           )}
@@ -93,11 +101,15 @@ export function EisenhowerMatrix({ matrix }: EisenhowerMatrixProps) {
               {matrix.q4.length}
             </span>
           </div>
-          <p className="text-xs text-muted-foreground">Time wasters, busy work to drop or minimize</p>
+          <p className="text-xs text-muted-foreground">
+            Time wasters, busy work to drop or minimize
+          </p>
         </CardHeader>
         <CardContent className="pt-3 flex flex-col gap-2 min-h-[140px]">
           {matrix.q4.length === 0 ? (
-            <p className="text-xs text-muted-foreground italic m-auto py-6">Clean slate: no Q4 tasks</p>
+            <p className="text-xs text-muted-foreground italic m-auto py-6">
+              Clean slate: no Q4 tasks
+            </p>
           ) : (
             matrix.q4.map((task) => <TaskItem key={task.id} task={task} />)
           )}

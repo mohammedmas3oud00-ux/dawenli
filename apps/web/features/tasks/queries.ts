@@ -1,9 +1,4 @@
-import {
-  getEisenhowerMatrix,
-  getTaskRecommendations,
-  listTasks,
-  type Task,
-} from "@bawsala/db";
+import { getEisenhowerMatrix, getTaskRecommendations, listTasks, type Task } from "@bawsala/db";
 import { db } from "@/lib/db";
 import { getProfileForUser } from "@/features/settings/queries";
 import type { CurrentUser } from "@/lib/auth";
@@ -41,10 +36,7 @@ export async function getEisenhowerMatrixForUser(user: CurrentUser) {
   return getEisenhowerMatrix(db(), user.id, today);
 }
 
-export async function getTaskRecommendationsForUser(
-  user: CurrentUser,
-  availableMinutes?: number,
-) {
+export async function getTaskRecommendationsForUser(user: CurrentUser, availableMinutes?: number) {
   const profile = await getProfileForUser(user);
   const now = new Date();
   const today = new Intl.DateTimeFormat("en-CA", {

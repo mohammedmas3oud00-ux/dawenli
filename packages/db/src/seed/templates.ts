@@ -20,7 +20,12 @@ const list = (key: string, labelAr: string, labelEn: string): TemplateField => (
   type: "list",
   required: false,
 });
-const textarea = (key: string, labelAr: string, labelEn: string, required = false): TemplateField => ({
+const textarea = (
+  key: string,
+  labelAr: string,
+  labelEn: string,
+  required = false,
+): TemplateField => ({
   key,
   labelAr,
   labelEn,
@@ -49,7 +54,11 @@ export const SYSTEM_TEMPLATES: readonly SystemTemplate[] = [
       list("wins", "الإنجازات", "Wins"),
       list("problems", "المشاكل والعوائق", "Problems & blockers"),
       list("delayed_projects", "المشاريع المتأخرة", "Delayed projects"),
-      textarea("priority_changes", "تعديل الأولويات للأسبوع القادم", "Priority changes for next week"),
+      textarea(
+        "priority_changes",
+        "تعديل الأولويات للأسبوع القادم",
+        "Priority changes for next week",
+      ),
       rating("satisfaction", "الرضا عن الأسبوع", "Satisfaction with the week"),
     ],
   },

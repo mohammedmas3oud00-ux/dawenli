@@ -30,6 +30,7 @@ Thumbs.db
 
 # test
 coverage/
+.pglite-data/
 
 # local agent config
 .agents/

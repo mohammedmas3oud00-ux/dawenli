@@ -46,7 +46,9 @@ export function EnergyCheckIn({ current }: { current: number | null }) {
           })}
         </form>
         <p className="text-sm text-muted-foreground">
-          {current ? t("current", { level: t(`levels.${current as 1 | 2 | 3 | 4 | 5}`) }) : t("notSet")}
+          {current
+            ? t("current", { level: t(`levels.${current as 1 | 2 | 3 | 4 | 5}`) })
+            : t("notSet")}
         </p>
         {state.status === "error" ? <Alert variant="error">{state.message}</Alert> : null}
       </CardContent>

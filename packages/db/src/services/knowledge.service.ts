@@ -13,14 +13,7 @@ import {
   type UpdateResourceInput,
 } from "@bawsala/core";
 import type { Database } from "../client";
-import {
-  notes,
-  resources,
-  tags,
-  type Note,
-  type Resource,
-  type Tag,
-} from "../schema";
+import { notes, resources, tags, type Note, type Resource, type Tag } from "../schema";
 import { owned, softDelete } from "./_shared";
 
 /* =========================================================================
@@ -51,11 +44,7 @@ export async function listNotes(
     .orderBy(desc(notes.isPinned), desc(notes.updatedAt));
 }
 
-export async function getNote(
-  db: Database,
-  userId: string,
-  noteId: string,
-): Promise<Note> {
+export async function getNote(db: Database, userId: string, noteId: string): Promise<Note> {
   const [row] = await db
     .select()
     .from(notes)
@@ -68,11 +57,7 @@ export async function getNote(
   return row;
 }
 
-export async function createNote(
-  db: Database,
-  userId: string,
-  raw: unknown,
-): Promise<Note> {
+export async function createNote(db: Database, userId: string, raw: unknown): Promise<Note> {
   const input: CreateNoteInput = createNoteSchema.parse(raw);
 
   const [created] = await db
@@ -119,11 +104,7 @@ export async function updateNote(
   return updated;
 }
 
-export async function deleteNote(
-  db: Database,
-  userId: string,
-  noteId: string,
-): Promise<void> {
+export async function deleteNote(db: Database, userId: string, noteId: string): Promise<void> {
   const result = await db
     .update(notes)
     .set(softDelete())
@@ -245,11 +226,7 @@ export async function listTags(db: Database, userId: string): Promise<Tag[]> {
     .orderBy(tags.name);
 }
 
-export async function createTag(
-  db: Database,
-  userId: string,
-  raw: unknown,
-): Promise<Tag> {
+export async function createTag(db: Database, userId: string, raw: unknown): Promise<Tag> {
   const input: CreateTagInput = createTagSchema.parse(raw);
 
   const [created] = await db
@@ -267,4 +244,3 @@ export async function createTag(
 
   return created;
 }
-

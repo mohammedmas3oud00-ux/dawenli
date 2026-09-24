@@ -44,10 +44,14 @@ describe("publicRoute", () => {
       return ok({ id: params.id });
     });
 
-    const good = await handler(new Request("http://x/a"), { params: Promise.resolve({ id: "42" }) });
+    const good = await handler(new Request("http://x/a"), {
+      params: Promise.resolve({ id: "42" }),
+    });
     expect(await good.json()).toEqual({ data: { id: "42" } });
 
-    const bad = await handler(new Request("http://x/a"), { params: Promise.resolve({ id: "missing" }) });
+    const bad = await handler(new Request("http://x/a"), {
+      params: Promise.resolve({ id: "missing" }),
+    });
     expect(bad.status).toBe(404);
   });
 });

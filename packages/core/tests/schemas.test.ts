@@ -54,12 +54,13 @@ describe("goal schema", () => {
 
 describe("habit schemas", () => {
   it("validates days of week", () => {
-    expect(createHabitSchema.safeParse({ name: "Quran", frequency: "daily", daysOfWeek: [7] }).success).toBe(
-      false,
-    );
-    expect(createHabitSchema.safeParse({ name: "Quran", frequency: "daily", daysOfWeek: [0, 6] }).success).toBe(
-      true,
-    );
+    expect(
+      createHabitSchema.safeParse({ name: "Quran", frequency: "daily", daysOfWeek: [7] }).success,
+    ).toBe(false);
+    expect(
+      createHabitSchema.safeParse({ name: "Quran", frequency: "daily", daysOfWeek: [0, 6] })
+        .success,
+    ).toBe(true);
   });
 
   it("accepts prayer metadata on logs", () => {
@@ -75,10 +76,12 @@ describe("habit schemas", () => {
 describe("review / template schemas", () => {
   it("enforces snake_case field keys", () => {
     expect(
-      templateFieldSchema.safeParse({ key: "TopWin", labelAr: "أ", labelEn: "a", type: "text" }).success,
+      templateFieldSchema.safeParse({ key: "TopWin", labelAr: "أ", labelEn: "a", type: "text" })
+        .success,
     ).toBe(false);
     expect(
-      templateFieldSchema.safeParse({ key: "top_win", labelAr: "أ", labelEn: "a", type: "text" }).success,
+      templateFieldSchema.safeParse({ key: "top_win", labelAr: "أ", labelEn: "a", type: "text" })
+        .success,
     ).toBe(true);
   });
 

@@ -1,17 +1,13 @@
 import { createDb, ensureEmbeddedDbReady, getEmbeddedDb, type Database } from "@bawsala/db";
-import { serverEnv } from "@/lib/env";
+import { isLocalDemoMode, serverEnv } from "@/lib/env";
 
 declare global {
   var __bawsalaDb: Database | undefined;
+  var __bawsalaDbMode: "demo" | "external" | undefined;
 }
 
 export function isDemoMode(): boolean {
-  return (
-    process.env.DEMO_MODE === "true" ||
-    !process.env.DATABASE_URL ||
-    process.env.DATABASE_URL.includes("54322") ||
-    process.env.DATABASE_URL.includes("<project-ref>")
-  );
+  return isLocalDemoMode();
 }
 
 /**
@@ -19,12 +15,14 @@ export function isDemoMode(): boolean {
  * uses the embedded PGlite instance pre-populated with realistic demo data.
  */
 export function db(): Database {
-  if (!globalThis.__bawsalaDb) {
-    if (isDemoMode()) {
+  const mode = isDemoMode() ? "demo" : "external";
+  if (!globalThis.__bawsalaDb || globalThis.__bawsalaDbMode !== mode) {
+    if (mode === "demo") {
       globalThis.__bawsalaDb = getEmbeddedDb();
     } else {
       globalThis.__bawsalaDb = createDb(serverEnv().DATABASE_URL);
     }
+    globalThis.__bawsalaDbMode = mode;
   }
   return globalThis.__bawsalaDb;
 }
@@ -36,4 +34,3 @@ export async function ensureDbReady(): Promise<Database> {
   }
   return current;
 }
-

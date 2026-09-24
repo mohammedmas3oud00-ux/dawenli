@@ -53,7 +53,9 @@ export default async function TasksPage({ params, searchParams }: Props) {
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <span className="size-2 rounded-full bg-primary animate-pulse" />
-              {locale === "ar" ? "أفضل مهمة للإنجاز الآن (توصية الذكاء الاصطناعي):" : "Recommended for Right Now:"}
+              {locale === "ar"
+                ? "أفضل مهمة للإنجاز الآن (توصية الذكاء الاصطناعي):"
+                : "Recommended for Right Now:"}
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-2">
@@ -91,7 +93,9 @@ export default async function TasksPage({ params, searchParams }: Props) {
             {tasks.length === 0 ? (
               <Card>
                 <CardContent className="py-10 text-center text-sm text-muted-foreground">
-                  {locale === "ar" ? "لا توجد مهام حالياً. ابدأ بإضافة مهمة أعلاه." : "No tasks found. Add a task above."}
+                  {locale === "ar"
+                    ? "لا توجد مهام حالياً. ابدأ بإضافة مهمة أعلاه."
+                    : "No tasks found. Add a task above."}
                 </CardContent>
               </Card>
             ) : (

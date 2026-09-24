@@ -99,4 +99,3 @@ export function adhkarPerformed(log: AdhkarLog): number {
   if (log.evening) count += 1;
   return count;
 }
-

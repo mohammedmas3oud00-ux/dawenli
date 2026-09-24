@@ -16,7 +16,9 @@ describe("migrations on a real Postgres (PGlite)", () => {
       sql`select table_name from information_schema.tables where table_schema = 'public' order by 1`,
     );
     const names = rows.map((r) => r.table_name);
-    expect(names).toEqual(expect.arrayContaining(["profiles", "tasks", "goals", "habits", "reviews"]));
+    expect(names).toEqual(
+      expect.arrayContaining(["profiles", "tasks", "goals", "habits", "reviews"]),
+    );
   });
 
   it("bootstrap a profile when an auth user is created", async () => {

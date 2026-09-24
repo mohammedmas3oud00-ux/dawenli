@@ -6,7 +6,7 @@ const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   transpilePackages: ["@bawsala/core", "@bawsala/db", "@bawsala/i18n"],
-  serverExternalPackages: ["postgres"],
+  serverExternalPackages: ["postgres", "@electric-sql/pglite"],
   poweredByHeader: false,
   typedRoutes: false,
 };

@@ -81,7 +81,13 @@ export function parseRRule(rule: string): RecurrenceRule | null {
   }
 
   if (!freq) return null;
-  return { freq, interval, ...(byDay ? { byDay } : {}), ...(count ? { count } : {}), ...(until ? { until } : {}) };
+  return {
+    freq,
+    interval,
+    ...(byDay ? { byDay } : {}),
+    ...(count ? { count } : {}),
+    ...(until ? { until } : {}),
+  };
 }
 
 export function formatRRule(rule: RecurrenceRule): string {
@@ -99,7 +105,9 @@ function addMonthsClamped(iso: string, months: number): string {
   const date = parseIsoDate(iso);
   const day = date.getUTCDate();
   const target = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + months, 1));
-  const lastDay = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0)).getUTCDate();
+  const lastDay = new Date(
+    Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0),
+  ).getUTCDate();
   target.setUTCDate(Math.min(day, lastDay));
   return toIsoDate(target);
 }

@@ -1,12 +1,4 @@
-import {
-  boolean,
-  index,
-  pgTable,
-  primaryKey,
-  smallint,
-  text,
-  uuid,
-} from "drizzle-orm/pg-core";
+import { boolean, index, pgTable, primaryKey, smallint, text, uuid } from "drizzle-orm/pg-core";
 import { ownedColumns, ownerPolicy } from "./_shared";
 import { projects } from "./hierarchy";
 
@@ -58,10 +50,7 @@ export const tags = pgTable(
     name: text("name").notNull(),
     color: text("color").notNull().default("indigo"),
   },
-  (t) => [
-    index("tags_user_name_idx").on(t.userId, t.name),
-    ownerPolicy("tags", t.userId),
-  ],
+  (t) => [index("tags_user_name_idx").on(t.userId, t.name), ownerPolicy("tags", t.userId)],
 ).enableRLS();
 
 export type Tag = typeof tags.$inferSelect;
@@ -92,4 +81,3 @@ export const noteTags = pgTable(
     }),
   ],
 ).enableRLS();
-

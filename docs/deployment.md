@@ -2,20 +2,21 @@
 
 ## 1. الخدمات
 
-| الطبقة | الخدمة | الخطة | ما تحصل عليه | القيود |
-|---|---|---|---|---|
-| Web + API | **Vercel** | Hobby | نشر تلقائي من GitLab، SSL، Edge network، دومين مخصص | استخدام غير تجاري؛ 100GB bandwidth؛ مهلة Serverless محدودة |
-| Database + Auth + Storage + Cron | **Supabase** | Free | Postgres 500MB، 50k MAU، 1GB Storage، pg_cron، Edge Functions | يتوقف بعد 7 أيام خمول (نحلها بالـ keep-alive)؛ مشروعان فقط |
-| Rate limiting (لاحقاً) | **Upstash Redis** | Free | 10k أمر/يوم | كافٍ للـ API الشخصي |
-| Email (Phase 3) | **Resend** | Free | 3000 رسالة/شهر | دومين واحد |
-| Monitoring (Phase 6) | **Sentry** | Developer | 5k خطأ/شهر | |
-| CI/CD | **GitLab** | Free | 400 دقيقة/شهر | كافية للـ lint/test |
+| الطبقة                           | الخدمة            | الخطة     | ما تحصل عليه                                                  | القيود                                                     |
+| -------------------------------- | ----------------- | --------- | ------------------------------------------------------------- | ---------------------------------------------------------- |
+| Web + API                        | **Vercel**        | Hobby     | نشر تلقائي من GitLab، SSL، Edge network، دومين مخصص           | استخدام غير تجاري؛ 100GB bandwidth؛ مهلة Serverless محدودة |
+| Database + Auth + Storage + Cron | **Supabase**      | Free      | Postgres 500MB، 50k MAU، 1GB Storage، pg_cron، Edge Functions | يتوقف بعد 7 أيام خمول (نحلها بالـ keep-alive)؛ مشروعان فقط |
+| Rate limiting (لاحقاً)           | **Upstash Redis** | Free      | 10k أمر/يوم                                                   | كافٍ للـ API الشخصي                                        |
+| Email (Phase 3)                  | **Resend**        | Free      | 3000 رسالة/شهر                                                | دومين واحد                                                 |
+| Monitoring (Phase 6)             | **Sentry**        | Developer | 5k خطأ/شهر                                                    |                                                            |
+| CI/CD                            | **GitLab**        | Free      | 400 دقيقة/شهر                                                 | كافية للـ lint/test                                        |
 
 ---
 
 ## 2. خطوات الإعداد الأولي
 
 ### 2.1 Supabase
+
 1. أنشئ مشروعاً (اختر أقرب Region: `eu-central-1` Frankfurt).
 2. Authentication → Providers: فعّل Email و Google (أنشئ OAuth client في Google Cloud Console).
 3. Authentication → URL Configuration:
@@ -26,6 +27,7 @@
 6. احفظ: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `DATABASE_URL` (Transaction pooler, port 6543).
 
 ### 2.2 Vercel
+
 1. Import Git Repository → GitLab → `0bawsala/bawsala`.
 2. Root Directory: `apps/web`؛ Framework: Next.js؛ Build Command يُكتشف عبر Turborepo.
 3. Environment Variables (Production + Preview):
@@ -53,6 +55,7 @@ SSL يصدر تلقائياً خلال دقائق. لو الدومين على Cl
 ### 2.4 GitLab
 
 **CI Variables** (Settings → CI/CD → Variables، Masked):
+
 - `DATABASE_URL` (لتشغيل migrations من CI عند الحاجة)
 - `HEALTH_URL` = `https://app.<domain>/api/v1/health`
 - `CRON_SECRET`
@@ -108,17 +111,18 @@ keepalive:
 
 ## 4. البيئات
 
-| البيئة | الفرع | الرابط | القاعدة |
-|---|---|---|---|
-| Local | أي | `localhost:3000` | Supabase CLI (Docker) أو مشروع Supabase ثانٍ |
-| Preview | كل MR | `*.vercel.app` | نفس قاعدة الإنتاج (شخصي) — أو المشروع الثاني للأمان |
-| Production | `main` | `app.<domain>` | Supabase الرئيسي |
+| البيئة     | الفرع  | الرابط           | القاعدة                                             |
+| ---------- | ------ | ---------------- | --------------------------------------------------- |
+| Local      | أي     | `localhost:3000` | Supabase CLI (Docker) أو مشروع Supabase ثانٍ        |
+| Preview    | كل MR  | `*.vercel.app`   | نفس قاعدة الإنتاج (شخصي) — أو المشروع الثاني للأمان |
+| Production | `main` | `app.<domain>`   | Supabase الرئيسي                                    |
 
 ---
 
 ## 5. النسخ الاحتياطي
 
 الخطة المجانية في Supabase لا تشمل نسخاً احتياطياً آلياً. الحل:
+
 - GitLab Scheduled Pipeline أسبوعي يشغّل `pg_dump` ويحفظ الناتج كـ **Artifact** (مشفر بـ `age` أو `gpg`، مدة احتفاظ 4 أسابيع).
 - أو زر "تصدير بياناتي" داخل التطبيق (موجود منذ MVP) يُستخدم شهرياً.
 
@@ -126,9 +130,9 @@ keepalive:
 
 ## 6. متى تنتقل للخطة المدفوعة؟
 
-| المؤشر | الإجراء |
-|---|---|
-| قاعدة البيانات > 400MB | Supabase Pro (25$) |
-| مستخدمون خارجيون أو دفع | Vercel Pro (20$) إلزامي بموجب شروط Hobby |
-| حاجة لنسخ احتياطي يومي آلي | Supabase Pro |
+| المؤشر                                 | الإجراء                                           |
+| -------------------------------------- | ------------------------------------------------- |
+| قاعدة البيانات > 400MB                 | Supabase Pro (25$)                                |
+| مستخدمون خارجيون أو دفع                | Vercel Pro (20$) إلزامي بموجب شروط Hobby          |
+| حاجة لنسخ احتياطي يومي آلي             | Supabase Pro                                      |
 | Serverless timeouts في مهام AI الطويلة | Vercel Pro أو نقل المهمة لـ Edge Function / Queue |

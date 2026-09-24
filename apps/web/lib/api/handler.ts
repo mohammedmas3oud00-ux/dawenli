@@ -14,10 +14,9 @@ type RouteContext<TParams> = { params: Promise<TParams> };
 
 /** `{ data, meta? }` success envelope. */
 export function ok<T>(data: T, init?: { status?: number; meta?: Record<string, unknown> }) {
-  return NextResponse.json(
-    init?.meta ? { data, meta: init.meta } : { data },
-    { status: init?.status ?? 200 },
-  );
+  return NextResponse.json(init?.meta ? { data, meta: init.meta } : { data }, {
+    status: init?.status ?? 200,
+  });
 }
 
 export function toErrorResponse(error: unknown): NextResponse {
@@ -62,7 +61,10 @@ export function publicRoute<TParams = Record<string, string>>(
 }
 
 /** Parses and validates a JSON body; throws a ZodError / AppError on failure. */
-export async function parseJson<T extends z.ZodType>(request: Request, schema: T): Promise<z.output<T>> {
+export async function parseJson<T extends z.ZodType>(
+  request: Request,
+  schema: T,
+): Promise<z.output<T>> {
   let body: unknown;
   try {
     body = await request.json();

@@ -1,7 +1,16 @@
 "use client";
 
 import { useTransition } from "react";
-import { BookOpen, ExternalLink, GraduationCap, Headphones, Newspaper, Star, Trash2, Video } from "lucide-react";
+import {
+  BookOpen,
+  ExternalLink,
+  GraduationCap,
+  Headphones,
+  Newspaper,
+  Star,
+  Trash2,
+  Video,
+} from "lucide-react";
 import type { Resource } from "@bawsala/db";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,10 +27,26 @@ const TYPE_ICONS: Record<string, typeof BookOpen> = {
 };
 
 const STATUS_LABELS: Record<string, { ar: string; en: string; color: string }> = {
-  in_progress: { ar: "قيد المتابعة", en: "In Progress", color: "bg-blue-500/15 text-blue-600 border-blue-500/20" },
-  queued: { ar: "قائمة الانتظار", en: "Queued", color: "bg-muted text-muted-foreground border-border" },
-  completed: { ar: "مكتمل", en: "Completed", color: "bg-emerald-500/15 text-emerald-600 border-emerald-500/20" },
-  abandoned: { ar: "متروك", en: "Abandoned", color: "bg-destructive/15 text-destructive border-destructive/20" },
+  in_progress: {
+    ar: "قيد المتابعة",
+    en: "In Progress",
+    color: "bg-blue-500/15 text-blue-600 border-blue-500/20",
+  },
+  queued: {
+    ar: "قائمة الانتظار",
+    en: "Queued",
+    color: "bg-muted text-muted-foreground border-border",
+  },
+  completed: {
+    ar: "مكتمل",
+    en: "Completed",
+    color: "bg-emerald-500/15 text-emerald-600 border-emerald-500/20",
+  },
+  abandoned: {
+    ar: "متروك",
+    en: "Abandoned",
+    color: "bg-destructive/15 text-destructive border-destructive/20",
+  },
 };
 
 const DEFAULT_STATUS_LABEL = {
@@ -35,7 +60,6 @@ export function ResourceCard({ resource, locale }: { resource: Resource; locale:
   const isAr = locale === "ar";
   const Icon = TYPE_ICONS[resource.type] || BookOpen;
   const statusInfo = STATUS_LABELS[resource.status] ?? DEFAULT_STATUS_LABEL;
-
 
   const handleStatusChange = (newStatus: "queued" | "in_progress" | "completed" | "abandoned") => {
     startTransition(async () => {
@@ -78,7 +102,9 @@ export function ResourceCard({ resource, locale }: { resource: Resource; locale:
               <Star
                 key={i}
                 className={`size-3.5 ${
-                  i < resource.rating! ? "fill-amber-500 text-amber-500" : "text-muted-foreground/30"
+                  i < resource.rating!
+                    ? "fill-amber-500 text-amber-500"
+                    : "text-muted-foreground/30"
                 }`}
               />
             ))}

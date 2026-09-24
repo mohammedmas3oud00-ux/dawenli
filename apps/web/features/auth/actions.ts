@@ -5,9 +5,16 @@ import { cookies } from "next/headers";
 import { redirect as redirectExternal } from "next/navigation";
 import { redirect } from "@/i18n/navigation";
 import type { ActionResult } from "@/lib/action-result";
-import { hasSupabaseEnv, publicEnv } from "@/lib/env";
+import { isLocalDemoMode, publicEnv } from "@/lib/env";
+import { DEMO_USER_EMAIL } from "@bawsala/db";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { authErrorKey, loginSchema, magicLinkSchema, registerSchema, safeNextPath } from "./schemas";
+import {
+  authErrorKey,
+  loginSchema,
+  magicLinkSchema,
+  registerSchema,
+  safeNextPath,
+} from "./schemas";
 
 function fieldErrors(error: { issues: { path: PropertyKey[]; message: string }[] }) {
   const out: Record<string, string[]> = {};
@@ -32,12 +39,7 @@ export async function signInWithPassword(
     return { status: "error", message: t("invalidEmail"), fieldErrors: fieldErrors(parsed.error) };
   }
 
-  // Demo Mode login check (when using demo credentials, or DEMO_MODE, or no Supabase env)
-  const isDemo =
-    parsed.data.email === "demo@bawsala.life" ||
-    parsed.data.email.startsWith("demo") ||
-    process.env.DEMO_MODE === "true" ||
-    !hasSupabaseEnv();
+  const isDemo = isLocalDemoMode() && parsed.data.email === DEMO_USER_EMAIL;
 
   if (isDemo) {
     const cookieStore = await cookies();
@@ -72,7 +74,11 @@ export async function signInWithMagicLink(
     next: formData.get("next") || undefined,
   });
   if (!parsed.success) {
-    return { status: "error", message: t("errors.invalidEmail"), fieldErrors: fieldErrors(parsed.error) };
+    return {
+      status: "error",
+      message: t("errors.invalidEmail"),
+      fieldErrors: fieldErrors(parsed.error),
+    };
   }
 
   const locale = await getLocale();

@@ -18,7 +18,11 @@ import { owned, softDelete, toNumeric, userPriorityContext } from "./_shared";
 export type TaskWithSubtasks = Task & { subtasks: Task[] };
 
 /** Fetches the linked goal's priority (1..5) if goalId is present. */
-async function getGoalPriority(db: Database, userId: string, goalId: string | null | undefined): Promise<number | null> {
+async function getGoalPriority(
+  db: Database,
+  userId: string,
+  goalId: string | null | undefined,
+): Promise<number | null> {
   if (!goalId) return null;
   const [g] = await db
     .select({ priority: goals.priority })
@@ -33,7 +37,11 @@ export async function listTasks(
   today: string,
   query: ListTasksQuery & { eisenhower?: EisenhowerQuadrant } = { view: "all" },
 ): Promise<Task[]> {
-  const conditions = [eq(tasks.userId, userId), isNull(tasks.deletedAt), isNull(tasks.parentTaskId)];
+  const conditions = [
+    eq(tasks.userId, userId),
+    isNull(tasks.deletedAt),
+    isNull(tasks.parentTaskId),
+  ];
 
   if (query.projectId) {
     conditions.push(eq(tasks.projectId, query.projectId));
@@ -220,11 +228,7 @@ export async function updateTask(
   return updated!;
 }
 
-export async function deleteTask(
-  db: Database,
-  userId: string,
-  taskId: string,
-): Promise<void> {
+export async function deleteTask(db: Database, userId: string, taskId: string): Promise<void> {
   // Soft-delete any subtasks
   await db
     .update(tasks)

@@ -27,9 +27,16 @@ export async function getArea(db: Database, userId: string, id: string): Promise
   return row ?? null;
 }
 
-export async function createArea(db: Database, userId: string, input: CreateAreaInput): Promise<Area> {
+export async function createArea(
+  db: Database,
+  userId: string,
+  input: CreateAreaInput,
+): Promise<Area> {
   const data = createAreaSchema.parse(input);
-  const [row] = await db.insert(areas).values({ ...data, userId }).returning();
+  const [row] = await db
+    .insert(areas)
+    .values({ ...data, userId })
+    .returning();
   return row!;
 }
 

@@ -40,7 +40,9 @@ export default async function ProjectsPage({ params }: { params: LocaleParams })
           <form action={createProjectAction} className="flex flex-col md:flex-row gap-3">
             <Input
               name="title"
-              placeholder={locale === "ar" ? "أدخل عنوان المشروع الجديد..." : "New project title..."}
+              placeholder={
+                locale === "ar" ? "أدخل عنوان المشروع الجديد..." : "New project title..."
+              }
               className="flex-1"
               required
             />

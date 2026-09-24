@@ -18,7 +18,9 @@ describe("projectHealth", () => {
   });
 
   it("is overdue after the due date", () => {
-    expect(projectHealth({ status: "active", progress: 50, dueDate: "2026-09-22" }, TODAY)).toBe("overdue");
+    expect(projectHealth({ status: "active", progress: 50, dueDate: "2026-09-22" }, TODAY)).toBe(
+      "overdue",
+    );
   });
 
   it("flags at_risk when progress lags the timeline by more than 20 points", () => {
@@ -29,9 +31,14 @@ describe("projectHealth", () => {
   });
 
   it("falls back to on_track when the timeline is degenerate", () => {
-    expect(projectHealth({ status: "active", progress: 0, dueDate: "2026-10-03" }, TODAY)).toBe("on_track");
+    expect(projectHealth({ status: "active", progress: 0, dueDate: "2026-10-03" }, TODAY)).toBe(
+      "on_track",
+    );
     expect(
-      projectHealth({ status: "active", progress: 0, startDate: "2026-10-03", dueDate: "2026-10-03" }, TODAY),
+      projectHealth(
+        { status: "active", progress: 0, startDate: "2026-10-03", dueDate: "2026-10-03" },
+        TODAY,
+      ),
     ).toBe("on_track");
   });
 });

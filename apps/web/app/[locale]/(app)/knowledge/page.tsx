@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getTranslations, setRequestLocale } from "next-intl/server";
+import { setRequestLocale } from "next-intl/server";
 import { BookOpen, FileText, Plus, Sparkles } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -22,7 +22,6 @@ type Props = {
 
 export async function generateMetadata({ params }: { params: LocaleParams }): Promise<Metadata> {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: "nav" });
   return { title: locale === "ar" ? "المعرفة" : "Knowledge" };
 }
 
@@ -70,7 +69,9 @@ export default async function KnowledgePage({ params, searchParams }: Props) {
           })}
         >
           <BookOpen className="size-4" />
-          <span>{isAr ? `المصادر والتعلم (${resources.length})` : `Resources (${resources.length})`}</span>
+          <span>
+            {isAr ? `المصادر والتعلم (${resources.length})` : `Resources (${resources.length})`}
+          </span>
         </Link>
       </div>
 

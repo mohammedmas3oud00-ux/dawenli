@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { LoginForm } from "@/features/auth/components/login-form";
 import { safeNextPath } from "@/features/auth/schemas";
 import type { LocaleParams } from "@/lib/types";
+import { isLocalDemoMode } from "@/lib/env";
 
 type Props = {
   params: LocaleParams;
@@ -28,7 +29,11 @@ export default async function LoginPage({ params, searchParams }: Props) {
         <h1 className="text-2xl font-semibold">{t("title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
       </div>
-      <LoginForm next={safeNext || undefined} oauthError={error === "oauth"} />
+      <LoginForm
+        next={safeNext || undefined}
+        oauthError={error === "oauth"}
+        showDemo={isLocalDemoMode()}
+      />
     </div>
   );
 }

@@ -2,7 +2,11 @@ import { analyseRoute, decide } from "./routing-guard";
 
 describe("analyseRoute", () => {
   it("extracts the locale and remaining segments", () => {
-    expect(analyseRoute("/ar/settings")).toMatchObject({ locale: "ar", rest: ["settings"], isRoot: false });
+    expect(analyseRoute("/ar/settings")).toMatchObject({
+      locale: "ar",
+      rest: ["settings"],
+      isRoot: false,
+    });
     expect(analyseRoute("/en")).toMatchObject({ locale: "en", rest: [], isRoot: true });
     expect(analyseRoute("/en/login")).toMatchObject({ isAuthPage: true });
     expect(analyseRoute("/ar/register")).toMatchObject({ isAuthPage: true });
@@ -20,7 +24,10 @@ describe("decide", () => {
   });
 
   it("omits next for the locale root", () => {
-    expect(decide(analyseRoute("/ar"), false)).toEqual({ action: "redirect", pathname: "/ar/login" });
+    expect(decide(analyseRoute("/ar"), false)).toEqual({
+      action: "redirect",
+      pathname: "/ar/login",
+    });
   });
 
   it("lets anonymous users reach auth pages", () => {
@@ -29,8 +36,14 @@ describe("decide", () => {
   });
 
   it("bounces signed-in users away from auth pages and the root", () => {
-    expect(decide(analyseRoute("/en/login"), true)).toEqual({ action: "redirect", pathname: "/en/today" });
-    expect(decide(analyseRoute("/ar"), true)).toEqual({ action: "redirect", pathname: "/ar/today" });
+    expect(decide(analyseRoute("/en/login"), true)).toEqual({
+      action: "redirect",
+      pathname: "/en/today",
+    });
+    expect(decide(analyseRoute("/ar"), true)).toEqual({
+      action: "redirect",
+      pathname: "/ar/today",
+    });
   });
 
   it("allows signed-in users on app pages", () => {

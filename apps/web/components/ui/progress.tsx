@@ -26,7 +26,10 @@ export function Progress({
       {...props}
     >
       <div
-        className={cn("h-full bg-primary transition-all duration-300 ease-in-out", indicatorClassName)}
+        className={cn(
+          "h-full bg-primary transition-all duration-300 ease-in-out",
+          indicatorClassName,
+        )}
         style={{ width: `${percentage}%` }}
       />
     </div>

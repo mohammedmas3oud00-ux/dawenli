@@ -19,19 +19,15 @@ export function QuranTracker({ habit, locale }: { habit: HabitWithTodayStatus; l
 
   const [pageInput, setPageInput] = useState<number | string>(initialCurrentPage);
 
-  const percent = targetPages > 0 ? Math.min(100, Math.round((currentPagesRead / targetPages) * 100)) : 0;
+  const percent =
+    targetPages > 0 ? Math.min(100, Math.round((currentPagesRead / targetPages) * 100)) : 0;
   const isCompleted = currentPagesRead >= targetPages;
 
   const handleAddPages = (additional: number) => {
     const newPagesRead = Math.max(0, currentPagesRead + additional);
     startTransition(async () => {
       const pageNum = Number(pageInput);
-      await logQuranAction(
-        habit.id,
-        newPagesRead,
-        pageNum > 0 ? pageNum : undefined,
-        metadata,
-      );
+      await logQuranAction(habit.id, newPagesRead, pageNum > 0 ? pageNum : undefined, metadata);
     });
   };
 
@@ -142,7 +138,10 @@ export function QuranTracker({ habit, locale }: { habit: HabitWithTodayStatus; l
         </div>
 
         {/* Current Mus'haf Page Bookmark */}
-        <form onSubmit={handleSaveCurrentPage} className="flex items-center gap-2 pt-1 border-t border-teal-500/10">
+        <form
+          onSubmit={handleSaveCurrentPage}
+          className="flex items-center gap-2 pt-1 border-t border-teal-500/10"
+        >
           <span className="text-xs text-muted-foreground whitespace-nowrap">
             {isAr ? "رقم الصفحة التي وصلت إليها:" : "Current Mus'haf page:"}
           </span>

@@ -1,14 +1,10 @@
 import { and, desc, eq, gte, isNull, lte, sql } from "drizzle-orm";
 import { AppError, logTimeEntrySchema, type LogTimeEntryInput } from "@bawsala/core";
 import type { Database } from "../client";
-import { projects, tasks, timeEntries, type TimeEntry } from "../schema";
-import { owned, softDelete } from "./_shared";
+import { tasks, timeEntries, type TimeEntry } from "../schema";
+import { owned } from "./_shared";
 
-export async function logTimeEntry(
-  db: Database,
-  userId: string,
-  raw: unknown,
-): Promise<TimeEntry> {
+export async function logTimeEntry(db: Database, userId: string, raw: unknown): Promise<TimeEntry> {
   const input: LogTimeEntryInput = logTimeEntrySchema.parse(raw);
 
   // If taskId provided but projectId omitted, lookup project from task

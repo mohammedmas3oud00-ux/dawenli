@@ -28,7 +28,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 function hourIn(timeZone: string, now: Date): number {
-  const hour = new Intl.DateTimeFormat("en-US", { timeZone, hour: "numeric", hour12: false }).format(now);
+  const hour = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hour: "numeric",
+    hour12: false,
+  }).format(now);
   return Number(hour) % 24;
 }
 
@@ -85,7 +89,9 @@ export default async function TodayPage({ params }: Props) {
               <div className="flex items-center gap-2">
                 <span className="size-2.5 rounded-full bg-primary animate-pulse" />
                 <CardTitle className="text-sm font-semibold">
-                  {isAr ? "أفضل مهمة للبدء بها الآن (مقترح الذكاء الاصطناعي)" : "Top Recommended Task Right Now"}
+                  {isAr
+                    ? "أفضل مهمة للبدء بها الآن (مقترح الذكاء الاصطناعي)"
+                    : "Top Recommended Task Right Now"}
                 </CardTitle>
               </div>
               <Badge variant="outline" className="text-xs bg-background/80">
@@ -149,9 +155,7 @@ export default async function TodayPage({ params }: Props) {
           <h3 className="text-sm font-semibold flex items-center gap-2">
             <Compass className="size-4 text-primary" />
             {isAr ? "مهام اليوم المجدولة" : "Today's Action Items"}
-            <span className="text-xs font-normal text-muted-foreground">
-              ({todayTasks.length})
-            </span>
+            <span className="text-xs font-normal text-muted-foreground">({todayTasks.length})</span>
           </h3>
           <Link
             href={`/${locale}/tasks`}
@@ -218,7 +222,9 @@ export default async function TodayPage({ params }: Props) {
                 <form action={seedSpiritualHabitsAction}>
                   <Button type="submit" variant="outline" size="sm" className="gap-2">
                     <Sparkles className="size-3.5 text-emerald-600" />
-                    <span>{isAr ? "تفعيل العبادات اليومية الآن" : "Enable Spiritual Routines Now"}</span>
+                    <span>
+                      {isAr ? "تفعيل العبادات اليومية الآن" : "Enable Spiritual Routines Now"}
+                    </span>
                   </Button>
                 </form>
               </div>

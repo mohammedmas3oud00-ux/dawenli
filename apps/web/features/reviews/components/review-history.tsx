@@ -64,7 +64,10 @@ export function ReviewHistory({ reviews, locale }: ReviewHistoryProps) {
                     </Badge>
                   )}
                   {rev.energy && (
-                    <Badge variant="outline" className="gap-1 text-xs border-amber-500/30 text-amber-700 dark:text-amber-300">
+                    <Badge
+                      variant="outline"
+                      className="gap-1 text-xs border-amber-500/30 text-amber-700 dark:text-amber-300"
+                    >
                       <Zap className="size-3 fill-amber-500 text-amber-500" />
                       <span>{rev.energy}/5</span>
                     </Badge>

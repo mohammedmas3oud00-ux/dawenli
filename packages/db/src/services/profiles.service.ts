@@ -56,6 +56,10 @@ export async function updateProfile(
   return updated;
 }
 
-export async function setCurrentEnergy(db: Database, userId: string, level: number): Promise<Profile> {
+export async function setCurrentEnergy(
+  db: Database,
+  userId: string,
+  level: number,
+): Promise<Profile> {
   return updateProfile(db, userId, { currentEnergy: level });
 }

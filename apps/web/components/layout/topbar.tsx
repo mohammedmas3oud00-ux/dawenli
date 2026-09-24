@@ -19,7 +19,13 @@ export function Topbar({ displayName }: { displayName: string | null }) {
         <LocaleSwitcher />
         <ThemeToggle />
         <form action={signOut}>
-          <Button type="submit" variant="ghost" size="icon" aria-label={t("signOut")} title={t("signOut")}>
+          <Button
+            type="submit"
+            variant="ghost"
+            size="icon"
+            aria-label={t("signOut")}
+            title={t("signOut")}
+          >
             <LogOut />
           </Button>
         </form>

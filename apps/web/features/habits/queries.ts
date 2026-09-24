@@ -3,7 +3,9 @@ import { db } from "@/lib/db";
 import { getProfileForUser } from "@/features/settings/queries";
 import type { CurrentUser } from "@/lib/auth";
 
-export async function getHabitsWithStatusForUser(user: CurrentUser): Promise<HabitWithTodayStatus[]> {
+export async function getHabitsWithStatusForUser(
+  user: CurrentUser,
+): Promise<HabitWithTodayStatus[]> {
   const profile = await getProfileForUser(user);
   const now = new Date();
   const today = new Intl.DateTimeFormat("en-CA", {

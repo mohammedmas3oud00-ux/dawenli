@@ -20,7 +20,11 @@ import {
 
 export type GoalWithProgress = Goal & ProgressInfo;
 
-async function withProgress(db: Database, userId: string, rows: Goal[]): Promise<GoalWithProgress[]> {
+async function withProgress(
+  db: Database,
+  userId: string,
+  rows: Goal[],
+): Promise<GoalWithProgress[]> {
   const map = await progressMap(
     db,
     userId,
@@ -51,7 +55,11 @@ export async function listGoals(
   return withProgress(db, userId, rows);
 }
 
-export async function getGoal(db: Database, userId: string, id: string): Promise<GoalWithProgress | null> {
+export async function getGoal(
+  db: Database,
+  userId: string,
+  id: string,
+): Promise<GoalWithProgress | null> {
   const [row] = await db
     .select()
     .from(goals)
@@ -72,7 +80,11 @@ function toRow(data: Partial<CreateGoalInput>) {
   };
 }
 
-export async function createGoal(db: Database, userId: string, input: CreateGoalInput): Promise<Goal> {
+export async function createGoal(
+  db: Database,
+  userId: string,
+  input: CreateGoalInput,
+): Promise<Goal> {
   const data = createGoalSchema.parse(input);
   if (data.parentId) await assertOwnedGoal(db, userId, data.parentId);
   const { metricTarget, metricCurrent, manualProgress, ...rest } = data;
@@ -97,7 +109,8 @@ export async function updateGoal(
 ): Promise<Goal> {
   const data = updateGoalSchema.parse(input);
   if (data.parentId) {
-    if (data.parentId === id) throw new AppError("VALIDATION_FAILED", "A goal cannot be its own parent");
+    if (data.parentId === id)
+      throw new AppError("VALIDATION_FAILED", "A goal cannot be its own parent");
     await assertOwnedGoal(db, userId, data.parentId);
   }
   const [row] = await db

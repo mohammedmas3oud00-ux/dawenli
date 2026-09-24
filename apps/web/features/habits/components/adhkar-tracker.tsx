@@ -66,9 +66,7 @@ export function AdhkarTracker({ habit, locale }: { habit: HabitWithTodayStatus; 
           <div className="flex items-center gap-2.5">
             <div
               className={`p-2 rounded-md ${
-                morningDone
-                  ? "bg-amber-500 text-white"
-                  : "bg-muted text-muted-foreground"
+                morningDone ? "bg-amber-500 text-white" : "bg-muted text-muted-foreground"
               }`}
             >
               <Sun className="size-4" />
@@ -108,9 +106,7 @@ export function AdhkarTracker({ habit, locale }: { habit: HabitWithTodayStatus; 
           <div className="flex items-center gap-2.5">
             <div
               className={`p-2 rounded-md ${
-                eveningDone
-                  ? "bg-indigo-600 text-white"
-                  : "bg-muted text-muted-foreground"
+                eveningDone ? "bg-indigo-600 text-white" : "bg-muted text-muted-foreground"
               }`}
             >
               <Moon className="size-4" />

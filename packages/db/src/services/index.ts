@@ -9,4 +9,3 @@ export * from "./tasks.service";
 export * from "./visions.service";
 export * from "./time.service";
 export * from "./knowledge.service";
-

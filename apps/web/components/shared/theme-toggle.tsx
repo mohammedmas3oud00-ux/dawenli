@@ -1,7 +1,7 @@
 "use client";
 
 import { Moon, Sun } from "lucide-react";
-import { useTheme } from "next-themes";
+import { useTheme } from "@/components/providers";
 import { useTranslations } from "next-intl";
 import { useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,11 @@ export function ThemeToggle() {
   const t = useTranslations("theme");
   const { resolvedTheme, setTheme } = useTheme();
   // Avoid hydration mismatch: theme is unknown until mounted on the client.
-  const mounted = useSyncExternalStore(subscribe, () => true, () => false);
+  const mounted = useSyncExternalStore(
+    subscribe,
+    () => true,
+    () => false,
+  );
   const isDark = mounted && resolvedTheme === "dark";
 
   return (

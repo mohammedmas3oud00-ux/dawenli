@@ -103,9 +103,15 @@ export type ResourceType = (typeof RESOURCE_TYPES)[number];
 export const RESOURCE_STATUSES = ["queued", "in_progress", "completed", "abandoned"] as const;
 export type ResourceStatus = (typeof RESOURCE_STATUSES)[number];
 
-export const NOTE_CATEGORIES = ["idea", "concept", "meeting", "summary", "journal", "general"] as const;
+export const NOTE_CATEGORIES = [
+  "idea",
+  "concept",
+  "meeting",
+  "summary",
+  "journal",
+  "general",
+] as const;
 export type NoteCategory = (typeof NOTE_CATEGORIES)[number];
 
 export const TIME_SESSION_MODES = ["pomodoro", "deep_work", "flowtime", "manual"] as const;
 export type TimeSessionMode = (typeof TIME_SESSION_MODES)[number];
-

@@ -365,5 +365,3 @@ describe("Knowledge Service", () => {
     expect(resourcesList.some((r) => r.id === resource.id)).toBe(true);
   });
 });
-
-

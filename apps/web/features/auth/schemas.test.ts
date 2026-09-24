@@ -23,9 +23,9 @@ describe("auth schemas", () => {
   });
 
   it("requires a display name on registration", () => {
-    expect(registerSchema.safeParse({ email: "a@b.co", password: "12345678", displayName: " " }).success).toBe(
-      false,
-    );
+    expect(
+      registerSchema.safeParse({ email: "a@b.co", password: "12345678", displayName: " " }).success,
+    ).toBe(false);
   });
 });
 

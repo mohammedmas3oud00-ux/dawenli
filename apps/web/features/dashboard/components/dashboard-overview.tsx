@@ -18,7 +18,13 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { GoalWithProgress, ProjectWithProgress, Task, HabitWithTodayStatus, Review } from "@bawsala/db";
+import type {
+  GoalWithProgress,
+  ProjectWithProgress,
+  Task,
+  HabitWithTodayStatus,
+  Review,
+} from "@bawsala/db";
 
 interface DashboardOverviewProps {
   locale: string;
@@ -59,7 +65,9 @@ export function DashboardOverview({
   const taskCompletionRate =
     tasks.length > 0 ? Math.round((completedTasks.length / tasks.length) * 100) : 0;
   const urgentImportantTasks = tasks.filter(
-    (t) => (t.eisenhower === "q1" || (t.importance >= 4 && (t.urgency ? t.urgency >= 4 : false))) && t.status !== "done",
+    (t) =>
+      (t.eisenhower === "q1" || (t.importance >= 4 && (t.urgency ? t.urgency >= 4 : false))) &&
+      t.status !== "done",
   );
 
   const completedHabits = habits.filter((h) => h.loggedToday);
@@ -102,7 +110,8 @@ export function DashboardOverview({
             <div className="flex items-baseline justify-between">
               <span className="text-2xl font-bold">{avgProjectProgress}%</span>
               <span className="text-xs text-muted-foreground">
-                {activeProjects.length} {isAr ? "نشط" : "active"} / {completedProjects.length} {isAr ? "مكتمل" : "done"}
+                {activeProjects.length} {isAr ? "نشط" : "active"} / {completedProjects.length}{" "}
+                {isAr ? "مكتمل" : "done"}
               </span>
             </div>
             <Progress value={avgProjectProgress} className="h-1.5" />
@@ -141,7 +150,9 @@ export function DashboardOverview({
               <span className="text-2xl font-bold">{habitCompletionRate}%</span>
               <div className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 font-medium">
                 <Flame className="size-3 fill-amber-500" />
-                <span>{maxStreak} {isAr ? "أيام متتالية" : "d streak"}</span>
+                <span>
+                  {maxStreak} {isAr ? "أيام متتالية" : "d streak"}
+                </span>
               </div>
             </div>
             <Progress value={habitCompletionRate} className="h-1.5" />
@@ -159,7 +170,11 @@ export function DashboardOverview({
               <div>
                 <CardTitle className="text-base flex items-center gap-2">
                   <TrendingUp className="size-4 text-primary" />
-                  <span>{isAr ? "أولويات مصفوفة آيزنهاور (هام وعاجل)" : "Eisenhower Top Priorities (Q1)"}</span>
+                  <span>
+                    {isAr
+                      ? "أولويات مصفوفة آيزنهاور (هام وعاجل)"
+                      : "Eisenhower Top Priorities (Q1)"}
+                  </span>
                 </CardTitle>
                 <CardDescription className="text-xs mt-1">
                   {isAr
@@ -180,7 +195,9 @@ export function DashboardOverview({
                 <div className="py-8 text-center flex flex-col items-center gap-2 text-muted-foreground">
                   <CheckCircle2 className="size-8 text-emerald-500/60" />
                   <p className="text-sm font-medium">
-                    {isAr ? "رائع! لا توجد مهام طارئة متراكمة في الربع الأول." : "Clear! No urgent tasks waiting in Quadrant 1."}
+                    {isAr
+                      ? "رائع! لا توجد مهام طارئة متراكمة في الربع الأول."
+                      : "Clear! No urgent tasks waiting in Quadrant 1."}
                   </p>
                   <p className="text-xs">
                     {isAr
@@ -202,7 +219,10 @@ export function DashboardOverview({
                             {task.estimateMinutes}m
                           </Badge>
                         )}
-                        <Badge variant="secondary" className="text-xs bg-red-500/10 text-red-600 border-red-200">
+                        <Badge
+                          variant="secondary"
+                          className="text-xs bg-red-500/10 text-red-600 border-red-200"
+                        >
                           {isAr ? "عاجل" : "Urgent"}
                         </Badge>
                       </div>
@@ -218,7 +238,9 @@ export function DashboardOverview({
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
                 <Sparkles className="size-4 text-primary" />
-                <span>{isAr ? "معمارية الربط الهرمي (Bottom-Up Alignment)" : "Life OS Hierarchy Rollup"}</span>
+                <span>
+                  {isAr ? "معمارية الربط الهرمي (Bottom-Up Alignment)" : "Life OS Hierarchy Rollup"}
+                </span>
               </CardTitle>
               <CardDescription className="text-xs">
                 {isAr
@@ -229,28 +251,38 @@ export function DashboardOverview({
             <CardContent>
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-center">
                 <div className="p-3 rounded-lg border bg-card flex flex-col gap-1 items-center">
-                  <span className="text-xs text-muted-foreground">{isAr ? "المستوى 4: الرؤية" : "Level 4: Vision"}</span>
-                  <span className="text-sm font-bold text-primary">{isAr ? "بوصلة الحياة" : "Life Compass"}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {isAr ? "المستوى 4: الرؤية" : "Level 4: Vision"}
+                  </span>
+                  <span className="text-sm font-bold text-primary">
+                    {isAr ? "بوصلة الحياة" : "Life Compass"}
+                  </span>
                   <Badge variant="outline" className="text-[10px] mt-1">
                     {goals.length} {isAr ? "أهداف مرتبطة" : "linked goals"}
                   </Badge>
                 </div>
                 <div className="p-3 rounded-lg border bg-card flex flex-col gap-1 items-center">
-                  <span className="text-xs text-muted-foreground">{isAr ? "المستوى 3: الأهداف" : "Level 3: Goals"}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {isAr ? "المستوى 3: الأهداف" : "Level 3: Goals"}
+                  </span>
                   <span className="text-sm font-bold">{goals.length}</span>
                   <Badge variant="secondary" className="text-[10px] mt-1">
                     {avgGoalProgress}% {isAr ? "تقدم" : "avg"}
                   </Badge>
                 </div>
                 <div className="p-3 rounded-lg border bg-card flex flex-col gap-1 items-center">
-                  <span className="text-xs text-muted-foreground">{isAr ? "المستوى 2: المشاريع" : "Level 2: Projects"}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {isAr ? "المستوى 2: المشاريع" : "Level 2: Projects"}
+                  </span>
                   <span className="text-sm font-bold">{projects.length}</span>
                   <Badge variant="secondary" className="text-[10px] mt-1">
                     {activeProjects.length} {isAr ? "نشط" : "active"}
                   </Badge>
                 </div>
                 <div className="p-3 rounded-lg border bg-card flex flex-col gap-1 items-center">
-                  <span className="text-xs text-muted-foreground">{isAr ? "المستوى 1: اليومي" : "Level 1: Actions"}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {isAr ? "المستوى 1: اليومي" : "Level 1: Actions"}
+                  </span>
                   <span className="text-sm font-bold">{tasks.length}</span>
                   <Badge variant="secondary" className="text-[10px] mt-1">
                     {completedTasks.length} {isAr ? "منجز" : "done"}
@@ -274,7 +306,9 @@ export function DashboardOverview({
             <CardContent className="flex flex-col gap-4">
               <div className="flex items-center justify-between p-3 rounded-lg bg-muted/40 border">
                 <div>
-                  <div className="text-xs text-muted-foreground">{isAr ? "مستوى الطاقة الحالي" : "Current Energy"}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {isAr ? "مستوى الطاقة الحالي" : "Current Energy"}
+                  </div>
                   <div className="text-sm font-semibold mt-0.5">
                     {currentEnergy ? `${currentEnergy} / 5` : isAr ? "غير محدد" : "Not set"}
                   </div>
@@ -327,8 +361,8 @@ export function DashboardOverview({
                     ? `تم إكمال مراجعة اليوم بنجاح (المزاج: ${latestReview.mood ?? 4}/5، الطاقة: ${latestReview.energy ?? 3}/5).`
                     : `Today's review completed (Mood: ${latestReview.mood ?? 4}/5, Energy: ${latestReview.energy ?? 3}/5).`
                   : isAr
-                  ? "لم تقم بتسجيل مراجعة هذا المساء بعد. دون إنجازاتك ودروس اليوم."
-                  : "You haven't recorded your evening reflection yet. Capture your wins and lessons."}
+                    ? "لم تقم بتسجيل مراجعة هذا المساء بعد. دون إنجازاتك ودروس اليوم."
+                    : "You haven't recorded your evening reflection yet. Capture your wins and lessons."}
               </p>
               <Link
                 href={`/${locale}/reviews`}
@@ -345,8 +379,8 @@ export function DashboardOverview({
                     ? "عرض أو تعديل المراجعة"
                     : "View or Edit Reflection"
                   : isAr
-                  ? "إجراء المراجعة الآن"
-                  : "Complete Reflection Now"}
+                    ? "إجراء المراجعة الآن"
+                    : "Complete Reflection Now"}
               </Link>
             </CardContent>
           </Card>

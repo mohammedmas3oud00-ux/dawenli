@@ -8,13 +8,13 @@ Vision → Goals → Areas → Projects → Tasks → Daily Actions → Habits �
 
 ## الوثائق
 
-| الوثيقة | المحتوى |
-|---|---|
-| [docs/architecture.md](docs/architecture.md) | الرؤية، المبادئ، مخطط النظام، Frontend/Backend، Auth، Storage، Jobs، محرك الأولويات، التقدم، AI، الموبايل، مسار SaaS، ADRs |
-| [docs/database-schema.md](docs/database-schema.md) | ERD، الجداول، RLS، Functions/Triggers، ترتيب Migrations |
-| [docs/project-structure.md](docs/project-structure.md) | هيكل الـ Monorepo وقواعد التنظيم |
-| [docs/roadmap.md](docs/roadmap.md) | المراحل الست مع Definition of Done |
-| [docs/deployment.md](docs/deployment.md) | Vercel + Supabase + GitLab CI + الدومين الفرعي (مجاني بالكامل) |
+| الوثيقة                                                | المحتوى                                                                                                                    |
+| ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| [docs/architecture.md](docs/architecture.md)           | الرؤية، المبادئ، مخطط النظام، Frontend/Backend، Auth، Storage، Jobs، محرك الأولويات، التقدم، AI، الموبايل، مسار SaaS، ADRs |
+| [docs/database-schema.md](docs/database-schema.md)     | ERD، الجداول، RLS، Functions/Triggers، ترتيب Migrations                                                                    |
+| [docs/project-structure.md](docs/project-structure.md) | هيكل الـ Monorepo وقواعد التنظيم                                                                                           |
+| [docs/roadmap.md](docs/roadmap.md)                     | المراحل الست مع Definition of Done                                                                                         |
+| [docs/deployment.md](docs/deployment.md)               | Vercel + Supabase + GitLab CI + الدومين الفرعي (مجاني بالكامل)                                                             |
 
 ## الـ Stack
 

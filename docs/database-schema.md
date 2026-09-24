@@ -75,20 +75,20 @@ erDiagram
 
 **`profiles`** (id = auth.users.id، بدون user_id)
 
-| العمود | النوع | ملاحظات |
-|---|---|---|
-| id | uuid PK → auth.users | |
-| display_name | text | |
-| avatar_url | text | |
-| locale | text default 'ar' | `ar` / `en` |
-| timezone | text default 'Africa/Cairo' | لحساب اليوم والـ Streaks |
-| theme | text default 'system' | `light` / `dark` / `system` |
-| accent_color | text default 'neutral' | |
-| week_starts_on | smallint default 6 | 6 = السبت |
-| current_energy | smallint | 1..5 يُحدَّث من المراجعة اليومية |
-| priority_weights | jsonb | تخصيص أوزان محرك الأولويات |
-| role | text default 'user' | |
-| onboarding_completed_at | timestamptz | |
+| العمود                  | النوع                       | ملاحظات                          |
+| ----------------------- | --------------------------- | -------------------------------- |
+| id                      | uuid PK → auth.users        |                                  |
+| display_name            | text                        |                                  |
+| avatar_url              | text                        |                                  |
+| locale                  | text default 'ar'           | `ar` / `en`                      |
+| timezone                | text default 'Africa/Cairo' | لحساب اليوم والـ Streaks         |
+| theme                   | text default 'system'       | `light` / `dark` / `system`      |
+| accent_color            | text default 'neutral'      |                                  |
+| week_starts_on          | smallint default 6          | 6 = السبت                        |
+| current_energy          | smallint                    | 1..5 يُحدَّث من المراجعة اليومية |
+| priority_weights        | jsonb                       | تخصيص أوزان محرك الأولويات       |
+| role                    | text default 'user'         |                                  |
+| onboarding_completed_at | timestamptz                 |                                  |
 
 ---
 
@@ -96,99 +96,99 @@ erDiagram
 
 **`visions`**
 
-| العمود | النوع | ملاحظات |
-|---|---|---|
-| title | text not null | |
-| statement | text | نص الرؤية |
-| horizon_years | smallint default 5 | |
-| is_active | boolean default true | رؤية نشطة واحدة عادةً |
+| العمود        | النوع                | ملاحظات               |
+| ------------- | -------------------- | --------------------- |
+| title         | text not null        |                       |
+| statement     | text                 | نص الرؤية             |
+| horizon_years | smallint default 5   |                       |
+| is_active     | boolean default true | رؤية نشطة واحدة عادةً |
 
 **`areas`** (مجالات الحياة: صحة، عمل، إيمان، عائلة...)
 
-| العمود | النوع | ملاحظات |
-|---|---|---|
-| name | text not null | |
-| icon | text | اسم أيقونة lucide |
-| color | text | من palette محدودة |
-| sort_order | integer | |
+| العمود     | النوع         | ملاحظات           |
+| ---------- | ------------- | ----------------- |
+| name       | text not null |                   |
+| icon       | text          | اسم أيقونة lucide |
+| color      | text          | من palette محدودة |
+| sort_order | integer       |                   |
 
 **`goals`**
 
-| العمود | النوع | ملاحظات |
-|---|---|---|
-| vision_id | uuid → visions | nullable |
-| area_id | uuid → areas | nullable |
-| parent_id | uuid → goals | هرم: life → annual → quarterly → monthly |
-| title | text not null | |
-| description | text | |
-| horizon | text not null | `life` / `annual` / `quarterly` / `monthly` |
-| period_start | date | |
-| period_end | date | |
-| status | text default 'active' | `draft` / `active` / `achieved` / `abandoned` / `paused` |
-| priority | smallint default 3 | 1..5 يدخل في `goal_contribution` |
-| metric_type | text | `percent` / `number` / `boolean` |
-| metric_target | numeric | مثال: 24 كتاباً |
-| metric_current | numeric | |
-| manual_progress | numeric | 0..100 يتجاوز الحساب الآلي إن وُجد |
-| sort_order | integer | |
+| العمود          | النوع                 | ملاحظات                                                  |
+| --------------- | --------------------- | -------------------------------------------------------- |
+| vision_id       | uuid → visions        | nullable                                                 |
+| area_id         | uuid → areas          | nullable                                                 |
+| parent_id       | uuid → goals          | هرم: life → annual → quarterly → monthly                 |
+| title           | text not null         |                                                          |
+| description     | text                  |                                                          |
+| horizon         | text not null         | `life` / `annual` / `quarterly` / `monthly`              |
+| period_start    | date                  |                                                          |
+| period_end      | date                  |                                                          |
+| status          | text default 'active' | `draft` / `active` / `achieved` / `abandoned` / `paused` |
+| priority        | smallint default 3    | 1..5 يدخل في `goal_contribution`                         |
+| metric_type     | text                  | `percent` / `number` / `boolean`                         |
+| metric_target   | numeric               | مثال: 24 كتاباً                                          |
+| metric_current  | numeric               |                                                          |
+| manual_progress | numeric               | 0..100 يتجاوز الحساب الآلي إن وُجد                       |
+| sort_order      | integer               |                                                          |
 
 Index: `(user_id, horizon, status)`, `(parent_id)`.
 
 **`projects`**
 
-| العمود | النوع | ملاحظات |
-|---|---|---|
-| goal_id | uuid → goals | nullable |
-| area_id | uuid → areas | nullable |
-| title | text not null | |
-| description | text | |
-| status | text default 'active' | `backlog` / `active` / `on_hold` / `completed` / `archived` |
-| weight | numeric default 1 | وزنه داخل الهدف |
-| start_date | date | |
-| due_date | date | |
-| completed_at | timestamptz | |
-| color | text | |
-| sort_order | integer | |
+| العمود       | النوع                 | ملاحظات                                                     |
+| ------------ | --------------------- | ----------------------------------------------------------- |
+| goal_id      | uuid → goals          | nullable                                                    |
+| area_id      | uuid → areas          | nullable                                                    |
+| title        | text not null         |                                                             |
+| description  | text                  |                                                             |
+| status       | text default 'active' | `backlog` / `active` / `on_hold` / `completed` / `archived` |
+| weight       | numeric default 1     | وزنه داخل الهدف                                             |
+| start_date   | date                  |                                                             |
+| due_date     | date                  |                                                             |
+| completed_at | timestamptz           |                                                             |
+| color        | text                  |                                                             |
+| sort_order   | integer               |                                                             |
 
 **`tasks`**
 
-| العمود | النوع | ملاحظات |
-|---|---|---|
-| project_id | uuid → projects | nullable (Inbox) |
-| goal_id | uuid → goals | مساهمة مباشرة دون مشروع |
-| parent_task_id | uuid → tasks | Subtasks |
-| title | text not null | |
-| description | text | |
-| status | text default 'todo' | `inbox` / `todo` / `in_progress` / `done` / `cancelled` |
-| importance | smallint default 3 | 1..5 |
-| urgency | smallint | 1..5 يُحسب من due_date إن لم يُحدد يدوياً |
-| impact | smallint default 3 | 1..5 |
-| difficulty | smallint default 3 | 1..5 |
-| energy | text default 'medium' | `low` / `medium` / `high` |
-| estimate_minutes | integer | |
-| actual_minutes | integer | يُجمع من time_entries |
-| due_date | date | |
-| due_time | time | |
-| scheduled_date | date | يوم التنفيذ المخطط (Daily Actions) |
-| priority_score | numeric | يُحسب في Service ويُخزَّن للترتيب |
-| eisenhower | text | `q1` / `q2` / `q3` / `q4` مشتق |
-| recurrence_rule | text | RFC 5545 RRULE |
-| recurrence_parent_id | uuid → tasks | |
-| completed_at | timestamptz | |
-| sort_order | integer | |
+| العمود               | النوع                 | ملاحظات                                                 |
+| -------------------- | --------------------- | ------------------------------------------------------- |
+| project_id           | uuid → projects       | nullable (Inbox)                                        |
+| goal_id              | uuid → goals          | مساهمة مباشرة دون مشروع                                 |
+| parent_task_id       | uuid → tasks          | Subtasks                                                |
+| title                | text not null         |                                                         |
+| description          | text                  |                                                         |
+| status               | text default 'todo'   | `inbox` / `todo` / `in_progress` / `done` / `cancelled` |
+| importance           | smallint default 3    | 1..5                                                    |
+| urgency              | smallint              | 1..5 يُحسب من due_date إن لم يُحدد يدوياً               |
+| impact               | smallint default 3    | 1..5                                                    |
+| difficulty           | smallint default 3    | 1..5                                                    |
+| energy               | text default 'medium' | `low` / `medium` / `high`                               |
+| estimate_minutes     | integer               |                                                         |
+| actual_minutes       | integer               | يُجمع من time_entries                                   |
+| due_date             | date                  |                                                         |
+| due_time             | time                  |                                                         |
+| scheduled_date       | date                  | يوم التنفيذ المخطط (Daily Actions)                      |
+| priority_score       | numeric               | يُحسب في Service ويُخزَّن للترتيب                       |
+| eisenhower           | text                  | `q1` / `q2` / `q3` / `q4` مشتق                          |
+| recurrence_rule      | text                  | RFC 5545 RRULE                                          |
+| recurrence_parent_id | uuid → tasks          |                                                         |
+| completed_at         | timestamptz           |                                                         |
+| sort_order           | integer               |                                                         |
 
 Indexes: `(user_id, scheduled_date)`, `(user_id, status, due_date)`, `(project_id)`, `(user_id, priority_score desc)`.
 
 **`progress_cache`**
 
-| العمود | النوع | ملاحظات |
-|---|---|---|
-| entity_type | text | `project` / `goal` / `vision` |
-| entity_id | uuid | |
-| progress | numeric | 0..100 |
-| total_tasks | integer | |
-| done_tasks | integer | |
-| computed_at | timestamptz | |
+| العمود      | النوع       | ملاحظات                       |
+| ----------- | ----------- | ----------------------------- |
+| entity_type | text        | `project` / `goal` / `vision` |
+| entity_id   | uuid        |                               |
+| progress    | numeric     | 0..100                        |
+| total_tasks | integer     |                               |
+| done_tasks  | integer     |                               |
+| computed_at | timestamptz |                               |
 
 PK: `(entity_type, entity_id)`. يُحدَّث عبر trigger على `tasks` و `projects` و `goals`.
 
@@ -198,47 +198,47 @@ PK: `(entity_type, entity_id)`. يُحدَّث عبر trigger على `tasks` و 
 
 **`habit_categories`** (قابلة للتخصيص، مع فئات مبدئية)
 
-| العمود | النوع | ملاحظات |
-|---|---|---|
-| name | text not null | |
-| kind | text default 'general' | `general` / `spiritual` |
-| icon | text | |
-| sort_order | integer | |
+| العمود     | النوع                  | ملاحظات                 |
+| ---------- | ---------------------- | ----------------------- |
+| name       | text not null          |                         |
+| kind       | text default 'general' | `general` / `spiritual` |
+| icon       | text                   |                         |
+| sort_order | integer                |                         |
 
 فئات مبدئية تُنشأ عند التسجيل: صحة، تعلم، عمل، علاقات، **قرآن**، **صلاة**، **أذكار**، **تأمل وتفكر**.
 
 **`habits`**
 
-| العمود | النوع | ملاحظات |
-|---|---|---|
-| category_id | uuid → habit_categories | |
-| goal_id | uuid → goals | nullable |
-| name | text not null | |
-| description | text | |
-| frequency | text not null | `daily` / `weekly` / `monthly` |
-| target_count | integer default 1 | مرات لكل فترة |
-| days_of_week | smallint[] | للعادات اليومية المحددة بأيام |
-| value_type | text default 'boolean' | `boolean` / `count` / `duration` / `pages` |
-| target_value | numeric | مثال: 5 صفحات، 20 دقيقة |
-| difficulty | smallint default 3 | 1..5 |
-| impact_score | smallint default 3 | 1..5 |
-| reminder_time | time | |
-| current_streak | integer default 0 | cache |
-| longest_streak | integer default 0 | cache |
-| is_archived | boolean default false | |
-| preset | text | مثال: `prayers` يفعّل واجهة الصلوات الخمس |
-| sort_order | integer | |
+| العمود         | النوع                   | ملاحظات                                    |
+| -------------- | ----------------------- | ------------------------------------------ |
+| category_id    | uuid → habit_categories |                                            |
+| goal_id        | uuid → goals            | nullable                                   |
+| name           | text not null           |                                            |
+| description    | text                    |                                            |
+| frequency      | text not null           | `daily` / `weekly` / `monthly`             |
+| target_count   | integer default 1       | مرات لكل فترة                              |
+| days_of_week   | smallint[]              | للعادات اليومية المحددة بأيام              |
+| value_type     | text default 'boolean'  | `boolean` / `count` / `duration` / `pages` |
+| target_value   | numeric                 | مثال: 5 صفحات، 20 دقيقة                    |
+| difficulty     | smallint default 3      | 1..5                                       |
+| impact_score   | smallint default 3      | 1..5                                       |
+| reminder_time  | time                    |                                            |
+| current_streak | integer default 0       | cache                                      |
+| longest_streak | integer default 0       | cache                                      |
+| is_archived    | boolean default false   |                                            |
+| preset         | text                    | مثال: `prayers` يفعّل واجهة الصلوات الخمس  |
+| sort_order     | integer                 |                                            |
 
 **`habit_logs`**
 
-| العمود | النوع | ملاحظات |
-|---|---|---|
-| habit_id | uuid → habits | |
-| log_date | date not null | |
-| value | numeric default 1 | |
-| completed | boolean | يُحسب: value >= target_value |
-| metadata | jsonb | مثال الصلاة: `{"fajr":"on_time","dhuhr":"late",...}` |
-| note | text | |
+| العمود    | النوع             | ملاحظات                                              |
+| --------- | ----------------- | ---------------------------------------------------- |
+| habit_id  | uuid → habits     |                                                      |
+| log_date  | date not null     |                                                      |
+| value     | numeric default 1 |                                                      |
+| completed | boolean           | يُحسب: value >= target_value                         |
+| metadata  | jsonb             | مثال الصلاة: `{"fajr":"on_time","dhuhr":"late",...}` |
+| note      | text              |                                                      |
 
 Unique: `(habit_id, log_date)`.
 
@@ -248,30 +248,30 @@ Unique: `(habit_id, log_date)`.
 
 **`templates`**
 
-| العمود | النوع | ملاحظات |
-|---|---|---|
-| user_id | uuid | null = قالب نظام |
-| type | text not null | `daily_review` / `weekly_review` / `monthly_review` / `quarterly_review` / `yearly_review` / `daily_plan` / `project` / `goal` / `journal` / `learning_plan` |
-| name | text not null | |
-| schema | jsonb not null | مصفوفة حقول: `[{key, label_ar, label_en, type, required}]` |
-| is_default | boolean | |
+| العمود     | النوع          | ملاحظات                                                                                                                                                      |
+| ---------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| user_id    | uuid           | null = قالب نظام                                                                                                                                             |
+| type       | text not null  | `daily_review` / `weekly_review` / `monthly_review` / `quarterly_review` / `yearly_review` / `daily_plan` / `project` / `goal` / `journal` / `learning_plan` |
+| name       | text not null  |                                                                                                                                                              |
+| schema     | jsonb not null | مصفوفة حقول: `[{key, label_ar, label_en, type, required}]`                                                                                                   |
+| is_default | boolean        |                                                                                                                                                              |
 
 **`reviews`**
 
-| العمود | النوع | ملاحظات |
-|---|---|---|
-| template_id | uuid → templates | |
-| type | text not null | `daily` / `weekly` / `monthly` / `quarterly` / `yearly` |
-| period_start | date not null | |
-| period_end | date not null | |
-| answers | jsonb | إجابات حسب schema القالب |
-| mood | smallint | 1..5 |
-| energy | smallint | 1..5 |
-| wins | text[] | |
-| failures | text[] | |
-| lessons | text[] | |
-| snapshot | jsonb | لقطة إحصائية وقت المراجعة (مهام، عادات، وقت) |
-| completed_at | timestamptz | |
+| العمود       | النوع            | ملاحظات                                                 |
+| ------------ | ---------------- | ------------------------------------------------------- |
+| template_id  | uuid → templates |                                                         |
+| type         | text not null    | `daily` / `weekly` / `monthly` / `quarterly` / `yearly` |
+| period_start | date not null    |                                                         |
+| period_end   | date not null    |                                                         |
+| answers      | jsonb            | إجابات حسب schema القالب                                |
+| mood         | smallint         | 1..5                                                    |
+| energy       | smallint         | 1..5                                                    |
+| wins         | text[]           |                                                         |
+| failures     | text[]           |                                                         |
+| lessons      | text[]           |                                                         |
+| snapshot     | jsonb            | لقطة إحصائية وقت المراجعة (مهام، عادات، وقت)            |
+| completed_at | timestamptz      |                                                         |
 
 Unique: `(user_id, type, period_start)`.
 
@@ -281,18 +281,18 @@ Unique: `(user_id, type, period_start)`.
 
 **`notes`**
 
-| العمود | النوع | ملاحظات |
-|---|---|---|
-| title | text | |
-| content | jsonb | Tiptap JSON |
-| content_text | text | نص خام للبحث (tsvector generated) |
-| type | text default 'note' | `note` / `journal` / `book_note` / `course_note` / `resource` |
-| para | text | `project` / `area` / `resource` / `archive` |
-| project_id | uuid → projects | |
-| area_id | uuid → areas | |
-| source_type | text | `book` / `course` |
-| source_id | uuid | |
-| is_pinned | boolean | |
+| العمود       | النوع               | ملاحظات                                                       |
+| ------------ | ------------------- | ------------------------------------------------------------- |
+| title        | text                |                                                               |
+| content      | jsonb               | Tiptap JSON                                                   |
+| content_text | text                | نص خام للبحث (tsvector generated)                             |
+| type         | text default 'note' | `note` / `journal` / `book_note` / `course_note` / `resource` |
+| para         | text                | `project` / `area` / `resource` / `archive`                   |
+| project_id   | uuid → projects     |                                                               |
+| area_id      | uuid → areas        |                                                               |
+| source_type  | text                | `book` / `course`                                             |
+| source_id    | uuid                |                                                               |
+| is_pinned    | boolean             |                                                               |
 
 Index: `gin(to_tsvector('simple', content_text))`.
 
@@ -304,14 +304,14 @@ Index: `gin(to_tsvector('simple', content_text))`.
 
 **`attachments`** (polymorphic)
 
-| العمود | النوع | ملاحظات |
-|---|---|---|
-| entity_type | text | `note` / `task` / `project` / `review` / `book` |
-| entity_id | uuid | |
-| storage_path | text not null | |
-| file_name | text | |
-| mime_type | text | |
-| size_bytes | integer | |
+| العمود       | النوع         | ملاحظات                                         |
+| ------------ | ------------- | ----------------------------------------------- |
+| entity_type  | text          | `note` / `task` / `project` / `review` / `book` |
+| entity_id    | uuid          |                                                 |
+| storage_path | text not null |                                                 |
+| file_name    | text          |                                                 |
+| mime_type    | text          |                                                 |
+| size_bytes   | integer       |                                                 |
 
 ---
 
@@ -335,17 +335,17 @@ Index: `gin(to_tsvector('simple', content_text))`.
 
 **`time_entries`**
 
-| العمود | النوع | ملاحظات |
-|---|---|---|
-| task_id | uuid → tasks | nullable |
-| project_id | uuid → projects | nullable |
-| category | text | `deep_work` / `shallow` / `meeting` / `learning` / `break` / `distraction` |
-| session_type | text | `manual` / `pomodoro` / `flowtime` / `deep_work` |
-| started_at | timestamptz not null | |
-| ended_at | timestamptz | null = جارية |
-| duration_seconds | integer | generated |
-| focus_rating | smallint | 1..5 |
-| note | text | |
+| العمود           | النوع                | ملاحظات                                                                    |
+| ---------------- | -------------------- | -------------------------------------------------------------------------- |
+| task_id          | uuid → tasks         | nullable                                                                   |
+| project_id       | uuid → projects      | nullable                                                                   |
+| category         | text                 | `deep_work` / `shallow` / `meeting` / `learning` / `break` / `distraction` |
+| session_type     | text                 | `manual` / `pomodoro` / `flowtime` / `deep_work`                           |
+| started_at       | timestamptz not null |                                                                            |
+| ended_at         | timestamptz          | null = جارية                                                               |
+| duration_seconds | integer              | generated                                                                  |
+| focus_rating     | smallint             | 1..5                                                                       |
+| note             | text                 |                                                                            |
 
 Index: `(user_id, started_at desc)`.
 

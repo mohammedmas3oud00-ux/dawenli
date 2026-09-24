@@ -23,7 +23,13 @@ export const createTaskSchema = z.object({
   impact: ratingSchema.default(3),
   difficulty: ratingSchema.default(3),
   energy: z.enum(ENERGY_LEVELS).default("medium"),
-  estimateMinutes: z.number().int().positive().max(24 * 60).nullable().optional(),
+  estimateMinutes: z
+    .number()
+    .int()
+    .positive()
+    .max(24 * 60)
+    .nullable()
+    .optional(),
   dueDate: isoDateSchema.nullable().optional(),
   dueTime: isoTimeSchema.nullable().optional(),
   scheduledDate: isoDateSchema.nullable().optional(),

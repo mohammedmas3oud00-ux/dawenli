@@ -18,14 +18,14 @@ Vision → Goals → Areas → Projects → Tasks → Daily Actions → Habits �
 
 ### 1.1 حدود النطاق (MVP)
 
-| داخل MVP (المرحلتان 1 و2) | خارج MVP (مراحل لاحقة) |
-|---|---|
-| Auth + Profile | Knowledge Management (Notes, Links, Tags) |
-| Vision / Goals / Areas / Projects | Learning (Books, Courses, Skills) |
-| Tasks + محرك الأولويات (Rule-based) | Time Tracking + Calendar |
-| Habits (عامة + روحية) + Streaks | Templates المتقدمة |
-| Daily + Weekly Review | AI Features |
-| i18n (ar/en) + RTL + Dark mode | Mobile App |
+| داخل MVP (المرحلتان 1 و2)           | خارج MVP (مراحل لاحقة)                    |
+| ----------------------------------- | ----------------------------------------- |
+| Auth + Profile                      | Knowledge Management (Notes, Links, Tags) |
+| Vision / Goals / Areas / Projects   | Learning (Books, Courses, Skills)         |
+| Tasks + محرك الأولويات (Rule-based) | Time Tracking + Calendar                  |
+| Habits (عامة + روحية) + Streaks     | Templates المتقدمة                        |
+| Daily + Weekly Review               | AI Features                               |
+| i18n (ar/en) + RTL + Dark mode      | Mobile App                                |
 
 ---
 
@@ -93,18 +93,18 @@ flowchart TB
 
 ## 4. معمارية الواجهة (Frontend)
 
-| البند | القرار | السبب |
-|---|---|---|
-| الإطار | **Next.js (App Router) + TypeScript** | RSC للقراءة السريعة، Server Actions للكتابة، Route Handlers للـ API، استضافة مجانية على Vercel |
-| التنسيق | **Tailwind CSS + shadcn/ui** | مكونات قابلة للتعديل بالكامل، تصميم Minimal افتراضياً، دعم RTL بخصائص منطقية |
-| الحالة (Server state) | **TanStack Query** | Caching، Optimistic updates، إعادة الجلب عند الاتصال |
-| الحالة (UI state) | **Zustand** | خفيف، للـ Sidebar، Modals، Filters، Focus timer |
-| النماذج | **React Hook Form + Zod** | نفس الـ Zod schemas مشتركة مع الخادم عبر `packages/core` |
-| i18n | **next-intl** مع segment `[locale]` | رسائل ar/en في ملفات JSON، `dir` تلقائي على `<html>` |
-| الثيم | **next-themes** | Light / Dark / System بدون Flash |
-| الحركة | **Framer Motion** (محدود) | انتقالات خفيفة فقط: fade، slide، layout. لا حركات ثقيلة |
-| الأيقونات | **lucide-react** | متناسقة مع shadcn |
-| المحرر (Phase 3) | **Tiptap** | Markdown + روابط بين الملاحظات |
+| البند                 | القرار                                | السبب                                                                                          |
+| --------------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| الإطار                | **Next.js (App Router) + TypeScript** | RSC للقراءة السريعة، Server Actions للكتابة، Route Handlers للـ API، استضافة مجانية على Vercel |
+| التنسيق               | **Tailwind CSS + shadcn/ui**          | مكونات قابلة للتعديل بالكامل، تصميم Minimal افتراضياً، دعم RTL بخصائص منطقية                   |
+| الحالة (Server state) | **TanStack Query**                    | Caching، Optimistic updates، إعادة الجلب عند الاتصال                                           |
+| الحالة (UI state)     | **Zustand**                           | خفيف، للـ Sidebar، Modals، Filters، Focus timer                                                |
+| النماذج               | **React Hook Form + Zod**             | نفس الـ Zod schemas مشتركة مع الخادم عبر `packages/core`                                       |
+| i18n                  | **next-intl** مع segment `[locale]`   | رسائل ar/en في ملفات JSON، `dir` تلقائي على `<html>`                                           |
+| الثيم                 | **next-themes**                       | Light / Dark / System بدون Flash                                                               |
+| الحركة                | **Framer Motion** (محدود)             | انتقالات خفيفة فقط: fade، slide، layout. لا حركات ثقيلة                                        |
+| الأيقونات             | **lucide-react**                      | متناسقة مع shadcn                                                                              |
+| المحرر (Phase 3)      | **Tiptap**                            | Markdown + روابط بين الملاحظات                                                                 |
 
 ### 4.1 نظام التصميم
 
@@ -191,15 +191,15 @@ GET    /api/v1/progress/vision              # rollup كامل
 
 ## 7. المصادقة والصلاحيات
 
-| البند | القرار |
-|---|---|
-| المزود | **Supabase Auth** |
-| الطرق | Email + Password، Magic Link، Google OAuth |
-| الويب | `@supabase/ssr` — الجلسة في Cookies (HttpOnly)، تحديث تلقائي في `middleware.ts` |
-| الموبايل | `supabase-js` + `expo-secure-store` للـ Refresh token |
-| الحماية | RLS في القاعدة (الخط الأخير)، + تحقق في Services (الخط الأول) |
-| الأدوار | `profiles.role`: `user` الآن، `admin` لاحقاً. أدوار الـ Workspace في مرحلة SaaS |
-| الخصوصية | تصدير كامل للبيانات (JSON) + حذف الحساب من الإعدادات منذ MVP |
+| البند    | القرار                                                                          |
+| -------- | ------------------------------------------------------------------------------- |
+| المزود   | **Supabase Auth**                                                               |
+| الطرق    | Email + Password، Magic Link، Google OAuth                                      |
+| الويب    | `@supabase/ssr` — الجلسة في Cookies (HttpOnly)، تحديث تلقائي في `middleware.ts` |
+| الموبايل | `supabase-js` + `expo-secure-store` للـ Refresh token                           |
+| الحماية  | RLS في القاعدة (الخط الأخير)، + تحقق في Services (الخط الأول)                   |
+| الأدوار  | `profiles.role`: `user` الآن، `admin` لاحقاً. أدوار الـ Workspace في مرحلة SaaS |
+| الخصوصية | تصدير كامل للبيانات (JSON) + حذف الحساب من الإعدادات منذ MVP                    |
 
 ---
 
@@ -216,13 +216,13 @@ GET    /api/v1/progress/vision              # rollup كامل
 
 ## 9. المهام الخلفية (Background Jobs)
 
-| المهمة | الآلية | التوقيت |
-|---|---|---|
-| حساب Streaks وتجميد المفقود | `pg_cron` → SQL function `recalculate_streaks()` | يومياً 00:10 بتوقيت المستخدم (تُخزن `profiles.timezone`) |
-| Rollup التقدم (Tasks → Projects → Goals → Vision) | **Trigger** عند تغيير حالة المهمة + تحديث `progress_cache` | فوري |
-| توليد مراجعة يومية فارغة | `pg_cron` | يومياً |
-| Keep-alive لمنع إيقاف Supabase | GitLab Scheduled Pipeline → `GET /api/v1/health` | يومياً |
-| تذكيرات (Email) | Phase 3: Resend (3000 رسالة/شهر مجاناً) عبر Supabase Edge Function | حسب الإعداد |
+| المهمة                                            | الآلية                                                             | التوقيت                                                  |
+| ------------------------------------------------- | ------------------------------------------------------------------ | -------------------------------------------------------- |
+| حساب Streaks وتجميد المفقود                       | `pg_cron` → SQL function `recalculate_streaks()`                   | يومياً 00:10 بتوقيت المستخدم (تُخزن `profiles.timezone`) |
+| Rollup التقدم (Tasks → Projects → Goals → Vision) | **Trigger** عند تغيير حالة المهمة + تحديث `progress_cache`         | فوري                                                     |
+| توليد مراجعة يومية فارغة                          | `pg_cron`                                                          | يومياً                                                   |
+| Keep-alive لمنع إيقاف Supabase                    | GitLab Scheduled Pipeline → `GET /api/v1/health`                   | يومياً                                                   |
+| تذكيرات (Email)                                   | Phase 3: Resend (3000 رسالة/شهر مجاناً) عبر Supabase Edge Function | حسب الإعداد                                              |
 
 عند الانتقال لـ NestJS في مرحلة SaaS تُستبدل بـ BullMQ + Redis دون تغيير المنطق (موجود في `packages/core`).
 
@@ -235,12 +235,12 @@ GET    /api/v1/progress/vision              # rollup كامل
 ```ts
 // كل المدخلات 1..5 ما عدا المذكور
 priority_score =
-    importance        * 0.25
-  + urgency           * 0.20   // مشتقة من due_date: <1d=5, <3d=4, <7d=3, <30d=2, else 1
-  + impact            * 0.20
-  + goal_contribution * 0.20   // 5 إذا مرتبطة بهدف نشط عالي الأولوية، 1 إذا غير مرتبطة
-  + (6 - difficulty)  * 0.05   // الأسهل يحصل دفعة صغيرة (Quick wins)
-  + energy_fit        * 0.10   // 5 إذا طاقة المهمة تطابق طاقة المستخدم الحالية (من Daily Review)
+  importance * 0.25 +
+  urgency * 0.2 + // مشتقة من due_date: <1d=5, <3d=4, <7d=3, <30d=2, else 1
+  impact * 0.2 +
+  goal_contribution * 0.2 + // 5 إذا مرتبطة بهدف نشط عالي الأولوية، 1 إذا غير مرتبطة
+  (6 - difficulty) * 0.05 + // الأسهل يحصل دفعة صغيرة (Quick wins)
+  energy_fit * 0.1; // 5 إذا طاقة المهمة تطابق طاقة المستخدم الحالية (من Daily Review)
 ```
 
 - **Eisenhower Quadrant** مشتق: `importance >= 4 && urgency >= 4` → Q1 وهكذا.
@@ -284,14 +284,15 @@ priority_score =
 
 ## 14. قابلية التوسع ومسار SaaS
 
-| المرحلة | المستخدمون | البنية | التكلفة التقديرية |
-|---|---|---|---|
-| شخصي | 1 | Vercel Hobby + Supabase Free | 0$ |
-| Beta خاصة | 10-100 | Vercel Hobby + Supabase Free/Pro | 0-25$ |
-| SaaS | 100-10k | Vercel Pro + Supabase Pro + Upstash Redis + Resend | ~50-100$ |
-| نمو | 10k+ | استخراج API إلى NestJS (Fly/Railway)، Read replicas، CDN للمرفقات | حسب الحمل |
+| المرحلة   | المستخدمون | البنية                                                            | التكلفة التقديرية |
+| --------- | ---------- | ----------------------------------------------------------------- | ----------------- |
+| شخصي      | 1          | Vercel Hobby + Supabase Free                                      | 0$                |
+| Beta خاصة | 10-100     | Vercel Hobby + Supabase Free/Pro                                  | 0-25$             |
+| SaaS      | 100-10k    | Vercel Pro + Supabase Pro + Upstash Redis + Resend                | ~50-100$          |
+| نمو       | 10k+       | استخراج API إلى NestJS (Fly/Railway)، Read replicas، CDN للمرفقات | حسب الحمل         |
 
 **ما يتغير عند SaaS:**
+
 1. إضافة `workspaces` + `workspace_members` وتعديل RLS من `user_id` إلى `workspace_id`.
 2. الفوترة: Lemon Squeezy أو Paddle (Merchant of Record، أسهل ضريبياً من Stripe لمطور فردي).
 3. Feature flags حسب الخطة (`plans` table).
@@ -301,13 +302,13 @@ priority_score =
 
 ## 15. سجل القرارات المعمارية (ADRs)
 
-| # | القرار | البدائل المرفوضة | السبب |
-|---|---|---|---|
-| 1 | Next.js Fullstack | NestJS منفصل، Django | لا استضافة Node مجانية دائمة؛ Serverless بلا Cold start مزعج؛ المنطق قابل للاستخراج |
-| 2 | PostgreSQL | MongoDB | البيانات علائقية وهرمية بامتياز (Rollups، Joins، RLS) |
-| 3 | Supabase | Neon + Auth.js + R2 | حزمة واحدة مجانية: DB + Auth + Storage + Cron، أقل تكاملات |
-| 4 | Drizzle | Prisma | أخف، SQL-first، Migrations أوضح مع RLS |
-| 5 | Monorepo (pnpm + Turborepo) | Repos منفصلة | مشاركة `core` بين Web و Mobile |
-| 6 | Expo لاحقاً + PWA أولاً | Flutter، Native | أقصى إعادة استخدام؛ PWA تكفي الاستخدام الشخصي |
-| 7 | Rule-based priority أولاً | AI من البداية | شفافية، صفر تكلفة، قابل للتفسير |
-| 8 | Feature-by-feature (Vertical slices) | Frontend أولاً كاملاً | منتج قابل للاستخدام مبكراً؛ الـ UI يتشكل حول بيانات حقيقية |
+| #   | القرار                               | البدائل المرفوضة      | السبب                                                                               |
+| --- | ------------------------------------ | --------------------- | ----------------------------------------------------------------------------------- |
+| 1   | Next.js Fullstack                    | NestJS منفصل، Django  | لا استضافة Node مجانية دائمة؛ Serverless بلا Cold start مزعج؛ المنطق قابل للاستخراج |
+| 2   | PostgreSQL                           | MongoDB               | البيانات علائقية وهرمية بامتياز (Rollups، Joins، RLS)                               |
+| 3   | Supabase                             | Neon + Auth.js + R2   | حزمة واحدة مجانية: DB + Auth + Storage + Cron، أقل تكاملات                          |
+| 4   | Drizzle                              | Prisma                | أخف، SQL-first، Migrations أوضح مع RLS                                              |
+| 5   | Monorepo (pnpm + Turborepo)          | Repos منفصلة          | مشاركة `core` بين Web و Mobile                                                      |
+| 6   | Expo لاحقاً + PWA أولاً              | Flutter، Native       | أقصى إعادة استخدام؛ PWA تكفي الاستخدام الشخصي                                       |
+| 7   | Rule-based priority أولاً            | AI من البداية         | شفافية، صفر تكلفة، قابل للتفسير                                                     |
+| 8   | Feature-by-feature (Vertical slices) | Frontend أولاً كاملاً | منتج قابل للاستخدام مبكراً؛ الـ UI يتشكل حول بيانات حقيقية                          |

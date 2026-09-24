@@ -23,8 +23,18 @@ export async function submitReviewAction(formData: FormData) {
   const winsText = formData.get("wins")?.toString()?.trim() || "";
   const lessonsText = formData.get("lessons")?.toString()?.trim() || "";
 
-  const wins = winsText ? winsText.split("\n").map((w) => w.trim()).filter(Boolean) : [];
-  const lessons = lessonsText ? lessonsText.split("\n").map((l) => l.trim()).filter(Boolean) : [];
+  const wins = winsText
+    ? winsText
+        .split("\n")
+        .map((w) => w.trim())
+        .filter(Boolean)
+    : [];
+  const lessons = lessonsText
+    ? lessonsText
+        .split("\n")
+        .map((l) => l.trim())
+        .filter(Boolean)
+    : [];
 
   await upsertReview(db(), user.id, {
     type: "daily",

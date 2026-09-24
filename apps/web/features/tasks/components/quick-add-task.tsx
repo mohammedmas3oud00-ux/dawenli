@@ -37,7 +37,11 @@ export function QuickAddTask() {
         </Button>
       </div>
       <p className="text-[11px] text-muted-foreground px-1">
-        Syntax: <code className="bg-muted px-1 rounded">@today | @tomorrow | @fri</code> for dates, <code className="bg-muted px-1 rounded">!p1..!p5</code> for priority, <code className="bg-muted px-1 rounded">#project</code> for project, <code className="bg-muted px-1 rounded">~45m</code> for duration, <code className="bg-muted px-1 rounded">^high</code> for energy.
+        Syntax: <code className="bg-muted px-1 rounded">@today | @tomorrow | @fri</code> for dates,{" "}
+        <code className="bg-muted px-1 rounded">!p1..!p5</code> for priority,{" "}
+        <code className="bg-muted px-1 rounded">#project</code> for project,{" "}
+        <code className="bg-muted px-1 rounded">~45m</code> for duration,{" "}
+        <code className="bg-muted px-1 rounded">^high</code> for energy.
       </p>
     </form>
   );

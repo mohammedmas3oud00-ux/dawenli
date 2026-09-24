@@ -11,7 +11,10 @@ export async function createGoalAction(formData: FormData): Promise<void> {
   const description = formData.get("description")?.toString()?.trim();
   const rawHorizon = formData.get("horizon")?.toString();
   const horizon =
-    rawHorizon === "life" || rawHorizon === "annual" || rawHorizon === "quarterly" || rawHorizon === "monthly"
+    rawHorizon === "life" ||
+    rawHorizon === "annual" ||
+    rawHorizon === "quarterly" ||
+    rawHorizon === "monthly"
       ? rawHorizon
       : "annual";
   const priority = Number(formData.get("priority") || 3);

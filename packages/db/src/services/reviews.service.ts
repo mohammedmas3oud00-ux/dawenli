@@ -26,11 +26,7 @@ export async function listReviews(
     .orderBy(desc(reviews.periodStart), desc(reviews.createdAt));
 }
 
-export async function getReview(
-  db: Database,
-  userId: string,
-  reviewId: string,
-): Promise<Review> {
+export async function getReview(db: Database, userId: string, reviewId: string): Promise<Review> {
   const [row] = await db
     .select()
     .from(reviews)
@@ -43,11 +39,7 @@ export async function getReview(
   return row;
 }
 
-export async function upsertReview(
-  db: Database,
-  userId: string,
-  raw: unknown,
-): Promise<Review> {
+export async function upsertReview(db: Database, userId: string, raw: unknown): Promise<Review> {
   const input: UpsertReviewInput = upsertReviewSchema.parse(raw);
 
   const [existing] = await db
@@ -104,11 +96,7 @@ export async function upsertReview(
   return created!;
 }
 
-export async function deleteReview(
-  db: Database,
-  userId: string,
-  reviewId: string,
-): Promise<void> {
+export async function deleteReview(db: Database, userId: string, reviewId: string): Promise<void> {
   const result = await db
     .update(reviews)
     .set(softDelete())

@@ -2,6 +2,7 @@ import { AppError } from "@bawsala/core";
 import { DEMO_USER_EMAIL, DEMO_USER_ID } from "@bawsala/db";
 import type { User } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+import { isLocalDemoMode } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export type CurrentUser = User;
@@ -20,7 +21,8 @@ export const DEMO_USER: User = {
 
 export async function getCurrentUser(): Promise<User | null> {
   const cookieStore = await cookies();
-  if (isDemo) {
+  const isDemoSession = cookieStore.get("bawsala_demo_session")?.value === "1";
+  if (isLocalDemoMode() && isDemoSession) {
     return DEMO_USER;
   }
 

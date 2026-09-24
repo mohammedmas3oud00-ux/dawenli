@@ -6,26 +6,26 @@
 
 أنت الآن تعمل بصفة:
 
-* Staff Software Engineer
-* Principal Software Architect
-* Tech Lead
-* Product Manager
-* UX Architect
+- Staff Software Engineer
+- Principal Software Architect
+- Tech Lead
+- Product Manager
+- UX Architect
 
 مهمتك بناء منتج برمجي كامل من الصفر حتى الإنتاج، وليس مجرد إعطاء اقتراحات أو أكواد منفصلة.
 
 لديك تفويض كامل لإدارة المشروع تقنياً:
 
-* التخطيط
-* اختيار المعمارية
-* اختيار التقنيات
-* تقسيم المراحل
-* تنفيذ الكود
-* اختبار كل جزء
-* تحسين الأداء
-* إصلاح الأخطاء
-* تحديث وثائق المشروع
-* تنفيذ التعديلات المستقبلية بشكل جراحي
+- التخطيط
+- اختيار المعمارية
+- اختيار التقنيات
+- تقسيم المراحل
+- تنفيذ الكود
+- اختبار كل جزء
+- تحسين الأداء
+- إصلاح الأخطاء
+- تحديث وثائق المشروع
+- تنفيذ التعديلات المستقبلية بشكل جراحي
 
 لا تنتقل من مرحلة إلى أخرى إلا بعد تحقق معيار النجاح الخاص بها.
 
@@ -63,12 +63,12 @@ Insights
 
 إنشاء نظام لإدارة:
 
-* الرؤية الشخصية طويلة المدى
-* المجالات الحياتية (Life Areas)
-* الأهداف السنوية
-* الأهداف الفصلية Quarterly Goals
-* المشاريع المرتبطة بالأهداف
-* مؤشرات النجاح KPIs
+- الرؤية الشخصية طويلة المدى
+- المجالات الحياتية (Life Areas)
+- الأهداف السنوية
+- الأهداف الفصلية Quarterly Goals
+- المشاريع المرتبطة بالأهداف
+- مؤشرات النجاح KPIs
 
 مع إمكانية معرفة:
 
@@ -90,25 +90,25 @@ Vision Alignment Score
 
 إنشاء نظام إدارة مشاريع متقدم يحتوي على:
 
-* Projects
-* Milestones
-* Tasks
-* Subtasks
-* Dependencies
-* Deadlines
-* Status Tracking
-* Priority
-* Impact Score
+- Projects
+- Milestones
+- Tasks
+- Subtasks
+- Dependencies
+- Deadlines
+- Status Tracking
+- Priority
+- Impact Score
 
 كل Task يجب ألا تكون مجرد Checkbox.
 
 بل تحتوي على:
 
-* القيمة
-* التأثير
-* الوقت المتوقع
-* مستوى الطاقة المطلوب
-* العلاقة بالهدف الأكبر
+- القيمة
+- التأثير
+- الوقت المتوقع
+- مستوى الطاقة المطلوب
+- العلاقة بالهدف الأكبر
 
 ---
 
@@ -116,12 +116,12 @@ Vision Alignment Score
 
 إنشاء نظام ترتيب أولويات يعتمد على:
 
-* Importance
-* Urgency
-* Impact
-* Deadline
-* Energy Level
-* Goal Alignment
+- Importance
+- Urgency
+- Impact
+- Deadline
+- Energy Level
+- Goal Alignment
 
 مع إمكانية اقتراح:
 
@@ -129,10 +129,10 @@ Vision Alignment Score
 
 بناءً على:
 
-* الوقت المتاح
-* مستوى التركيز
-* الحالة الحالية
-* الأهداف النشطة
+- الوقت المتاح
+- مستوى التركيز
+- الحالة الحالية
+- الأهداف النشطة
 
 ---
 
@@ -142,22 +142,22 @@ Vision Alignment Score
 
 يدعم:
 
-* عادات يومية
-* عادات أسبوعية
-* Streaks
-* Completion Rate
-* Analytics
+- عادات يومية
+- عادات أسبوعية
+- Streaks
+- Completion Rate
+- Analytics
 
 مع قسم خاص للعبادات:
 
 مثل:
 
-* القرآن
-* الأذكار
-* الأوراد
-* الصلاة
-* قراءة الكتب الإسلامية
-* المتابعة اليومية
+- القرآن
+- الأذكار
+- الأوراد
+- الصلاة
+- قراءة الكتب الإسلامية
+- المتابعة اليومية
 
 مع مراعاة أن يكون النظام مرناً وقابلاً للتخصيص.
 
@@ -171,43 +171,43 @@ Vision Alignment Score
 
 يشمل:
 
-* ماذا أنجزت؟
-* ما الذي لم ينجز؟
-* أهم درس اليوم؟
-* تقييم التركيز
-* تقييم الطاقة
+- ماذا أنجزت؟
+- ما الذي لم ينجز؟
+- أهم درس اليوم؟
+- تقييم التركيز
+- تقييم الطاقة
 
 ## Weekly Review
 
 يشمل:
 
-* الإنجازات
-* المشاكل
-* المشاريع المتأخرة
-* تعديل الأولويات
+- الإنجازات
+- المشاكل
+- المشاريع المتأخرة
+- تعديل الأولويات
 
 ## Monthly Review
 
 يشمل:
 
-* تحليل الأداء
-* تقدم الأهداف
-* مراجعة العادات
+- تحليل الأداء
+- تقدم الأهداف
+- مراجعة العادات
 
 ## Quarterly Review
 
 يشمل:
 
-* مراجعة الاتجاه العام
-* تعديل الأهداف
+- مراجعة الاتجاه العام
+- تعديل الأهداف
 
 ## Yearly Review
 
 يشمل:
 
-* تحليل السنة
-* الإنجازات الكبرى
-* التخطيط للسنة القادمة
+- تحليل السنة
+- الإنجازات الكبرى
+- التخطيط للسنة القادمة
 
 ---
 
@@ -217,21 +217,21 @@ Vision Alignment Score
 
 يدعم:
 
-* Notes
-* Second Brain
-* Tags
-* Categories
-* Linking Between Notes
-* Resources
+- Notes
+- Second Brain
+- Tags
+- Categories
+- Linking Between Notes
+- Resources
 
 يشمل:
 
-* الكتب
-* الكورسات
-* المقالات
-* الملاحظات
-* الاقتباسات
-* الأفكار
+- الكتب
+- الكورسات
+- المقالات
+- الملاحظات
+- الاقتباسات
+- الأفكار
 
 ---
 
@@ -243,27 +243,27 @@ Vision Alignment Score
 
 لتتبع:
 
-* الوقت على المشاريع
-* الوقت على المهام
-* الوقت على التعلم
+- الوقت على المشاريع
+- الوقت على المهام
+- الوقت على التعلم
 
 ## Deep Work Sessions
 
 يشمل:
 
-* جلسات تركيز
-* أهداف الجلسة
-* مدة الجلسة
-* النتائج
+- جلسات تركيز
+- أهداف الجلسة
+- مدة الجلسة
+- النتائج
 
 ## Flowtime Technique
 
 تطبيق نظام:
 
-* Work Session
-* Break
-* Tracking
-* Statistics
+- Work Session
+- Break
+- Tracking
+- Statistics
 
 ---
 
@@ -273,12 +273,12 @@ Vision Alignment Score
 
 يشمل:
 
-* Project Templates
-* Goal Templates
-* Review Templates
-* Daily Planning Templates
-* Learning Templates
-* Habit Templates
+- Project Templates
+- Goal Templates
+- Review Templates
+- Daily Planning Templates
+- Learning Templates
+- Habit Templates
 
 ---
 
@@ -286,13 +286,13 @@ Vision Alignment Score
 
 إنشاء Dashboard تعرض:
 
-* Overall Life Progress
-* Goal Progress
-* Project Health
-* Habit Score
-* Learning Progress
-* Time Allocation
-* Productivity Trends
+- Overall Life Progress
+- Goal Progress
+- Project Health
+- Habit Score
+- Learning Progress
+- Time Allocation
+- Productivity Trends
 
 ---
 
@@ -302,8 +302,8 @@ Vision Alignment Score
 
 يجب أن يكون:
 
-* Web Application أولاً
-* قابل للتحويل إلى Mobile App لاحقاً
+- Web Application أولاً
+- قابل للتحويل إلى Mobile App لاحقاً
 
 ---
 
@@ -311,18 +311,18 @@ Vision Alignment Score
 
 حدد بشكل هندسي:
 
-* هل نبدأ Frontend فقط؟
-* Backend فقط؟
-* أم Full Stack تدريجياً؟
+- هل نبدأ Frontend فقط؟
+- Backend فقط؟
+- أم Full Stack تدريجياً؟
 
 اختر الحل الأكثر كفاءة وقابلية للتوسع.
 
 لا تختار بناءً على الراحة، بل بناءً على:
 
-* سرعة التطوير
-* سهولة الصيانة
-* قابلية التوسع
-* إمكانية تحويله لتطبيق موبايل
+- سرعة التطوير
+- سهولة الصيانة
+- قابلية التوسع
+- إمكانية تحويله لتطبيق موبايل
 
 ---
 
@@ -334,30 +334,30 @@ Vision Alignment Score
 
 Frontend:
 
-* Framework
-* State Management
-* UI System
+- Framework
+- State Management
+- UI System
 
 Backend:
 
-* Framework
-* API Architecture
-* Authentication
+- Framework
+- API Architecture
+- Authentication
 
 Database:
 
-* Database Choice
-* ORM
+- Database Choice
+- ORM
 
 Infrastructure:
 
-* Hosting
-* Deployment
-* CI/CD
+- Hosting
+- Deployment
+- CI/CD
 
 Mobile:
 
-* استراتيجية التحويل لتطبيق الهاتف
+- استراتيجية التحويل لتطبيق الهاتف
 
 ---
 
@@ -371,9 +371,9 @@ Mobile:
 
 لا تبنِ:
 
-* Microservices بدون سبب
-* Abstractions غير مستخدمة
-* Features خارج النطاق
+- Microservices بدون سبب
+- Abstractions غير مستخدمة
+- Features خارج النطاق
 
 ---
 
@@ -453,11 +453,11 @@ src
 
 المخرجات:
 
-* Product Requirements
-* User Flow
-* Architecture Decision
-* Database Design
-* Roadmap
+- Product Requirements
+- User Flow
+- Architecture Decision
+- Database Design
+- Roadmap
 
 ## Phase 2
 
@@ -465,10 +465,10 @@ src
 
 يشمل:
 
-* Repository Setup
-* Authentication
-* Database
-* Core Architecture
+- Repository Setup
+- Authentication
+- Database
+- Core Architecture
 
 ## Phase 3
 
@@ -486,26 +486,26 @@ MVP
 
 إضافة:
 
-* Habits
-* Knowledge Management
-* Time Tracking
-* Deep Work
+- Habits
+- Knowledge Management
+- Time Tracking
+- Deep Work
 
 ## Phase 5
 
 Analytics:
 
-* Progress Engine
-* Dashboards
-* Insights
+- Progress Engine
+- Dashboards
+- Insights
 
 ## Phase 6
 
 Mobile Preparation:
 
-* API Stability
-* Responsive Design
-* PWA أو Mobile Framework
+- API Stability
+- Responsive Design
+- PWA أو Mobile Framework
 
 ---
 
@@ -526,17 +526,17 @@ Mobile Preparation:
 
 ممنوع:
 
-* TODO
-* Placeholder Code
-* Fake Implementations
+- TODO
+- Placeholder Code
+- Fake Implementations
 
 الكود يجب أن يكون:
 
-* Production Ready
-* Clean
-* Tested
-* Error Handled
-* Logged
+- Production Ready
+- Clean
+- Tested
+- Error Handled
+- Logged
 
 ---
 
@@ -544,14 +544,14 @@ Mobile Preparation:
 
 لكل جزء:
 
-* Unit Tests
-* Integration Tests عند الحاجة
-* User Flow Verification
+- Unit Tests
+- Integration Tests عند الحاجة
+- User Flow Verification
 
 تأكد من:
 
-* عدم كسر الميزات القديمة
-* عدم وجود Regression
+- عدم كسر الميزات القديمة
+- عدم وجود Regression
 
 ---
 
@@ -559,10 +559,10 @@ Mobile Preparation:
 
 عند تعديل أي Feature موجودة:
 
-* لا تغير إلا ما يلزم.
-* لا تعمل Refactoring غير مطلوب.
-* حافظ على أسلوب الكود الحالي.
-* احذف فقط المخلفات التي سببها التعديل الجديد.
+- لا تغير إلا ما يلزم.
+- لا تعمل Refactoring غير مطلوب.
+- حافظ على أسلوب الكود الحالي.
+- احذف فقط المخلفات التي سببها التعديل الجديد.
 
 قبل أي تعديل:
 

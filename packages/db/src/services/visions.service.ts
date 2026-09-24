@@ -13,7 +13,10 @@ import { owned, progressMap, softDelete, ZERO_PROGRESS, type ProgressInfo } from
 export type VisionWithProgress = Vision & ProgressInfo;
 
 /** The single active vision (the product has one "north star" per user). */
-export async function getActiveVision(db: Database, userId: string): Promise<VisionWithProgress | null> {
+export async function getActiveVision(
+  db: Database,
+  userId: string,
+): Promise<VisionWithProgress | null> {
   const [row] = await db
     .select()
     .from(visions)
@@ -34,10 +37,17 @@ export async function getVision(db: Database, userId: string, id: string): Promi
   return row ?? null;
 }
 
-export async function createVision(db: Database, userId: string, input: CreateVisionInput): Promise<Vision> {
+export async function createVision(
+  db: Database,
+  userId: string,
+  input: CreateVisionInput,
+): Promise<Vision> {
   const data = createVisionSchema.parse(input);
   if (data.isActive) await deactivateOthers(db, userId);
-  const [row] = await db.insert(visions).values({ ...data, userId }).returning();
+  const [row] = await db
+    .insert(visions)
+    .values({ ...data, userId })
+    .returning();
   return row!;
 }
 

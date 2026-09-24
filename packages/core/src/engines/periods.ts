@@ -42,7 +42,12 @@ export function periodFor(type: ReviewType, iso: string, weekStartsOn: number): 
 }
 
 /** The period immediately before / after `period` for the same review type. */
-export function shiftPeriod(type: ReviewType, period: Period, direction: -1 | 1, weekStartsOn: number): Period {
+export function shiftPeriod(
+  type: ReviewType,
+  period: Period,
+  direction: -1 | 1,
+  weekStartsOn: number,
+): Period {
   const anchor = direction < 0 ? addDays(period.start, -1) : addDays(period.end, 1);
   return periodFor(type, anchor, weekStartsOn);
 }

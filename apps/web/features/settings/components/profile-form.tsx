@@ -1,9 +1,9 @@
 "use client";
 
-import { LOCALES, THEMES } from "@bawsala/core";
+import { LOCALES, THEMES, type Theme } from "@bawsala/core";
 import type { Profile } from "@bawsala/db";
 import { LOCALE_LABELS } from "@bawsala/i18n";
-import { useTheme } from "next-themes";
+import { useTheme } from "@/components/providers";
 import { useTranslations } from "next-intl";
 import { useActionState, useEffect } from "react";
 import { Alert } from "@/components/ui/alert";
@@ -26,10 +26,12 @@ export function ProfileForm({ profile, timezones }: { profile: Profile; timezone
 
   // Keep the client theme in sync with the persisted preference.
   useEffect(() => {
-    setTheme(profile.theme);
+    setTheme(THEMES.includes(profile.theme as Theme) ? (profile.theme as Theme) : "system");
   }, [profile.theme, setTheme]);
 
-  const tzOptions = timezones.includes(profile.timezone) ? timezones : [profile.timezone, ...timezones];
+  const tzOptions = timezones.includes(profile.timezone)
+    ? timezones
+    : [profile.timezone, ...timezones];
 
   return (
     <form action={action} className="flex flex-col gap-6">
@@ -91,7 +93,11 @@ export function ProfileForm({ profile, timezones }: { profile: Profile; timezone
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="weekStartsOn">{t("fields.weekStartsOn")}</Label>
-            <Select id="weekStartsOn" name="weekStartsOn" defaultValue={String(profile.weekStartsOn)}>
+            <Select
+              id="weekStartsOn"
+              name="weekStartsOn"
+              defaultValue={String(profile.weekStartsOn)}
+            >
               {WEEKDAYS.map((d) => (
                 <option key={d} value={d}>
                   {t(`weekdays.${d}`)}

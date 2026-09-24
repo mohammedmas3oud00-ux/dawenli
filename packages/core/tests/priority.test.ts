@@ -68,7 +68,14 @@ describe("computePriority", () => {
     expect(sum).toBeCloseTo(1, 10);
 
     const result = computePriority(
-      { importance: 5, impact: 5, difficulty: 1, energy: "medium", dueDate: TODAY, goalPriority: 5 },
+      {
+        importance: 5,
+        impact: 5,
+        difficulty: 1,
+        energy: "medium",
+        dueDate: TODAY,
+        goalPriority: 5,
+      },
       { today: TODAY, userEnergy: 3 },
     );
     expect(result.score).toBe(5);
@@ -102,7 +109,10 @@ describe("computePriority", () => {
       ease: 0,
       energyFit: 0,
     };
-    const result = computePriority({ ...base, importance: 4 }, { today: TODAY, weights: onlyImportance });
+    const result = computePriority(
+      { ...base, importance: 4 },
+      { today: TODAY, weights: onlyImportance },
+    );
     expect(result.score).toBe(4);
   });
 

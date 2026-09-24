@@ -16,7 +16,15 @@ import {
   type UpdateHabitInput,
 } from "@bawsala/core";
 import type { Database } from "../client";
-import { habitCategories, habitLogs, habits, profiles, type Habit, type HabitCategory, type HabitLog } from "../schema";
+import {
+  habitCategories,
+  habitLogs,
+  habits,
+  profiles,
+  type Habit,
+  type HabitCategory,
+  type HabitLog,
+} from "../schema";
 import { fromNumeric, owned, softDelete, toNumeric } from "./_shared";
 
 export type HabitWithCategory = Habit & { category: HabitCategory | null };
@@ -79,11 +87,7 @@ export async function getHabit(
   };
 }
 
-export async function createHabit(
-  db: Database,
-  userId: string,
-  raw: unknown,
-): Promise<Habit> {
+export async function createHabit(db: Database, userId: string, raw: unknown): Promise<Habit> {
   const input: CreateHabitInput = createHabitSchema.parse(raw);
 
   const [created] = await db
@@ -148,11 +152,7 @@ export async function updateHabit(
   return updated!;
 }
 
-export async function deleteHabit(
-  db: Database,
-  userId: string,
-  habitId: string,
-): Promise<void> {
+export async function deleteHabit(db: Database, userId: string, habitId: string): Promise<void> {
   const result = await db
     .update(habits)
     .set(softDelete())
@@ -209,7 +209,13 @@ export async function logHabit(
         completed: habitLogs.completed,
       })
       .from(habitLogs)
-      .where(and(eq(habitLogs.habitId, habitId), eq(habitLogs.userId, userId), isNull(habitLogs.deletedAt)))
+      .where(
+        and(
+          eq(habitLogs.habitId, habitId),
+          eq(habitLogs.userId, userId),
+          isNull(habitLogs.deletedAt),
+        ),
+      )
       .orderBy(asc(habitLogs.logDate));
 
     const [profile] = await db
@@ -291,7 +297,13 @@ export async function logHabit(
       completed: habitLogs.completed,
     })
     .from(habitLogs)
-    .where(and(eq(habitLogs.habitId, habitId), eq(habitLogs.userId, userId), isNull(habitLogs.deletedAt)))
+    .where(
+      and(
+        eq(habitLogs.habitId, habitId),
+        eq(habitLogs.userId, userId),
+        isNull(habitLogs.deletedAt),
+      ),
+    )
     .orderBy(asc(habitLogs.logDate));
 
   const [profile] = await db
@@ -367,11 +379,7 @@ export async function getTodayHabitsStatus(
     .select()
     .from(habitLogs)
     .where(
-      and(
-        eq(habitLogs.userId, userId),
-        eq(habitLogs.logDate, today),
-        isNull(habitLogs.deletedAt),
-      ),
+      and(eq(habitLogs.userId, userId), eq(habitLogs.logDate, today), isNull(habitLogs.deletedAt)),
     );
 
   const logMap = new Map(todayLogs.map((l) => [l.habitId, l]));
