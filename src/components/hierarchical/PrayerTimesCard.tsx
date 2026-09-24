@@ -45,12 +45,14 @@ export const PrayerTimesCard: React.FC<PrayerTimesCardProps> = ({
   const [nextPrayer, setNextPrayer] = useState<{ name: string; minutesRemaining: number; timeStr: string } | null>(null);
   const [lastNotifiedPrayer, setLastNotifiedPrayer] = useState<string>('');
   const [cityLabel, setCityLabel] = useState<string>('القاهرة / التوقيت المحلي');
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Load Prayer Times
-  const loadTimes = async () => {
+  const loadTimes = async (useLocation = false) => {
     setLoading(true);
+    setLoadError(null);
     try {
-      if (navigator.geolocation) {
+      if (useLocation && navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           async (pos) => {
             try {
@@ -61,31 +63,31 @@ export const PrayerTimesCard: React.FC<PrayerTimesCardProps> = ({
               setData(res);
               setCityLabel('موقعك الجغرافي المباشر');
             } catch {
-              const fallback = await fetchPrayerTimes();
-              setData(fallback);
+              setLoadError('تعذر جلب مواقيت دقيقة لموقعك.');
             } finally {
               setLoading(false);
             }
           },
           async () => {
-            const fallback = await fetchPrayerTimes();
-            setData(fallback);
+            setLoadError('لم يُسمح بالوصول إلى الموقع؛ ما زالت مواقيت القاهرة معروضة.');
             setLoading(false);
           },
           { timeout: 4000 }
         );
       } else {
-        const fallback = await fetchPrayerTimes();
-        setData(fallback);
+        const cairo = await fetchPrayerTimes();
+        setData(cairo);
+        setCityLabel('القاهرة — اختر الموقع لمواقيت مدينتك');
         setLoading(false);
       }
     } catch {
+      setLoadError('تعذر تحميل مواقيت الصلاة الدقيقة.');
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadTimes();
+    void loadTimes(false);
   }, []);
 
   // Compute Next Prayer and Trigger Adhan Alert
@@ -98,7 +100,6 @@ export const PrayerTimesCard: React.FC<PrayerTimesCardProps> = ({
 
       const prayers: { id: string; name: string; timeStr: string }[] = [
         { id: 'Fajr', name: 'الفجر', timeStr: data.Fajr },
-        { id: 'Sunrise', name: 'الشروق', timeStr: data.Sunrise },
         { id: 'Dhuhr', name: 'الظهر', timeStr: data.Dhuhr },
         { id: 'Asr', name: 'العصر', timeStr: data.Asr },
         { id: 'Maghrib', name: 'المغرب', timeStr: data.Maghrib },
@@ -226,14 +227,17 @@ export const PrayerTimesCard: React.FC<PrayerTimesCardProps> = ({
 
           <button
             type="button"
-            onClick={loadTimes}
+            onClick={() => void loadTimes(true)}
+            aria-label="استخدام موقعي لتحديث مواقيت الصلاة"
             className="p-1.5 sm:p-2 bg-white dark:bg-slate-800 hover:bg-[#f2efe8] dark:hover:bg-slate-700 text-[#55635b] dark:text-slate-300 rounded-xl border border-[#e8e4db] dark:border-slate-700 transition-colors cursor-pointer shrink-0"
-            title="تحديث المواقيت"
+            title="استخدام موقعي لتحديث المواقيت"
           >
             <RefreshCw className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
+
+      {loadError && <p role="status" className="mt-2 text-[11px] text-amber-700 dark:text-amber-400">{loadError}</p>}
 
       {/* Next Prayer Countdown Spotlight */}
       {nextPrayer && (

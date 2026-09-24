@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Settings, Plus, Trash2, X, Sliders, Type, Hash, ListFilter, Calendar, CheckSquare } from 'lucide-react';
 import { CustomFieldDefinition, CustomFieldType } from '../../types/hierarchical';
-import { addCustomField, deleteCustomField } from '../../utils/customFieldsStore';
 import { CustomSelect } from './CustomSelect';
+import { createId } from '../../utils/id';
 
 interface CustomFieldsManagerModalProps {
   isOpen: boolean;
@@ -42,11 +42,13 @@ export const CustomFieldsManagerModal: React.FC<CustomFieldsManagerModalProps> =
       }
     }
 
-    const created = addCustomField(entityType, {
+    const created: CustomFieldDefinition = {
+      id: createId(),
+      entityType,
       name: name.trim(),
       type,
       options,
-    });
+    };
 
     onFieldsChanged([...fields, created]);
     setName('');
@@ -55,7 +57,6 @@ export const CustomFieldsManagerModal: React.FC<CustomFieldsManagerModalProps> =
   };
 
   const handleDelete = (id: string) => {
-    deleteCustomField(entityType, id);
     onFieldsChanged(fields.filter((f) => f.id !== id));
   };
 

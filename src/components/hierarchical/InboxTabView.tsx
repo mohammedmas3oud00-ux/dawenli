@@ -38,6 +38,7 @@ interface InboxTabViewProps {
   onAddInboxItem: (item: Partial<InboxItem>) => void;
   onDeleteItem: (id: string) => void;
   onConvertToTask: (inboxItem: InboxItem, projectId: string) => void;
+  onCreateProjectDraft: (inboxItem: InboxItem, goalId: string) => void;
   onConvertToVault: (inboxItem: InboxItem, pillarId: string) => void;
   onConvertToHabit: (inboxItem: InboxItem, pillarId: string) => void;
   onOpenVoiceAi?: () => void;
@@ -46,11 +47,12 @@ interface InboxTabViewProps {
 export const InboxTabView: React.FC<InboxTabViewProps> = ({
   inboxItems,
   projects,
-  goals: _goals,
+  goals,
   pillars,
   onAddInboxItem,
   onDeleteItem,
   onConvertToTask,
+  onCreateProjectDraft,
   onConvertToVault,
   onConvertToHabit,
   onOpenVoiceAi,
@@ -206,8 +208,15 @@ export const InboxTabView: React.FC<InboxTabViewProps> = ({
       title: aiRes.actionableTitle || item.title,
     };
 
-    if (dest === 'task' || dest === 'project') {
+    if (dest === 'task') {
       onConvertToTask(enhancedItem, targetProject?.id || projects[0]?.id);
+    } else if (dest === 'project') {
+      const targetGoal = goals.find((goal) => goal.pillar_id === targetPillar?.id) || goals[0];
+      if (!targetGoal) {
+        alert('أنشئ هدف قيمة أولًا حتى يمكن تأسيس المشروع تحته.');
+        return;
+      }
+      onCreateProjectDraft(enhancedItem, targetGoal.id);
     } else if (dest === 'vault') {
       onConvertToVault(enhancedItem, targetPillar?.id || pillars[0]?.id);
     } else if (dest === 'habit') {
@@ -282,8 +291,8 @@ export const InboxTabView: React.FC<InboxTabViewProps> = ({
         </div>
 
         {/* Rapid Capture Form - Frictionless & Streamlined */}
-        <form onSubmit={handleQuickAdd} className="bg-[#f8f7f4] dark:bg-slate-800/80 border border-[#e8e4db] dark:border-slate-700 rounded-xl p-2.5 sm:p-3 space-y-2">
-          <div className="flex items-center gap-2">
+        <form onSubmit={handleQuickAdd} className="bg-[#f8f7f4] dark:bg-slate-800/80 border border-[#e8e4db] dark:border-slate-700 rounded-xl p-2.5 sm:p-3 space-y-2 min-w-0 overflow-x-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 min-w-0">
             <input
               ref={inputRef}
               type="text"
@@ -291,13 +300,14 @@ export const InboxTabView: React.FC<InboxTabViewProps> = ({
               value={quickTitle}
               onChange={(e) => setQuickTitle(e.target.value)}
               placeholder="اكتب فكرة، التزاماً، أو رابطاً واضغط Enter للإيداع السريع..."
-              className="flex-1 bg-white dark:bg-slate-900 border border-[#d8d4cc] dark:border-slate-700 rounded-lg px-3 py-2 text-xs text-[#1a2420] dark:text-slate-100 outline-hidden focus:border-[#174235] focus:ring-1 focus:ring-[#174235]/20 placeholder:text-[#8a968f]"
+              className="w-full min-w-0 flex-1 bg-white dark:bg-slate-900 border border-[#d8d4cc] dark:border-slate-700 rounded-lg px-3 py-2 text-xs text-[#1a2420] dark:text-slate-100 outline-hidden focus:border-[#174235] focus:ring-1 focus:ring-[#174235]/20 placeholder:text-[#8a968f]"
             />
             
             <select
               value={quickSourceType}
               onChange={(e) => setQuickSourceType(e.target.value as InboxSourceType)}
-              className="bg-white dark:bg-slate-900 border border-[#d8d4cc] dark:border-slate-700 rounded-lg py-2 px-2.5 text-xs font-bold text-[#174235] dark:text-emerald-300 outline-hidden cursor-pointer"
+              aria-label="نوع عنصر صندوق الوارد"
+              className="w-full sm:w-auto min-w-0 bg-white dark:bg-slate-900 border border-[#d8d4cc] dark:border-slate-700 rounded-lg py-2 px-2.5 text-xs font-bold text-[#174235] dark:text-emerald-300 outline-hidden cursor-pointer"
             >
               <option value="idea">💡 فكرة</option>
               <option value="task_seed">⚡ مهمة</option>
@@ -306,6 +316,7 @@ export const InboxTabView: React.FC<InboxTabViewProps> = ({
               <option value="link">🔗 رابط</option>
             </select>
 
+            <div className="flex items-center gap-2 self-stretch sm:self-auto">
             <button
               type="button"
               onClick={toggleVoiceDictation}
@@ -347,6 +358,7 @@ export const InboxTabView: React.FC<InboxTabViewProps> = ({
             >
               {showAdvancedInputs ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             </button>
+            </div>
           </div>
 
           {showAdvancedInputs && (

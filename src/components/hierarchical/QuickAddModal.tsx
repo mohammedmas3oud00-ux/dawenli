@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { CheckSquare, Folder, Target, Eye, Layers, Zap, X, Inbox, Mic, Sparkles } from 'lucide-react';
 import { Pillar, Vision, ValueGoal, Project, Task, InboxItem } from '../../types/hierarchical';
 import { CustomSelect } from './CustomSelect';
+import { toLocalDateKey } from '../../utils/date';
 
 type QuickAddType = 'inbox' | 'task' | 'project' | 'goal' | 'vision' | 'pillar';
 
@@ -116,7 +117,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
       });
     } else if (activeType === 'project') {
       if (!projectTitle.trim() || !projectGoalId) return;
-      const today = new Date().toISOString().split('T')[0];
+      const today = toLocalDateKey();
       onAddProject({
         title: projectTitle.trim(),
         goal_id: projectGoalId,

@@ -1,4 +1,5 @@
 import { Task, Project, ValueGoal, Pillar, EnergyLevel } from '../types/hierarchical';
+import { parseLocalDateKey, toLocalDateKey } from './date';
 
 export interface TaskRecommendation {
   task: Task;
@@ -22,6 +23,7 @@ export interface RecommendationParams {
  * Estimate task duration in minutes based on priority, status, and description length
  */
 export function estimateTaskDuration(task: Task): number {
+  if (typeof task.estimated_hours === 'number' && task.estimated_hours > 0) return Math.round(task.estimated_hours * 60);
   if (task.priority === 'high') return 45;
   if (task.priority === 'medium') return 30;
   return 15;
@@ -31,6 +33,7 @@ export function estimateTaskDuration(task: Task): number {
  * Determine ideal energy level for task
  */
 export function determineTaskEnergy(task: Task): EnergyLevel {
+  if (task.energy_level) return task.energy_level;
   if (task.priority === 'high') return 'high';
   if (task.priority === 'medium') return 'medium';
   return 'low';
@@ -47,7 +50,7 @@ export function getRecommendedTasks(
   params: RecommendationParams
 ): TaskRecommendation[] {
   const { availableMinutes, energyLevel, pillarId = 'all' } = params;
-  const today = new Date().toISOString().split('T')[0];
+  const today = toLocalDateKey();
 
   // Map entities for fast lookup
   const projectMap = new Map(projects.map(p => [p.id, p]));
@@ -63,10 +66,13 @@ export function getRecommendedTasks(
   for (const task of activeTasks) {
     const project = task.project_id ? projectMap.get(task.project_id) : undefined;
     const goal = project ? goalMap.get(project.goal_id) : undefined;
-    const pillar = goal ? pillarMap.get(goal.pillar_id) : (pillarId !== 'all' ? pillarMap.get(pillarId) : undefined);
+    const pillar = goal ? pillarMap.get(goal.pillar_id) : undefined;
+
+    // Orphans are invalid data and must never be recommended as if they matched a filter.
+    if (!project || !goal || !pillar) continue;
 
     // Filter out if specific pillar requested and doesn't match
-    if (pillarId !== 'all' && pillar && pillar.id !== pillarId) {
+    if (pillarId !== 'all' && pillar.id !== pillarId) {
       continue;
     }
 
@@ -104,7 +110,7 @@ export function getRecommendedTasks(
         urgencyLabel = '🚨 مستحقة اليوم';
         reasons.push('مستحقة اليوم ضمن خطتك التنفيذية');
       } else {
-        const diffDays = Math.ceil((new Date(dueDate).getTime() - new Date(today).getTime()) / (1000 * 60 * 60 * 24));
+        const diffDays = Math.ceil((parseLocalDateKey(dueDate).getTime() - parseLocalDateKey(today).getTime()) / (1000 * 60 * 60 * 24));
         if (diffDays <= 3) {
           score += 25;
           urgencyLabel = `⏳ مستحقة خلال ${diffDays} أيام`;

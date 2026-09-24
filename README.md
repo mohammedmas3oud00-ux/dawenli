@@ -1,20 +1,24 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# دوّنلي
 
-# Run and deploy your AI Studio app
+منظومة إنتاجية شخصية هرمية مبنية بـ React وVite وSupabase.
 
-This contains everything you need to run your app locally.
+## التشغيل المحلي
 
-View your app in AI Studio: https://ai.studio/apps/41e6b62a-76c6-4759-9d05-8c0b6d6fc8c8
+1. انسخ `.env.example` إلى `.env` واضبط عنوان Supabase ومفتاح `anon`.
+2. ثبّت الحزم: `npm install`.
+3. طبّق migrations الموجودة في `supabase/migrations` على مشروع Supabase.
+4. للتطوير: `npm run dev`.
+5. لمحاكاة الإنتاج: `npm run build` ثم `npm start`.
 
-## Run Locally
+## بوابات الجودة
 
-**Prerequisites:**  Node.js
+- `npm run typecheck`
+- `npm test`
+- `npm run build`
+- `npm audit --audit-level=high`
 
+ميزات Gemini متاحة للمستخدم المسجل فقط. يدخل المستخدم authorization key من الواجهة، ويظل المفتاح في ذاكرة الصفحة فقط ولا يُحفظ في التخزين المحلي أو قاعدة البيانات أو السجلات.
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## النشر على Vercel
+
+اضبط `VITE_SUPABASE_URL` و`VITE_SUPABASE_ANON_KEY` في بيئة Vercel. ملفات TypeScript داخل `api/` تشغّل API، بينما يعالج fallback في `vercel.json` روابط SPA العميقة بعد أولوية نظام الملفات.

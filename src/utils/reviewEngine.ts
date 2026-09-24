@@ -9,6 +9,7 @@ import {
   SystemReviewSnapshot,
   ReviewActionItem 
 } from '../types/hierarchical';
+import { toLocalDateKey } from './date';
 
 /**
  * Calculates a live diagnostic snapshot of the entire productivity system.
@@ -33,7 +34,7 @@ export function generateSystemSnapshot(
     ? tasks.filter(t => relevantProjectIds.has(t.project_id))
     : tasks;
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = toLocalDateKey();
 
   const tasksCompleted = relevantTasks.filter(t => t.status === 'done').length;
   const tasksPending = relevantTasks.length - tasksCompleted;
@@ -43,17 +44,18 @@ export function generateSystemSnapshot(
 
   const projectsActive = relevantProjects.filter(p => p.status === 'in_progress').length;
 
-  const totalProgress = pillars.length > 0 
-    ? Math.round(pillars.reduce((acc, p) => acc + (p.progress || 0), 0) / pillars.length)
+  const relevantPillars = focusPillarId ? pillars.filter((pillar) => pillar.id === focusPillarId) : pillars;
+  const totalProgress = relevantPillars.length > 0
+    ? Math.round(relevantPillars.reduce((acc, p) => acc + (p.progress || 0), 0) / relevantPillars.length)
     : 0;
 
-  const pillarDistribution = pillars.map(p => ({
+  const pillarDistribution = relevantPillars.map(p => ({
     pillar_id: p.id,
     pillar_title: p.title,
     progress: p.progress || 0,
   }));
 
-  const sortedByProgress = [...pillars].sort((a, b) => (b.progress || 0) - (a.progress || 0));
+  const sortedByProgress = [...relevantPillars].sort((a, b) => (b.progress || 0) - (a.progress || 0));
   const topActivePillar = sortedByProgress[0]?.title;
   const laggingPillar = sortedByProgress[sortedByProgress.length - 1]?.title;
 
@@ -251,7 +253,7 @@ export function getInitialSeedReviews(
   const formatDate = (daysAgo: number) => {
     const d = new Date(today);
     d.setDate(d.getDate() - daysAgo);
-    return d.toISOString().split('T')[0];
+    return toLocalDateKey(d);
   };
 
   return [

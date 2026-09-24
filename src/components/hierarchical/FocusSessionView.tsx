@@ -14,12 +14,15 @@ import {
   Calendar,
   Target
 } from 'lucide-react';
-import { Task, Project, Pillar, FocusMode, FocusSessionRecord } from '../../types/hierarchical';
+import { Task, Project, Pillar, ValueGoal, FocusMode, FocusSessionRecord } from '../../types/hierarchical';
 import { playFocusSound } from '../../utils/audioChime';
+import { toLocalDateKey } from '../../utils/date';
+import { createId } from '../../utils/id';
 
 interface FocusSessionViewProps {
   tasks: Task[];
   projects: Project[];
+  goals: ValueGoal[];
   pillars: Pillar[];
   initialTask?: Task | null;
   onToggleTaskStatus: (taskId: string) => void;
@@ -34,6 +37,7 @@ type PomodoroPhase = 'work' | 'short_break' | 'long_break';
 export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
   tasks,
   projects,
+  goals,
   pillars,
   initialTask,
   onToggleTaskStatus,
@@ -70,7 +74,8 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
 
   const activeTask = tasks.find(t => t.id === selectedTaskId) || initialTask;
   const activeProject = activeTask ? projects.find(p => p.id === activeTask.project_id) : undefined;
-  const activePillar = activeProject ? pillars.find(p => p.id === (activeProject as any).pillar_id) : undefined;
+  const activeGoal = activeProject ? goals.find(goal => goal.id === activeProject.goal_id) : undefined;
+  const activePillar = activeGoal ? pillars.find(p => p.id === activeGoal.pillar_id) : undefined;
 
   const activeTasksList = tasks.filter(t => t.status !== 'done');
 
@@ -142,7 +147,7 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
     if (durationSecs < 60) return;
 
     const record: FocusSessionRecord = {
-      id: `focus-${Date.now()}`,
+      id: createId(),
       task_id: selectedTaskId || null,
       task_title: activeTask?.title,
       project_title: activeProject?.title,
@@ -150,7 +155,7 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
       duration_seconds: durationSecs,
       mode: sessionType,
       completed_at: new Date().toISOString(),
-      date: new Date().toISOString().split('T')[0],
+      date: toLocalDateKey(),
       distractions_count: distractionsCount,
       notes: customIntention || activeTask?.title || 'جلسة تركيز حر',
     };
@@ -223,7 +228,7 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = toLocalDateKey();
   const todaySessions = sessionsHistory.filter(s => s.date === todayStr);
   const totalFocusSecondsToday = todaySessions.reduce((acc, s) => acc + s.duration_seconds, 0);
   const totalFocusMinutesToday = Math.round(totalFocusSecondsToday / 60);

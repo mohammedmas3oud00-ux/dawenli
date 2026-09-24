@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { toLocalDateKey } from '../../utils/date';
 import { 
   CheckSquare, 
   Plus, 
@@ -21,7 +22,6 @@ import {
 } from 'lucide-react';
 import { Task, Project, CustomFieldDefinition } from '../../types/hierarchical';
 import { CustomSelect } from './CustomSelect';
-import { getCustomFields } from '../../utils/customFieldsStore';
 import { CustomFieldsManagerModal } from './CustomFieldsManagerModal';
 
 interface TasksTabViewProps {
@@ -35,6 +35,8 @@ interface TasksTabViewProps {
   onDeleteTask: (taskId: string) => void;
   onSelectProject: (projectId: string) => void;
   onStartFocus?: (task: Task) => void;
+  customFields: CustomFieldDefinition[];
+  onCustomFieldsChange: (fields: CustomFieldDefinition[]) => void;
 }
 
 type ViewMode = 'list' | 'board' | 'calendar';
@@ -50,6 +52,8 @@ export const TasksTabView: React.FC<TasksTabViewProps> = ({
   onDeleteTask,
   onSelectProject,
   onStartFocus,
+  customFields,
+  onCustomFieldsChange,
 }) => {
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [statusFilter, setStatusFilter] = useState<'all' | 'todo' | 'done'>('all');
@@ -57,15 +61,11 @@ export const TasksTabView: React.FC<TasksTabViewProps> = ({
   const [projectFilter, setProjectFilter] = useState<string>('all');
 
   // Notion-like Custom Fields State
-  const [customFields, setCustomFields] = useState<CustomFieldDefinition[]>([]);
   const [isFieldsModalOpen, setIsFieldsModalOpen] = useState(false);
 
   // Calendar State
   const [currentCalendarDate, setCurrentCalendarDate] = useState(() => new Date());
 
-  useEffect(() => {
-    setCustomFields(getCustomFields('task'));
-  }, []);
 
   const handleCustomFieldChange = (taskId: string, fieldId: string, value: any) => {
     const task = tasks.find((t) => t.id === taskId);
@@ -624,7 +624,7 @@ export const TasksTabView: React.FC<TasksTabViewProps> = ({
               const dayNum = i + 1;
               const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
               const dayTasks = tasks.filter((t) => t.due_date === dateString);
-              const isToday = new Date().toISOString().split('T')[0] === dateString;
+              const isToday = toLocalDateKey() === dateString;
 
               return (
                 <div
@@ -689,7 +689,7 @@ export const TasksTabView: React.FC<TasksTabViewProps> = ({
         onClose={() => setIsFieldsModalOpen(false)}
         entityType="task"
         fields={customFields}
-        onFieldsChanged={(newFields) => setCustomFields(newFields)}
+        onFieldsChanged={onCustomFieldsChange}
       />
     </div>
   );

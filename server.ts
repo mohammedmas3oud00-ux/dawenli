@@ -3,20 +3,21 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { GoogleGenAI, Type } from '@google/genai';
+import { createClient } from '@supabase/supabase-js';
+import { randomUUID } from 'crypto';
 
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const app = express();
-const PORT = 3000;
+export const app = express();
+const PORT = Number(process.env.PORT || 3000);
 
-app.use(express.json({ limit: '25mb' }));
+app.use(express.json({ limit: '4.4mb' }));
 
-// Helper to get GoogleGenAI client with fallback to request header or env
-function getAiClient(customKey?: string) {
-  const apiKey = (customKey || process.env.GEMINI_API_KEY || '').trim();
+function getAiClient(customKey: string) {
+  const apiKey = customKey.trim();
   return new GoogleGenAI({
     apiKey,
     httpOptions: {
@@ -26,9 +27,6 @@ function getAiClient(customKey?: string) {
     },
   });
 }
-
-// Default instance using env
-const ai = getAiClient();
 
 // Robust model cascade list prioritized by availability and quota
 const MODEL_CASCADE = [
@@ -91,7 +89,8 @@ async function generateContentWithFallback(params: {
     ? [params.preferredModel, ...MODEL_CASCADE.filter(m => m !== params.preferredModel)]
     : MODEL_CASCADE;
 
-  const client = params.customKey ? getAiClient(params.customKey) : ai;
+  if (!params.customKey) throw new Error('Gemini authorization key is required');
+  const client = getAiClient(params.customKey);
   let lastError: any = null;
 
   for (const model of models) {
@@ -124,6 +123,38 @@ async function generateContentWithFallback(params: {
 
   throw lastError || new Error('تعذر معالجة الطلب عبر نماذج الذكاء الاصطناعي حالياً');
 }
+
+type ApiErrorCode = 'BAD_REQUEST' | 'UNAUTHORIZED' | 'PAYLOAD_TOO_LARGE' | 'RATE_LIMITED' | 'UPSTREAM_ERROR' | 'NOT_CONFIGURED';
+
+function apiError(res: express.Response, status: number, code: ApiErrorCode, message: string) {
+  return res.status(status).json({ ok: false, error: { code, message, requestId: randomUUID() } });
+}
+
+const supabaseUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').trim();
+const supabaseAnonKey = (process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '').trim();
+const authClient = supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey, { auth: { persistSession: false } }) : null;
+const localRateLimits = new Map<string, { count: number; resetAt: number }>();
+
+async function requireAiAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
+  if (!authClient) return apiError(res, 503, 'NOT_CONFIGURED', 'خدمة المصادقة غير مهيأة.');
+  const token = req.headers.authorization?.match(/^Bearer\s+(.+)$/i)?.[1];
+  const geminiKey = typeof req.headers['x-gemini-api-key'] === 'string' ? req.headers['x-gemini-api-key'].trim() : '';
+  if (!token || !geminiKey) return apiError(res, 401, 'UNAUTHORIZED', 'الجلسة ومفتاح Gemini المؤقت مطلوبان.');
+  const { data, error } = await authClient.auth.getUser(token);
+  if (error || !data.user) return apiError(res, 401, 'UNAUTHORIZED', 'جلسة المستخدم غير صالحة أو منتهية.');
+
+  const now = Date.now();
+  const current = localRateLimits.get(data.user.id);
+  const bucket = !current || current.resetAt <= now ? { count: 0, resetAt: now + 60_000 } : current;
+  if (bucket.count >= 20) return apiError(res, 429, 'RATE_LIMITED', 'تم بلوغ حد الطلبات المؤقت. حاول بعد دقيقة.');
+  bucket.count += 1;
+  localRateLimits.set(data.user.id, bucket);
+  res.locals.userId = data.user.id;
+  res.locals.geminiKey = geminiKey;
+  next();
+}
+
+app.use('/api/ai', requireAiAuth);
 
 // Helper to remove speech-to-text stutter and repeated phrases (Unicode safe for Arabic)
 function sanitizeSpeechText(rawText: string): string {
@@ -195,10 +226,10 @@ async function handleAnalyzeInput(req: express.Request, res: express.Response) {
     const rawInput = req.body.speechText || req.body.text || req.body.prompt;
     const existingPillars = req.body.existingPillars || [];
     const existingProjects = req.body.existingProjects || [];
-    const customKey = (req.headers['x-gemini-api-key'] as string) || undefined;
+    const customKey = res.locals.geminiKey as string;
 
     if (!rawInput || typeof rawInput !== 'string' || !rawInput.trim()) {
-      return res.status(400).json({ error: 'لم يتم إرسال أي نص للتحليل' });
+      return apiError(res, 400, 'BAD_REQUEST', 'لم يتم إرسال أي نص للتحليل.');
     }
 
     const preCleanedText = sanitizeSpeechText(rawInput);
@@ -301,17 +332,10 @@ ${preCleanedText}
       estimatedHours: Number(t.estimatedHours) || 1,
     }));
 
-    return res.json({
-      success: true,
-      data: parsed,
-      modelUsed,
-    });
+    return res.json({ ok: true, data: { ...parsed, modelUsed } });
   } catch (error: any) {
-    console.error('Error in analyze handler:', error);
-    return res.status(500).json({
-      error: 'فشل تحليل النص بالذكاء الاصطناعي',
-      details: error.message || String(error),
-    });
+    console.error('Error in analyze handler');
+    return apiError(res, 502, 'UPSTREAM_ERROR', 'فشل تحليل النص بالذكاء الاصطناعي.');
   }
 }
 
@@ -325,8 +349,12 @@ app.post('/api/ai/transcribe', async (req, res) => {
   try {
     const { audioData, mimeType = 'audio/webm' } = req.body;
     if (!audioData) {
-      return res.status(400).json({ error: 'لم يتم إرسال بيانات الصوت' });
+      return apiError(res, 400, 'BAD_REQUEST', 'لم يتم إرسال بيانات الصوت.');
     }
+    if (typeof audioData !== 'string' || audioData.length > 4 * 1024 * 1024) {
+      return apiError(res, 413, 'PAYLOAD_TOO_LARGE', 'حجم التسجيل يتجاوز الحد الآمن 3MB.');
+    }
+    const client = getAiClient(res.locals.geminiKey as string);
 
     const audioPart = {
       inlineData: {
@@ -337,7 +365,7 @@ app.post('/api/ai/transcribe', async (req, res) => {
 
     let transcribed = '';
     try {
-      const response = await ai.models.generateContent({
+      const response = await client.models.generateContent({
         model: 'gemini-3.5-transcribe',
         contents: {
           parts: [
@@ -351,7 +379,7 @@ app.post('/api/ai/transcribe', async (req, res) => {
       transcribed = response.text?.trim() || '';
     } catch (primaryErr) {
       console.warn('Primary transcribe model failed, trying fallback:', primaryErr);
-      const fallback = await ai.models.generateContent({
+      const fallback = await client.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: {
           parts: [
@@ -365,16 +393,10 @@ app.post('/api/ai/transcribe', async (req, res) => {
       transcribed = fallback.text?.trim() || '';
     }
 
-    return res.json({
-      success: true,
-      transcription: sanitizeSpeechText(transcribed),
-    });
+    return res.json({ ok: true, data: { transcription: sanitizeSpeechText(transcribed) } });
   } catch (error: any) {
-    console.error('Error in /api/ai/transcribe:', error);
-    return res.status(500).json({
-      error: 'فشل تفريغ الصوت بالذكاء الاصطناعي',
-      details: error.message || String(error),
-    });
+    console.error('Error in /api/ai/transcribe');
+    return apiError(res, 502, 'UPSTREAM_ERROR', 'فشل تفريغ الصوت بالذكاء الاصطناعي.');
   }
 });
 
@@ -384,9 +406,9 @@ app.post('/api/ai/transcribe', async (req, res) => {
 app.post('/api/ai/decompose-project', async (req, res) => {
   try {
     const { projectTitle, projectDescription = '', pillarTitle = '' } = req.body;
-    const customKey = (req.headers['x-gemini-api-key'] as string) || undefined;
+    const customKey = res.locals.geminiKey as string;
     if (!projectTitle) {
-      return res.status(400).json({ error: 'اسم المشروع مطلوب' });
+      return apiError(res, 400, 'BAD_REQUEST', 'اسم المشروع مطلوب.');
     }
 
     const prompt = `
@@ -441,10 +463,10 @@ app.post('/api/ai/decompose-project', async (req, res) => {
       estimatedHours: Number(t.estimatedHours) || 1.5,
     }));
 
-    return res.json({ success: true, tasks, modelUsed });
+    return res.json({ ok: true, data: { tasks, modelUsed } });
   } catch (error: any) {
-    console.error('Error in /api/ai/decompose-project:', error);
-    return res.status(500).json({ error: 'فشل تفكيك المشروع', details: error.message || String(error) });
+    console.error('Error in /api/ai/decompose-project');
+    return apiError(res, 502, 'UPSTREAM_ERROR', 'فشل تفكيك المشروع.');
   }
 });
 
@@ -454,7 +476,7 @@ app.post('/api/ai/decompose-project', async (req, res) => {
 app.post('/api/ai/smart-review', async (req, res) => {
   try {
     const { frequency, reflection, systemMetrics } = req.body;
-    const customKey = (req.headers['x-gemini-api-key'] as string) || undefined;
+    const customKey = res.locals.geminiKey as string;
 
     const prompt = `
 أنت مستشار استراتيجي شخصي يحلل أداء المستخدم ضمن نظام الإنتاجية الهرمي (دوّنلي).
@@ -520,10 +542,10 @@ ${JSON.stringify(systemMetrics || {}, null, 2)}
       }));
     }
 
-    return res.json({ success: true, data, modelUsed });
+    return res.json({ ok: true, data: { ...data, modelUsed } });
   } catch (error: any) {
-    console.error('Error in /api/ai/smart-review:', error);
-    return res.status(500).json({ error: 'فشل التحليل الذكي للمراجعة', details: error.message || String(error) });
+    console.error('Error in /api/ai/smart-review');
+    return apiError(res, 502, 'UPSTREAM_ERROR', 'فشل التحليل الذكي للمراجعة.');
   }
 });
 
@@ -534,10 +556,10 @@ ${JSON.stringify(systemMetrics || {}, null, 2)}
 app.post('/api/ai/analyze-inbox', async (req, res) => {
   try {
     const { title, content = '', url = '', pillars = [], projects = [] } = req.body;
-    const customKey = (req.headers['x-gemini-api-key'] as string) || undefined;
+    const customKey = res.locals.geminiKey as string;
 
     if (!title || typeof title !== 'string' || !title.trim()) {
-      return res.status(400).json({ error: 'عنوان العنصر مطلوب للتحليل' });
+      return apiError(res, 400, 'BAD_REQUEST', 'عنوان العنصر مطلوب للتحليل.');
     }
 
     const prompt = `
@@ -636,14 +658,10 @@ app.post('/api/ai/analyze-inbox', async (req, res) => {
     parsed.priority = normalizePriority(parsed.priority);
     parsed.energyLevel = normalizeEnergy(parsed.energyLevel);
 
-    return res.json({
-      success: true,
-      data: parsed,
-      modelUsed,
-    });
+    return res.json({ ok: true, data: { ...parsed, modelUsed } });
   } catch (error: any) {
-    console.error('Error in /api/ai/analyze-inbox:', error);
-    return res.status(500).json({ error: 'فشل تحليل عنصر صندوق الوارد بالذكاء الاصطناعي', details: error.message || String(error) });
+    console.error('Error in /api/ai/analyze-inbox');
+    return apiError(res, 502, 'UPSTREAM_ERROR', 'فشل تحليل عنصر صندوق الوارد بالذكاء الاصطناعي.');
   }
 });
 
@@ -655,16 +673,19 @@ let cachedPrayerTimes: { date: string; data: any } | null = null;
 
 app.get('/api/prayer-times', async (req, res) => {
   try {
-    const lat = req.query.lat ? String(req.query.lat) : '30.0444'; // Default to Cairo / Middle East
-    const lng = req.query.lng ? String(req.query.lng) : '31.2357';
+    const lat = req.query.lat ? Number(req.query.lat) : 30.0444;
+    const lng = req.query.lng ? Number(req.query.lng) : 31.2357;
     const city = req.query.city ? String(req.query.city) : '';
     const country = req.query.country ? String(req.query.country) : '';
 
-    const todayStr = new Date().toISOString().split('T')[0];
-    const cacheKey = `${todayStr}_${lat}_${lng}_${city}`;
+    if (!Number.isFinite(lat) || lat < -90 || lat > 90 || !Number.isFinite(lng) || lng < -180 || lng > 180) {
+      return apiError(res, 400, 'BAD_REQUEST', 'إحداثيات الموقع غير صالحة.');
+    }
+    const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Cairo' }).format(new Date());
+    const cacheKey = `${todayStr}_${lat}_${lng}_${city}_${country}`;
 
     if (cachedPrayerTimes && cachedPrayerTimes.date === cacheKey) {
-      return res.json({ success: true, data: cachedPrayerTimes.data });
+      return res.json({ ok: true, data: cachedPrayerTimes.data });
     }
 
     let url = `https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lng}&method=5`; // Egyptian General Authority of Survey or Umm Al-Qura
@@ -697,29 +718,32 @@ app.get('/api/prayer-times', async (req, res) => {
       data: cleanTimings,
     };
 
-    return res.json({ success: true, data: cleanTimings });
+    return res.json({ ok: true, data: cleanTimings });
   } catch (error: any) {
-    console.warn('Failed to fetch from Aladhan API, using standard reliable prayer calculation:', error.message);
-    // Reliable static prayer times fallback
-    const fallbackTimings = {
-      Fajr: '04:30',
-      Sunrise: '05:55',
-      Dhuhr: '12:00',
-      Asr: '15:25',
-      Maghrib: '18:05',
-      Isha: '19:25',
-      date: new Date().toLocaleDateString('ar-EG'),
-      hijri: '',
-      hijriMonthArabic: '',
-      isFallback: true,
-    };
-    return res.json({ success: true, data: fallbackTimings });
+    console.warn('Failed to fetch accurate prayer times');
+    return apiError(res, 502, 'UPSTREAM_ERROR', 'تعذر جلب مواقيت الصلاة الدقيقة. فعّل الموقع أو حاول لاحقًا.');
   }
+});
+
+app.use((error: unknown, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const bodyError = error as { type?: string; status?: number };
+  if (bodyError.type === 'entity.too.large' || bodyError.status === 413) {
+    apiError(res, 413, 'PAYLOAD_TOO_LARGE', 'حجم الطلب يتجاوز الحد المسموح.');
+    return;
+  }
+  if (req.path.startsWith('/api/')) {
+    apiError(res, 400, 'BAD_REQUEST', 'صيغة الطلب غير صالحة.');
+    return;
+  }
+  next(error);
 });
 
 // Setup Vite middleware in dev or static files in production
 async function startServer() {
-  if (process.env.NODE_ENV !== 'production') {
+  const productionMode = process.env.NODE_ENV === 'production' || process.argv.includes('--production');
+  if (!Number.isInteger(PORT) || PORT < 1 || PORT > 65535) throw new Error('PORT must be a valid TCP port.');
+  if (productionMode && !authClient) throw new Error('SUPABASE_URL and SUPABASE_ANON_KEY (or VITE equivalents) are required.');
+  if (!productionMode) {
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -727,7 +751,7 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = path.resolve(__dirname, 'dist');
+    const distPath = path.resolve(process.cwd(), 'dist');
     app.use(express.static(distPath));
     app.get('*', (_req, res) => {
       res.sendFile(path.resolve(distPath, 'index.html'));
@@ -739,4 +763,11 @@ async function startServer() {
   });
 }
 
-startServer();
+if (process.env.VERCEL !== '1' && process.env.NODE_ENV !== 'test') {
+  startServer().catch((error) => {
+    console.error('Failed to start Dawenli server:', error);
+    process.exitCode = 1;
+  });
+}
+
+export default app;

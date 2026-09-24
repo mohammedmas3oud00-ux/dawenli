@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Pillar, Vision, ValueGoal, Project, Task } from '../../types/hierarchical';
 import { CustomSelect } from './CustomSelect';
+import { toLocalDateKey } from '../../utils/date';
 
 // ---------------------------------------------------------
 // 1. PILLAR MODAL
@@ -500,6 +501,7 @@ interface ProjectModalProps {
   initialProject?: Project | null;
   goalTitle?: string;
   goals?: ValueGoal[];
+  defaultProject?: Partial<Project> | null;
 }
 
 export const ProjectModal: React.FC<ProjectModalProps> = ({
@@ -509,6 +511,7 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
   initialProject,
   goalTitle,
   goals = [],
+  defaultProject,
 }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -526,15 +529,15 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
       setDueDate(initialProject.due_date || '');
       setGoalId(initialProject.goal_id);
     } else {
-      const today = new Date().toISOString().split('T')[0];
-      setTitle('');
-      setDescription('');
-      setStatus('in_progress');
-      setStartDate(today);
-      setDueDate(today);
-      if (goals.length > 0) setGoalId(goals[0].id);
+      const today = toLocalDateKey();
+      setTitle(defaultProject?.title || '');
+      setDescription(defaultProject?.description || '');
+      setStatus(defaultProject?.status || 'in_progress');
+      setStartDate(defaultProject?.start_date || today);
+      setDueDate(defaultProject?.due_date || today);
+      setGoalId(defaultProject?.goal_id || goals[0]?.id || '');
     }
-  }, [initialProject, isOpen, goals]);
+  }, [initialProject, defaultProject, isOpen, goals]);
 
   if (!isOpen) return null;
 
@@ -678,6 +681,7 @@ interface TaskModalProps {
   initialTask?: Task | null;
   projectTitle?: string;
   projects?: Project[];
+  defaultDueDate?: string | null;
 }
 
 export const TaskModal: React.FC<TaskModalProps> = ({
@@ -687,6 +691,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
   initialTask,
   projectTitle,
   projects = [],
+  defaultDueDate,
 }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -708,10 +713,10 @@ export const TaskModal: React.FC<TaskModalProps> = ({
       setDescription('');
       setStatus('todo');
       setPriority('medium');
-      setDueDate('');
+      setDueDate(defaultDueDate || '');
       if (projects.length > 0) setProjectId(projects[0].id);
     }
-  }, [initialTask, isOpen, projects]);
+  }, [initialTask, isOpen, projects, defaultDueDate]);
 
   if (!isOpen) return null;
 
@@ -776,7 +781,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
             </div>
           )}
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">الحالة:</label>
               <CustomSelect

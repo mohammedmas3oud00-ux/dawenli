@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { CustomSelect } from './CustomSelect';
 import { performAiSmartReview } from '../../utils/speechRecognition';
+import { toLocalDateKey } from '../../utils/date';
 
 interface ReviewModalProps {
   isOpen: boolean;
@@ -36,6 +37,7 @@ interface ReviewModalProps {
   onSaveReview: (review: Partial<SystemReview>) => void;
   initialReview?: SystemReview | null;
   defaultFrequency?: ReviewFrequency;
+  defaultFocusPillarId?: string | null;
   pillars: Pillar[];
   visions: Vision[];
   goals: ValueGoal[];
@@ -49,6 +51,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
   onSaveReview,
   initialReview,
   defaultFrequency = 'daily',
+  defaultFocusPillarId = null,
   pillars,
   visions,
   goals,
@@ -57,7 +60,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
 }) => {
   const [frequency, setFrequency] = useState<ReviewFrequency>(defaultFrequency);
   const [title, setTitle] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(toLocalDateKey());
   const [rating, setRating] = useState<number>(8);
   const [focusPillarId, setFocusPillarId] = useState<string>('all');
 
@@ -111,12 +114,12 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
       setRecommendations(initialReview.recommendations || []);
       setActionItems(initialReview.action_items || []);
     } else {
-      const todayStr = new Date().toISOString().split('T')[0];
+      const todayStr = toLocalDateKey();
       setFrequency(defaultFrequency);
       setTitle(getDefaultTitle(defaultFrequency, todayStr));
       setDate(todayStr);
       setRating(8);
-      setFocusPillarId('all');
+      setFocusPillarId(defaultFocusPillarId || 'all');
       setWins('');
       setChallenges('');
       setLessons('');
@@ -124,9 +127,9 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
       setNotes('');
 
       // Run automatic audit immediately for fresh draft
-      runAutoAudit(defaultFrequency, 'all');
+      runAutoAudit(defaultFrequency, defaultFocusPillarId || 'all');
     }
-  }, [initialReview, isOpen, defaultFrequency]);
+  }, [initialReview, isOpen, defaultFrequency, defaultFocusPillarId]);
 
   if (!isOpen) return null;
 

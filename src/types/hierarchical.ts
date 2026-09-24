@@ -57,6 +57,7 @@ export type CustomFieldType = 'text' | 'number' | 'select' | 'date' | 'checkbox'
 
 export interface CustomFieldDefinition {
   id: string;
+  user_id?: string;
   name: string;
   type: CustomFieldType;
   options?: string[]; // For select type
@@ -74,7 +75,7 @@ export interface Project {
   status: ProjectStatus;
   progress: number;     // Numeric 0 - 100 (auto-calculated from Tasks)
   start_date: string;
-  due_date: string;
+  due_date: string | null;
   custom_fields?: CustomFieldValues;
   created_at: string;
   updated_at?: string;
@@ -172,11 +173,8 @@ export interface InboxItem {
   url?: string;
   status: InboxStatus;
   created_at: string;
-  processed_into?: {
-    entity_type: 'task' | 'project' | 'goal' | 'habit' | 'vault';
-    entity_id: string;
-    target_title: string;
-  };
+  converted_to?: 'task' | 'project' | 'goal' | 'habit' | 'vault' | null;
+  converted_entity_id?: string | null;
 }
 
 export type HabitTimeOfDay = 'morning' | 'afternoon' | 'evening' | 'anytime';
@@ -190,10 +188,10 @@ export interface Habit {
   description: string;
   frequency: HabitFrequency;
   target_days_per_week: number;
+  custom_days?: number[]; // JavaScript weekdays: Sunday = 0
   time_of_day: HabitTimeOfDay;
   current_streak: number;
   longest_streak: number;
-  best_streak?: number;
   completed_dates: string[]; // List of YYYY-MM-DD strings
   is_active: boolean;
   created_at: string;
@@ -250,6 +248,7 @@ export type FocusMode = 'pomodoro' | 'flowtime';
 
 export interface FocusSessionRecord {
   id: string;
+  user_id?: string;
   task_id?: string | null;
   task_title?: string;
   project_title?: string;
@@ -287,5 +286,21 @@ export interface TimeBlock {
   is_completed: boolean;
   notes?: string;
   created_at: string;
+}
+
+export interface AppDataSnapshot {
+  schemaVersion: 3;
+  pillars: Pillar[];
+  visions: Vision[];
+  goals: ValueGoal[];
+  projects: Project[];
+  tasks: Task[];
+  reviews: SystemReview[];
+  inboxItems: InboxItem[];
+  habits: Habit[];
+  vaults: VaultItem[];
+  focusSessions: FocusSessionRecord[];
+  timeBlocks: TimeBlock[];
+  customFieldDefinitions: CustomFieldDefinition[];
 }
 

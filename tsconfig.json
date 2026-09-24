@@ -14,7 +14,8 @@
     "moduleResolution": "bundler",
     "isolatedModules": true,
     "moduleDetection": "force",
-    "allowJs": true,
+    "allowJs": false,
+    "strict": true,
     "jsx": "react-jsx",
     "paths": {
       "@/*": [
@@ -23,5 +24,6 @@
     },
     "allowImportingTsExtensions": true,
     "noEmit": true
-  }
+  },
+  "include": ["src", "server.ts", "api", "vite.config.ts", "vitest.config.ts"]
 }

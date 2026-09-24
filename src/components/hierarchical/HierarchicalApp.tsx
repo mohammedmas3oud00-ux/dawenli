@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { lazy, useState, useEffect, useRef } from 'react';
 import { 
   Pillar, 
   Vision,
@@ -14,61 +14,52 @@ import {
   Habit,
   VaultItem,
   FocusSessionRecord,
-  TimeBlock
+  TimeBlock,
+  CustomFieldDefinition,
+  AppDataSnapshot
 } from '../../types/hierarchical';
 import { 
-  loadHierarchicalState, 
-  saveHierarchicalState, 
-  recalculateAllHierarchicalProgress,
-  loadReviewsState,
-  saveReviewsState
+  recalculateAllHierarchicalProgress
 } from '../../utils/hierarchicalStore';
-import { 
-  loadPPVState, 
-  saveInboxState, 
-  saveHabitsState, 
-  saveVaultsState 
-} from '../../utils/ppvStore';
 import { generateSystemSnapshot } from '../../utils/reviewEngine';
 
 import { Breadcrumbs } from './Breadcrumbs';
 import { Sidebar } from './Sidebar';
-import { PillarsListView } from './PillarsListView';
-import { PillarDetailView } from './PillarDetailView';
-import { VisionDetailView } from './VisionDetailView';
-import { ValueGoalDetailView } from './ValueGoalDetailView';
-import { ProjectDetailView } from './ProjectDetailView';
-import { VisionsTabView } from './VisionsTabView';
-import { GoalsTabView } from './GoalsTabView';
-import { ProjectsTabView } from './ProjectsTabView';
-import { TasksTabView } from './TasksTabView';
-import { ReviewsTabView } from './ReviewsTabView';
-import { ReviewModal } from './ReviewModal';
-import { InboxTabView } from './InboxTabView';
-import { HabitsTabView } from './HabitsTabView';
-import { VaultsTabView } from './VaultsTabView';
-import { FocusSessionView } from './FocusSessionView';
-import { TimeBlockingView } from './TimeBlockingView';
-import { 
-  loadFocusSessions, 
-  saveFocusSession, 
-  loadTimeBlocks, 
-  saveTimeBlocks 
-} from '../../utils/focusAndTimeBlockStore';
-import { 
-  PillarModal, 
-  VisionModal,
-  ValueGoalModal, 
-  ProjectModal, 
-  TaskModal 
-} from './EntityFormModals';
-import { QuickAddModal } from './QuickAddModal';
-import { SqlSchemaModal } from './SqlSchemaModal';
-import { VoiceAiCaptureModal } from './VoiceAiCaptureModal';
+const PillarsListView = lazy(() => import('./PillarsListView').then((module) => ({ default: module.PillarsListView })));
+const PillarDetailView = lazy(() => import('./PillarDetailView').then((module) => ({ default: module.PillarDetailView })));
+const VisionDetailView = lazy(() => import('./VisionDetailView').then((module) => ({ default: module.VisionDetailView })));
+const ValueGoalDetailView = lazy(() => import('./ValueGoalDetailView').then((module) => ({ default: module.ValueGoalDetailView })));
+const ProjectDetailView = lazy(() => import('./ProjectDetailView').then((module) => ({ default: module.ProjectDetailView })));
+const VisionsTabView = lazy(() => import('./VisionsTabView').then((module) => ({ default: module.VisionsTabView })));
+const GoalsTabView = lazy(() => import('./GoalsTabView').then((module) => ({ default: module.GoalsTabView })));
+const ProjectsTabView = lazy(() => import('./ProjectsTabView').then((module) => ({ default: module.ProjectsTabView })));
+const TasksTabView = lazy(() => import('./TasksTabView').then((module) => ({ default: module.TasksTabView })));
+const ReviewsTabView = lazy(() => import('./ReviewsTabView').then((module) => ({ default: module.ReviewsTabView })));
+const ReviewModal = lazy(() => import('./ReviewModal').then((module) => ({ default: module.ReviewModal })));
+const InboxTabView = lazy(() => import('./InboxTabView').then((module) => ({ default: module.InboxTabView })));
+const HabitsTabView = lazy(() => import('./HabitsTabView').then((module) => ({ default: module.HabitsTabView })));
+const VaultsTabView = lazy(() => import('./VaultsTabView').then((module) => ({ default: module.VaultsTabView })));
+const FocusSessionView = lazy(() => import('./FocusSessionView').then((module) => ({ default: module.FocusSessionView })));
+const TimeBlockingView = lazy(() => import('./TimeBlockingView').then((module) => ({ default: module.TimeBlockingView })));
+const entityModals = () => import('./EntityFormModals');
+const PillarModal = lazy(() => entityModals().then((module) => ({ default: module.PillarModal })));
+const VisionModal = lazy(() => entityModals().then((module) => ({ default: module.VisionModal })));
+const ValueGoalModal = lazy(() => entityModals().then((module) => ({ default: module.ValueGoalModal })));
+const ProjectModal = lazy(() => entityModals().then((module) => ({ default: module.ProjectModal })));
+const TaskModal = lazy(() => entityModals().then((module) => ({ default: module.TaskModal })));
+const QuickAddModal = lazy(() => import('./QuickAddModal').then((module) => ({ default: module.QuickAddModal })));
+const SqlSchemaModal = lazy(() => import('./SqlSchemaModal').then((module) => ({ default: module.SqlSchemaModal })));
+const VoiceAiCaptureModal = lazy(() => import('./VoiceAiCaptureModal').then((module) => ({ default: module.VoiceAiCaptureModal })));
 import { AuthModal } from './AuthModal';
 import { ToastContainer, ToastMessage } from './ToastNotification';
-import { Database, RotateCcw, Plus, Menu, Mic, Sparkles, Sun, Moon, User, LogIn, LogOut } from 'lucide-react';
+import { Database, RotateCcw, Plus, Menu, Mic, Sparkles, Sun, Moon, User, LogIn, LogOut, KeyRound } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../../utils/supabaseClient';
+import { createSnapshotBackup, DataRepository, emptySnapshot, GuestLocalRepository, SupabaseRepository } from '../../data/repository';
+import { findLegacySnapshot, remapSnapshotIds, removeLegacyDawenliKeys } from '../../data/legacyMigration';
+import { createId } from '../../utils/id';
+import { toLocalDateKey } from '../../utils/date';
+import { calculateHabitStreak } from '../../utils/habitStreak';
+import { clearGeminiAuthorizationKey, getGeminiAuthorizationKey, setGeminiAuthorizationKey } from '../../utils/aiCredentials';
 
 export const HierarchicalApp: React.FC = () => {
   // Core Entities State
@@ -87,6 +78,7 @@ export const HierarchicalApp: React.FC = () => {
   // Focus Sessions & Time Blocking State
   const [focusSessions, setFocusSessions] = useState<FocusSessionRecord[]>([]);
   const [timeBlocks, setTimeBlocks] = useState<TimeBlock[]>([]);
+  const [customFieldDefinitions, setCustomFieldDefinitions] = useState<CustomFieldDefinition[]>([]);
   const [activeFocusTask, setActiveFocusTask] = useState<Task | null>(null);
 
   // Navigation State
@@ -107,39 +99,41 @@ export const HierarchicalApp: React.FC = () => {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   // User Authentication State
-  const [currentUser, setCurrentUser] = useState<{ email: string; isGuest?: boolean } | null>(() => {
-    const saved = localStorage.getItem('dawenli_user');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {}
-    }
-    return { email: 'mohammedmasoud.work@gmail.com', isGuest: false };
-  });
+  const [currentUser, setCurrentUser] = useState<{ id?: string; email: string; isGuest?: boolean } | null>(null);
+  const [authStatus, setAuthStatus] = useState<'loading' | 'signedOut' | 'guest' | 'authenticated'>('loading');
+  const [dataReady, setDataReady] = useState(false);
+  const repositoryRef = useRef<DataRepository | null>(null);
+  const lastSavedSnapshotRef = useRef<AppDataSnapshot>(emptySnapshot());
 
   // Supabase Auth Session Synchronization
   useEffect(() => {
-    if (isSupabaseConfigured && supabase) {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session?.user?.email) {
-          const authUser = { email: session.user.email, isGuest: false };
-          setCurrentUser(authUser);
-          localStorage.setItem('dawenli_user', JSON.stringify(authUser));
-        }
-      });
-
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-        if (session?.user?.email) {
-          const authUser = { email: session.user.email, isGuest: false };
-          setCurrentUser(authUser);
-          localStorage.setItem('dawenli_user', JSON.stringify(authUser));
-        }
-      });
-
-      return () => {
-        subscription.unsubscribe();
-      };
+    if (!isSupabaseConfigured || !supabase) {
+      setAuthStatus('signedOut');
+      return;
     }
+    let active = true;
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (!active) return;
+      if (error || !session?.user?.email) {
+        setCurrentUser(null);
+        setAuthStatus('signedOut');
+        return;
+      }
+      setCurrentUser({ id: session.user.id, email: session.user.email });
+      setAuthStatus('authenticated');
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!active) return;
+      if (session?.user?.email) {
+        setCurrentUser({ id: session.user.id, email: session.user.email });
+        setAuthStatus('authenticated');
+      } else {
+        setCurrentUser(null);
+        setAuthStatus('signedOut');
+        setDataReady(false);
+      }
+    });
+    return () => { active = false; subscription.unsubscribe(); };
   }, []);
 
   // Dark Mode Theme State
@@ -166,9 +160,9 @@ export const HierarchicalApp: React.FC = () => {
     setIsDark((prev) => !prev);
   };
 
-  const handleAuthSuccess = (user: { email: string; isGuest?: boolean }) => {
+  const handleAuthSuccess = (user: { id?: string; email: string; isGuest?: boolean }) => {
     setCurrentUser(user);
-    localStorage.setItem('dawenli_user', JSON.stringify(user));
+    setAuthStatus(user.isGuest ? 'guest' : 'authenticated');
     setIsAuthModalOpen(false);
     setToasts((prev) => [
       ...prev,
@@ -182,6 +176,7 @@ export const HierarchicalApp: React.FC = () => {
   };
 
   const handleSignOut = async () => {
+    clearGeminiAuthorizationKey();
     if (isSupabaseConfigured && supabase) {
       try {
         await supabase.auth.signOut();
@@ -190,7 +185,8 @@ export const HierarchicalApp: React.FC = () => {
       }
     }
     setCurrentUser(null);
-    localStorage.removeItem('dawenli_user');
+    setAuthStatus('signedOut');
+    setDataReady(false);
     setIsAuthModalOpen(true);
     setToasts((prev) => [
       ...prev,
@@ -235,6 +231,7 @@ export const HierarchicalApp: React.FC = () => {
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [editingReview, setEditingReview] = useState<SystemReview | null>(null);
   const [defaultReviewFrequency, setDefaultReviewFrequency] = useState<ReviewFrequency>('daily');
+  const [defaultReviewPillarId, setDefaultReviewPillarId] = useState<string | null>(null);
 
   const [isPillarModalOpen, setIsPillarModalOpen] = useState(false);
   const [editingPillar, setEditingPillar] = useState<Pillar | null>(null);
@@ -247,37 +244,114 @@ export const HierarchicalApp: React.FC = () => {
 
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [newProjectDefaults, setNewProjectDefaults] = useState<Partial<Project> | null>(null);
 
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [newTaskDueDate, setNewTaskDueDate] = useState<string | null>(null);
 
-  // Load state on mount
+  const applySnapshot = (snapshot: AppDataSnapshot) => {
+    const calculated = recalculateAllHierarchicalProgress(snapshot.pillars, snapshot.visions, snapshot.goals, snapshot.projects, snapshot.tasks);
+    setPillars(calculated.pillars);
+    setVisions(calculated.visions);
+    setGoals(calculated.goals);
+    setProjects(calculated.projects);
+    setTasks(calculated.tasks);
+    setReviews(snapshot.reviews);
+    setInboxItems(snapshot.inboxItems);
+    setHabits(snapshot.habits);
+    setVaults(snapshot.vaults);
+    setFocusSessions(snapshot.focusSessions);
+    setTimeBlocks(snapshot.timeBlocks);
+    setCustomFieldDefinitions(snapshot.customFieldDefinitions);
+  };
+
+  const handleConfigureAiKey = (): boolean => {
+    if (currentUser?.isGuest || authStatus !== 'authenticated') {
+      alert('ميزات Gemini متاحة للحسابات المسجلة فقط.');
+      return false;
+    }
+    const entered = window.prompt('أدخل Gemini authorization key. سيبقى في الذاكرة فقط حتى تحديث الصفحة أو تسجيل الخروج.', getGeminiAuthorizationKey());
+    if (entered === null) return Boolean(getGeminiAuthorizationKey());
+    if (!entered.trim()) {
+      clearGeminiAuthorizationKey();
+      return false;
+    }
+    setGeminiAuthorizationKey(entered);
+    setToasts((previous) => [...previous, { id: createId(), type: 'success', title: 'تم تفعيل Gemini', description: 'المفتاح محفوظ مؤقتًا في ذاكرة الصفحة فقط.' }]);
+    return true;
+  };
+
+  const handleOpenVoiceAi = () => {
+    if ((getGeminiAuthorizationKey() || handleConfigureAiKey()) && authStatus === 'authenticated') {
+      setIsVoiceAiModalOpen(true);
+    }
+  };
+
+  // Select exactly one repository per session. Signed-in data never falls back to local storage.
   useEffect(() => {
-    const loaded = loadHierarchicalState();
-    setPillars(loaded.pillars);
-    setVisions(loaded.visions);
-    setGoals(loaded.goals);
-    setProjects(loaded.projects);
-    setTasks(loaded.tasks);
-    const revs = loadReviewsState(
-      loaded.pillars,
-      loaded.visions,
-      loaded.goals,
-      loaded.projects,
-      loaded.tasks
-    );
-    setReviews(revs);
+    if (!currentUser || authStatus === 'loading' || authStatus === 'signedOut') return;
+    const repository = currentUser.isGuest
+      ? new GuestLocalRepository()
+      : currentUser.id && supabase
+        ? new SupabaseRepository(supabase, currentUser.id)
+        : null;
+    if (!repository) {
+      setAuthStatus('signedOut');
+      setCurrentUser(null);
+      return;
+    }
+    repositoryRef.current = repository;
+    setDataReady(false);
+    let active = true;
+    repository.load().then(async (loadedSnapshot) => {
+      if (!active) return;
+      let snapshot = loadedSnapshot;
+      const cloudIsEmpty = !currentUser.isGuest && [snapshot.pillars, snapshot.visions, snapshot.goals, snapshot.projects, snapshot.tasks, snapshot.inboxItems, snapshot.habits, snapshot.vaults].every((items) => items.length === 0);
+      const legacy = currentUser.isGuest ? null : findLegacySnapshot();
+      const migrationPrompt = cloudIsEmpty
+        ? `عُثر على ${legacy?.count ?? 0} عنصرًا محليًا قديمًا. هل تريد تنزيل نسخة احتياطية ثم استيرادها إلى حسابك السحابي؟`
+        : `عُثر على بيانات محلية قديمة، لكن الحساب السحابي غير فارغ ولن يُدمج تلقائيًا. هل تريد تنزيل نسخة JSON فقط؟`;
+      if (legacy && !legacy.isSeedOnly && legacy.count > 0 && window.confirm(migrationPrompt)) {
+        createSnapshotBackup(legacy.snapshot);
+        if (cloudIsEmpty) {
+          const migrated = remapSnapshotIds(legacy.snapshot);
+          await repository.save(migrated);
+          removeLegacyDawenliKeys();
+          snapshot = migrated;
+        } else {
+          setToasts((previous) => [...previous, { id: createId(), type: 'info', title: 'تم تصدير البيانات المحلية', description: 'لم تُدمج تلقائيًا لأن الحساب السحابي يحتوي بيانات بالفعل.' }]);
+        }
+      }
+      applySnapshot(snapshot);
+      lastSavedSnapshotRef.current = snapshot;
+      setDataReady(true);
+    }).catch((error: unknown) => {
+      if (!active) return;
+      setToasts((previous) => [...previous, { id: createId(), type: 'warning', title: 'تعذر تحميل البيانات', description: error instanceof Error ? error.message : 'خطأ غير معروف' }]);
+    });
+    return () => { active = false; };
+  }, [currentUser?.id, currentUser?.isGuest, authStatus]);
 
-    const { inbox, habits: loadedHabits, vaults: loadedVaults } = loadPPVState(loaded.pillars);
-    setInboxItems(inbox);
-    setHabits(loadedHabits);
-    setVaults(loadedVaults);
-
-    const initialFocus = loadFocusSessions(loaded.tasks);
-    setFocusSessions(initialFocus);
-    const initialBlocks = loadTimeBlocks(loaded.tasks, loaded.projects, loaded.pillars);
-    setTimeBlocks(initialBlocks);
-  }, []);
+  useEffect(() => {
+    if (!dataReady || !repositoryRef.current) return;
+    const snapshot: AppDataSnapshot = {
+      schemaVersion: 3,
+      pillars, visions, goals, projects, tasks, reviews,
+      inboxItems, habits, vaults, focusSessions, timeBlocks,
+      customFieldDefinitions,
+    };
+    const repository = repositoryRef.current;
+    const timer = window.setTimeout(() => {
+      repository.save(snapshot).then(() => {
+        lastSavedSnapshotRef.current = snapshot;
+      }).catch((error: unknown) => {
+        applySnapshot(lastSavedSnapshotRef.current);
+        setToasts((previous) => [...previous, { id: createId(), type: 'warning', title: 'فشل الحفظ', description: error instanceof Error ? error.message : 'أُعيدت آخر حالة محفوظة.' }]);
+      });
+    }, 400);
+    return () => window.clearTimeout(timer);
+  }, [dataReady, pillars, visions, goals, projects, tasks, reviews, inboxItems, habits, vaults, focusSessions, timeBlocks, customFieldDefinitions]);
 
   // Recalculate & Persist Helper
   const applyStateUpdate = (
@@ -299,13 +373,6 @@ export const HierarchicalApp: React.FC = () => {
     setGoals(recalculated.goals);
     setProjects(recalculated.projects);
     setTasks(recalculated.tasks);
-    saveHierarchicalState(
-      recalculated.pillars,
-      recalculated.visions,
-      recalculated.goals,
-      recalculated.projects,
-      recalculated.tasks
-    );
   };
 
   // Active Entities for drill-down context
@@ -386,8 +453,7 @@ export const HierarchicalApp: React.FC = () => {
   };
 
   const handleSaveFocusSession = (session: FocusSessionRecord) => {
-    const updated = saveFocusSession(session);
-    setFocusSessions(updated);
+    setFocusSessions((previous) => [session, ...previous.filter((item) => item.id !== session.id)]);
   };
 
   const handleSaveTimeBlock = (block: TimeBlock) => {
@@ -396,13 +462,18 @@ export const HierarchicalApp: React.FC = () => {
       ? timeBlocks.map((b) => (b.id === block.id ? block : b))
       : [block, ...timeBlocks];
     setTimeBlocks(updated);
-    saveTimeBlocks(updated);
+  };
+
+  const handleSaveTimeBlocks = (blocks: TimeBlock[]) => {
+    setTimeBlocks((previous) => {
+      const incomingIds = new Set(blocks.map((block) => block.id));
+      return [...blocks, ...previous.filter((block) => !incomingIds.has(block.id))];
+    });
   };
 
   const handleDeleteTimeBlock = (blockId: string) => {
     const updated = timeBlocks.filter((b) => b.id !== blockId);
     setTimeBlocks(updated);
-    saveTimeBlocks(updated);
   };
 
   const handleToggleTimeBlockStatus = (blockId: string) => {
@@ -410,7 +481,6 @@ export const HierarchicalApp: React.FC = () => {
       b.id === blockId ? { ...b, is_completed: !b.is_completed } : b
     );
     setTimeBlocks(updated);
-    saveTimeBlocks(updated);
   };
 
   // 1. Pillars
@@ -422,7 +492,7 @@ export const HierarchicalApp: React.FC = () => {
       applyStateUpdate(updated, visions, goals, projects, tasks);
     } else {
       const newP: Pillar = {
-        id: `pillar-${Date.now()}`,
+        id: createId(),
         title: pillarData.title || 'ركيزة جديدة',
         description: pillarData.description || '',
         pillar_group: pillarData.pillar_group || 'Growth',
@@ -454,6 +524,11 @@ export const HierarchicalApp: React.FC = () => {
     const remainingPillars = pillars.filter((p) => p.id !== pillarId);
 
     applyStateUpdate(remainingPillars, remainingVisions, remainingGoals, remainingProjects, remainingTasks);
+    setHabits((items) => items.filter((item) => item.pillar_id !== pillarId));
+    setVaults((items) => items.filter((item) => item.pillar_id !== pillarId));
+    setTimeBlocks((items) => items.filter((item) => item.pillar_id !== pillarId && (!item.project_id || !targetProjectIds.includes(item.project_id))));
+    setFocusSessions((items) => items.map((item) => item.task_id && !remainingTasks.some((task) => task.id === item.task_id) ? { ...item, task_id: null } : item));
+    setReviews((items) => items.map((item) => item.focus_pillar_id === pillarId ? { ...item, focus_pillar_id: null } : item));
     if (selectedPillarId === pillarId) {
       setSelectedPillarId(null);
       setSelectedVisionId(null);
@@ -470,9 +545,13 @@ export const HierarchicalApp: React.FC = () => {
       );
       applyStateUpdate(pillars, updated, goals, projects, tasks);
     } else {
-      const targetPillarId = visionData.pillar_id || selectedPillarId || (pillars[0]?.id) || 'pillar-1';
+      const targetPillarId = visionData.pillar_id || selectedPillarId;
+      if (!targetPillarId || !pillars.some((pillar) => pillar.id === targetPillarId)) {
+        alert('أنشئ ركيزة أو اختر ركيزة صحيحة أولًا.');
+        return;
+      }
       const newV: Vision = {
-        id: `vis-${Date.now()}`,
+        id: createId(),
         pillar_id: targetPillarId,
         title: visionData.title || 'رؤية جديدة',
         description: visionData.description || '',
@@ -499,6 +578,8 @@ export const HierarchicalApp: React.FC = () => {
     const remainingVisions = visions.filter((v) => v.id !== visionId);
 
     applyStateUpdate(pillars, remainingVisions, remainingGoals, remainingProjects, remainingTasks);
+    setTimeBlocks((items) => items.filter((item) => !item.project_id || !targetProjectIds.includes(item.project_id)));
+    setFocusSessions((items) => items.map((item) => item.task_id && !remainingTasks.some((task) => task.id === item.task_id) ? { ...item, task_id: null } : item));
     if (selectedVisionId === visionId) {
       setSelectedVisionId(null);
       setSelectedGoalId(null);
@@ -514,10 +595,18 @@ export const HierarchicalApp: React.FC = () => {
       );
       applyStateUpdate(pillars, visions, updated, projects, tasks);
     } else {
-      const targetPillarId = currentPillar?.id || (currentVision ? currentVision.pillar_id : (pillars[0]?.id || 'pillar-1'));
+      const targetPillarId = goalData.pillar_id || currentVision?.pillar_id || currentPillar?.id;
+      if (!targetPillarId || !pillars.some((pillar) => pillar.id === targetPillarId)) {
+        alert('أنشئ ركيزة أو اختر ركيزة صحيحة أولًا.');
+        return;
+      }
       const targetVisionId = currentVision?.id || goalData.vision_id || undefined;
+      if (targetVisionId && !visions.some((vision) => vision.id === targetVisionId && vision.pillar_id === targetPillarId)) {
+        alert('الرؤية المختارة لا تتبع الركيزة المحددة.');
+        return;
+      }
       const newG: ValueGoal = {
-        id: `goal-${Date.now()}`,
+        id: createId(),
         pillar_id: targetPillarId,
         vision_id: targetVisionId,
         title: goalData.title || 'هدف قيمة جديد',
@@ -542,6 +631,8 @@ export const HierarchicalApp: React.FC = () => {
     const remainingGoals = goals.filter((g) => g.id !== goalId);
 
     applyStateUpdate(pillars, visions, remainingGoals, remainingProjects, remainingTasks);
+    setTimeBlocks((items) => items.filter((item) => !item.project_id || !targetProjectIds.includes(item.project_id)));
+    setFocusSessions((items) => items.map((item) => item.task_id && !remainingTasks.some((task) => task.id === item.task_id) ? { ...item, task_id: null } : item));
     if (selectedGoalId === goalId) {
       setSelectedGoalId(null);
       setSelectedProjectId(null);
@@ -556,10 +647,14 @@ export const HierarchicalApp: React.FC = () => {
       );
       applyStateUpdate(pillars, visions, goals, updated, tasks);
     } else {
-      const targetGoalId = projectData.goal_id || currentGoal?.id || (goals[0]?.id) || 'goal-1';
-      const today = new Date().toISOString().split('T')[0];
+      const targetGoalId = projectData.goal_id || currentGoal?.id;
+      if (!targetGoalId || !goals.some((goal) => goal.id === targetGoalId)) {
+        alert('أنشئ هدف قيمة أو اختر هدفًا صحيحًا أولًا.');
+        return;
+      }
+      const today = toLocalDateKey();
       const newP: Project = {
-        id: `proj-${Date.now()}`,
+        id: createId(),
         goal_id: targetGoalId,
         title: projectData.title || 'مشروع جديد',
         description: projectData.description || '',
@@ -580,6 +675,9 @@ export const HierarchicalApp: React.FC = () => {
     const remainingProjects = projects.filter((p) => p.id !== projectId);
 
     applyStateUpdate(pillars, visions, goals, remainingProjects, remainingTasks);
+    setVaults((items) => items.map((item) => item.project_id === projectId ? { ...item, project_id: null } : item));
+    setTimeBlocks((items) => items.filter((item) => item.project_id !== projectId));
+    setFocusSessions((items) => items.map((item) => item.task_id && !remainingTasks.some((task) => task.id === item.task_id) ? { ...item, task_id: null } : item));
     if (selectedProjectId === projectId) {
       setSelectedProjectId(null);
     }
@@ -593,9 +691,13 @@ export const HierarchicalApp: React.FC = () => {
       );
       applyStateUpdate(pillars, visions, goals, projects, updated);
     } else {
-      const targetProjectId = taskData.project_id || currentProject?.id || (projects[0]?.id) || 'proj-1';
+      const targetProjectId = taskData.project_id || currentProject?.id;
+      if (!targetProjectId || !projects.some((project) => project.id === targetProjectId)) {
+        alert('أنشئ مشروعًا أو اختر مشروعًا صحيحًا أولًا.');
+        return;
+      }
       const newTask: Task = {
-        id: `task-${Date.now()}`,
+        id: createId(),
         project_id: targetProjectId,
         title: taskData.title || 'مهمة جديدة',
         description: taskData.description || '',
@@ -687,6 +789,8 @@ export const HierarchicalApp: React.FC = () => {
   const handleDeleteTask = (taskId: string) => {
     const remainingTasks = tasks.filter((t) => t.id !== taskId);
     applyStateUpdate(pillars, visions, goals, projects, remainingTasks);
+    setTimeBlocks((items) => items.map((item) => item.task_id === taskId ? { ...item, task_id: null } : item));
+    setFocusSessions((items) => items.map((item) => item.task_id === taskId ? { ...item, task_id: null } : item));
   };
 
   // Direct jumps
@@ -700,7 +804,7 @@ export const HierarchicalApp: React.FC = () => {
 
   const handleJumpToGoal = (goalId: string, visionId?: string, pillarId?: string) => {
     if (pillarId) setSelectedPillarId(pillarId);
-    if (visionId) setSelectedVisionId(visionId);
+    setSelectedVisionId(visionId || null);
     setSelectedGoalId(goalId);
     setSelectedProjectId(null);
     setCurrentTab('hierarchy');
@@ -712,7 +816,7 @@ export const HierarchicalApp: React.FC = () => {
     const targetGoal = goals.find((g) => g.id === targetGoalId);
     if (targetGoal) {
       setSelectedPillarId(targetGoal.pillar_id);
-      if (targetGoal.vision_id) setSelectedVisionId(targetGoal.vision_id);
+      setSelectedVisionId(targetGoal.vision_id || null);
       setSelectedGoalId(targetGoal.id);
     }
     setSelectedProjectId(projectId);
@@ -730,9 +834,9 @@ export const HierarchicalApp: React.FC = () => {
       );
     } else {
       const newRev: SystemReview = {
-        id: `rev-${Date.now()}`,
+        id: createId(),
         frequency: reviewData.frequency || 'daily',
-        date: reviewData.date || new Date().toISOString().split('T')[0],
+        date: reviewData.date || toLocalDateKey(),
         title: reviewData.title || 'مراجعة دورية',
         rating: reviewData.rating || 8,
         focus_pillar_id: reviewData.focus_pillar_id || null,
@@ -762,7 +866,6 @@ export const HierarchicalApp: React.FC = () => {
       updated = [newRev, ...reviews];
     }
     setReviews(updated);
-    saveReviewsState(updated);
     setIsReviewModalOpen(false);
     setEditingReview(null);
   };
@@ -771,7 +874,6 @@ export const HierarchicalApp: React.FC = () => {
     if (!confirm('هل أنت متأكد من حذف هذه المراجعة؟')) return;
     const updated = reviews.filter((r) => r.id !== reviewId);
     setReviews(updated);
-    saveReviewsState(updated);
   };
 
   const handleConvertActionToTask = (actionItem: ReviewActionItem, reviewId: string) => {
@@ -783,13 +885,13 @@ export const HierarchicalApp: React.FC = () => {
 
     // 1. Create a real task in the target project
     const newTask: Task = {
-      id: `task-${Date.now()}`,
+      id: createId(),
       project_id: targetProjectId,
       title: actionItem.title,
       description: 'مهمة مستخلصة تلقائياً من جلسة المراجعة الدورية والتدقيق التحليلي',
       status: 'todo',
       priority: actionItem.priority || 'medium',
-      due_date: new Date().toISOString().split('T')[0],
+      due_date: toLocalDateKey(),
       completed_at: null,
       created_at: new Date().toISOString(),
     };
@@ -810,7 +912,6 @@ export const HierarchicalApp: React.FC = () => {
       return r;
     });
     setReviews(updatedReviews);
-    saveReviewsState(updatedReviews);
   };
 
   const handleVoiceAiCommit = (data: {
@@ -826,8 +927,8 @@ export const HierarchicalApp: React.FC = () => {
       estimatedHours?: number;
     }>;
   }) => {
-    const today = new Date().toISOString().split('T')[0];
-    const newProjectId = `proj-${Date.now()}`;
+    const today = toLocalDateKey();
+    const newProjectId = createId();
 
     // Target goal under chosen pillar
     let targetGoalId = data.goalId;
@@ -838,7 +939,7 @@ export const HierarchicalApp: React.FC = () => {
         targetGoalId = existingGoal.id;
       } else {
         const newGoal: ValueGoal = {
-          id: `goal-${Date.now()}`,
+          id: createId(),
           pillar_id: data.pillarId,
           title: `هدف: ${data.projectTitle}`,
           description: 'هدف قيمة استراتيجي مستخلص ومولد آلياً بالذكاء الاصطناعي',
@@ -865,7 +966,7 @@ export const HierarchicalApp: React.FC = () => {
     };
 
     const newTasks: Task[] = data.tasks.map((t, idx) => ({
-      id: `task-${Date.now()}-${idx}`,
+      id: createId(),
       project_id: newProjectId,
       title: t.title,
       description: t.description || '',
@@ -901,9 +1002,12 @@ export const HierarchicalApp: React.FC = () => {
   };
 
   const handleBatchAddTasks = (newTasksData: Partial<Task>[]) => {
-    const today = new Date().toISOString().split('T')[0];
-    const created: Task[] = newTasksData.map((t, idx) => ({
-      id: `task-${Date.now()}-${idx}`,
+    const today = toLocalDateKey();
+    const created: Task[] = newTasksData.filter((task) => {
+      const projectId = task.project_id || selectedProjectId;
+      return Boolean(projectId && projects.some((project) => project.id === projectId));
+    }).map((t) => ({
+      id: createId(),
       project_id: t.project_id || selectedProjectId || '',
       title: t.title || 'مهمة جديدة',
       description: t.description || '',
@@ -930,6 +1034,7 @@ export const HierarchicalApp: React.FC = () => {
 
   const handleStartPillarReview = (pillarId: string) => {
     setDefaultReviewFrequency('weekly');
+    setDefaultReviewPillarId(pillarId);
     setEditingReview(null);
     setIsReviewModalOpen(true);
   };
@@ -937,7 +1042,7 @@ export const HierarchicalApp: React.FC = () => {
   // --- GTD INBOX HANDLERS ---
   const handleAddInboxItem = (data: Partial<InboxItem>) => {
     const newItem: InboxItem = {
-      id: `inbox-${Date.now()}`,
+      id: createId(),
       title: data.title || '',
       content: data.content || '',
       source_type: data.source_type || 'idea',
@@ -947,24 +1052,22 @@ export const HierarchicalApp: React.FC = () => {
     };
     const updated = [newItem, ...inboxItems];
     setInboxItems(updated);
-    saveInboxState(updated);
   };
 
   const handleDeleteInboxItem = (id: string) => {
     const updated = inboxItems.filter(i => i.id !== id);
     setInboxItems(updated);
-    saveInboxState(updated);
   };
 
   const handleConvertInboxToTask = (item: InboxItem, targetProjectId: string) => {
     const newTask: Task = {
-      id: `task-${Date.now()}`,
+      id: createId(),
       project_id: targetProjectId,
       title: item.title,
       description: item.content || (item.url ? `الرابط المرجعي: ${item.url}` : ''),
       status: 'todo',
       priority: 'medium',
-      due_date: new Date().toISOString().split('T')[0],
+      due_date: toLocalDateKey(),
       completed_at: null,
       created_at: new Date().toISOString(),
     };
@@ -978,12 +1081,11 @@ export const HierarchicalApp: React.FC = () => {
         : i
     );
     setInboxItems(updatedInbox);
-    saveInboxState(updatedInbox);
   };
 
   const handleConvertInboxToVault = (item: InboxItem, targetPillarId: string) => {
     const newVault: VaultItem = {
-      id: `vault-${Date.now()}`,
+      id: createId(),
       title: item.title,
       vault_type: item.url ? 'resources' : 'notes',
       pillar_id: targetPillarId,
@@ -997,7 +1099,6 @@ export const HierarchicalApp: React.FC = () => {
 
     const updatedVaults = [newVault, ...vaults];
     setVaults(updatedVaults);
-    saveVaultsState(updatedVaults);
 
     const updatedInbox = inboxItems.map(i => 
       i.id === item.id 
@@ -1005,12 +1106,11 @@ export const HierarchicalApp: React.FC = () => {
         : i
     );
     setInboxItems(updatedInbox);
-    saveInboxState(updatedInbox);
   };
 
   const handleConvertInboxToHabit = (item: InboxItem, targetPillarId: string) => {
     const newHabit: Habit = {
-      id: `habit-${Date.now()}`,
+      id: createId(),
       title: item.title,
       description: item.content || '',
       pillar_id: targetPillarId,
@@ -1019,7 +1119,6 @@ export const HierarchicalApp: React.FC = () => {
       completed_dates: [],
       current_streak: 0,
       longest_streak: 0,
-      best_streak: 0,
       is_active: true,
       time_of_day: 'morning',
       created_at: new Date().toISOString(),
@@ -1027,7 +1126,6 @@ export const HierarchicalApp: React.FC = () => {
 
     const updatedHabits = [newHabit, ...habits];
     setHabits(updatedHabits);
-    saveHabitsState(updatedHabits);
 
     const updatedInbox = inboxItems.map(i => 
       i.id === item.id 
@@ -1035,7 +1133,6 @@ export const HierarchicalApp: React.FC = () => {
         : i
     );
     setInboxItems(updatedInbox);
-    saveInboxState(updatedInbox);
   };
 
   // --- HABITS HANDLERS ---
@@ -1047,36 +1144,17 @@ export const HierarchicalApp: React.FC = () => {
         ? h.completed_dates.filter(d => d !== dateStr)
         : [...h.completed_dates, dateStr];
 
-      // Simple streak calculator
-      let streak = 0;
-      const today = new Date();
-      for (let i = 0; i < 60; i++) {
-        const d = new Date(today);
-        d.setDate(d.getDate() - i);
-        const iso = d.toISOString().split('T')[0];
-        if (newDates.includes(iso)) {
-          streak++;
-        } else if (i === 0) {
-          // If today isn't done yet, check yesterday
-          continue;
-        } else {
-          break;
-        }
-      }
-
-      const best = Math.max(h.longest_streak || h.best_streak || 0, streak);
+      const streak = calculateHabitStreak(h, newDates);
 
       return {
         ...h,
         completed_dates: newDates,
-        current_streak: streak,
-        longest_streak: best,
-        best_streak: best,
+        current_streak: streak.current,
+        longest_streak: streak.longest,
       };
     });
 
     setHabits(updated);
-    saveHabitsState(updated);
   };
 
   const handleSaveHabit = (data: Partial<Habit>) => {
@@ -1085,7 +1163,7 @@ export const HierarchicalApp: React.FC = () => {
       updated = habits.map(h => h.id === data.id ? { ...h, ...data } as Habit : h);
     } else {
       const newHabit: Habit = {
-        id: `habit-${Date.now()}`,
+        id: createId(),
         title: data.title || '',
         description: data.description || '',
         pillar_id: data.pillar_id || pillars[0]?.id || '',
@@ -1094,7 +1172,6 @@ export const HierarchicalApp: React.FC = () => {
         completed_dates: [],
         current_streak: 0,
         longest_streak: 0,
-        best_streak: 0,
         is_active: true,
         time_of_day: data.time_of_day || 'morning',
         created_at: new Date().toISOString(),
@@ -1102,13 +1179,11 @@ export const HierarchicalApp: React.FC = () => {
       updated = [newHabit, ...habits];
     }
     setHabits(updated);
-    saveHabitsState(updated);
   };
 
   const handleDeleteHabit = (habitId: string) => {
     const updated = habits.filter(h => h.id !== habitId);
     setHabits(updated);
-    saveHabitsState(updated);
   };
 
   // --- VAULTS HANDLERS ---
@@ -1118,7 +1193,7 @@ export const HierarchicalApp: React.FC = () => {
       updated = vaults.map(v => v.id === data.id ? { ...v, ...data } as VaultItem : v);
     } else {
       const newItem: VaultItem = {
-        id: `vault-${Date.now()}`,
+        id: createId(),
         title: data.title || '',
         vault_type: data.vault_type || 'notes',
         pillar_id: data.pillar_id || pillars[0]?.id || '',
@@ -1134,39 +1209,32 @@ export const HierarchicalApp: React.FC = () => {
       updated = [newItem, ...vaults];
     }
     setVaults(updated);
-    saveVaultsState(updated);
   };
 
   const handleDeleteVaultItem = (vaultId: string) => {
     const updated = vaults.filter(v => v.id !== vaultId);
     setVaults(updated);
-    saveVaultsState(updated);
   };
 
-  // Reset to initial seed
-  const handleResetData = () => {
-    if (confirm('هل تريد استعادة البيانات الافتراضية؟')) {
-      localStorage.clear();
-      const loaded = loadHierarchicalState();
-      setPillars(loaded.pillars);
-      setVisions(loaded.visions);
-      setGoals(loaded.goals);
-      setProjects(loaded.projects);
-      setTasks(loaded.tasks);
-      const revs = loadReviewsState(
-        loaded.pillars,
-        loaded.visions,
-        loaded.goals,
-        loaded.projects,
-        loaded.tasks
-      );
-      setReviews(revs);
+  const handleCreateProjectDraft = (item: InboxItem, goalId: string) => {
+    setEditingProject(null);
+    setNewProjectDefaults({
+      title: item.title,
+      description: item.content,
+      goal_id: goalId,
+      status: 'in_progress',
+      start_date: toLocalDateKey(),
+      due_date: null,
+    });
+    setIsProjectModalOpen(true);
+  };
 
-      const { inbox, habits: loadedHabits, vaults: loadedVaults } = loadPPVState(loaded.pillars);
-      setInboxItems(inbox);
-      setHabits(loadedHabits);
-      setVaults(loadedVaults);
-
+  const handleResetData = async () => {
+    if (confirm('هل تريد حذف بيانات هذا الحساب فقط؟ لا يمكن التراجع عن ذلك.')) {
+      await repositoryRef.current?.clear();
+      const cleared = emptySnapshot();
+      applySnapshot(cleared);
+      lastSavedSnapshotRef.current = cleared;
       setSelectedPillarId(null);
       setSelectedVisionId(null);
       setSelectedGoalId(null);
@@ -1175,7 +1243,11 @@ export const HierarchicalApp: React.FC = () => {
     }
   };
 
-  if (!currentUser) {
+  if (authStatus === 'loading') {
+    return <div className="min-h-screen flex items-center justify-center bg-[#f8f7f4] dark:bg-slate-950" dir="rtl">جاري التحقق من الجلسة...</div>;
+  }
+
+  if (!currentUser || authStatus === 'signedOut') {
     return (
       <div className="h-full w-full min-h-screen bg-[#f8f7f4] dark:bg-slate-950 text-[#1a2420] dark:text-slate-100 flex items-center justify-center p-4 selection:bg-[#174235] selection:text-white" dir="rtl">
         <AuthModal
@@ -1188,6 +1260,10 @@ export const HierarchicalApp: React.FC = () => {
         <ToastContainer toasts={toasts} onDismiss={(id) => setToasts((prev) => prev.filter((t) => t.id !== id))} />
       </div>
     );
+  }
+
+  if (!dataReady) {
+    return <div className="min-h-screen flex items-center justify-center bg-[#f8f7f4] dark:bg-slate-950" dir="rtl">جاري تحميل بياناتك...</div>;
   }
 
   return (
@@ -1208,12 +1284,12 @@ export const HierarchicalApp: React.FC = () => {
           habits: habits.length,
           vaults: vaults.length,
           focus: focusSessions.length,
-          timeBlocks: timeBlocks.filter(b => b.date === new Date().toISOString().split('T')[0]).length,
+          timeBlocks: timeBlocks.filter(b => b.date === toLocalDateKey()).length,
         }}
         isOpenMobile={isMobileSidebarOpen}
         onCloseMobile={() => setIsMobileSidebarOpen(false)}
         onOpenQuickAdd={() => setIsQuickAddOpen(true)}
-        onOpenVoiceAi={() => setIsVoiceAiModalOpen(true)}
+        onOpenVoiceAi={handleOpenVoiceAi}
         isDark={isDark}
         onToggleDark={handleToggleDark}
         currentUser={currentUser}
@@ -1268,7 +1344,7 @@ export const HierarchicalApp: React.FC = () => {
               
               {/* VOICE & AI ACTION BUTTON: Amber gradient with microphone and Gemini AI */}
               <button
-                onClick={() => setIsVoiceAiModalOpen(true)}
+                onClick={handleOpenVoiceAi}
                 className="flex items-center gap-1 sm:gap-2 px-2.5 sm:px-3.5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold rounded-xl text-xs shadow-xs transition-all cursor-pointer group"
                 title="تحدث بصوتك والتحليل والتفكيك الذكي بالذكاء الاصطناعي"
               >
@@ -1276,6 +1352,17 @@ export const HierarchicalApp: React.FC = () => {
                 <Sparkles className="w-3.5 h-3.5 text-amber-200 hidden sm:inline" />
                 <span className="whitespace-nowrap hidden sm:inline">تحدث بصوتك</span>
               </button>
+
+              {!currentUser.isGuest && (
+                <button
+                  onClick={handleConfigureAiKey}
+                  aria-label="إعداد مفتاح Gemini المؤقت"
+                  className="p-2 rounded-xl text-[#55615a] dark:text-slate-300 hover:bg-[#f2efe8] dark:hover:bg-slate-800 border border-[#e8e5de] dark:border-slate-700"
+                  title="إعداد مفتاح Gemini المؤقت"
+                >
+                  <KeyRound className="w-4 h-4" />
+                </button>
+              )}
 
               {/* PRIMARY ACTION BUTTON: Deep Forest Green matching Dawenli */}
               <button
@@ -1336,6 +1423,7 @@ export const HierarchicalApp: React.FC = () => {
 
         {/* Main Body View Container */}
         <main className="flex-1 overflow-y-auto p-3 sm:p-5 md:p-6 lg:p-8">
+          <React.Suspense fallback={<div className="p-8 text-center text-sm text-slate-500">جاري تحميل القسم...</div>}>
           <div className="max-w-7xl mx-auto w-full space-y-6">
             
             {/* TAB 1: DRILL-DOWN HIERARCHY */}
@@ -1351,14 +1439,17 @@ export const HierarchicalApp: React.FC = () => {
                     onToggleTaskStatus={handleToggleTaskStatus}
                     onNewTask={() => {
                       setEditingTask(null);
+                      setNewTaskDueDate(null);
                       setIsTaskModalOpen(true);
                     }}
                     onEditTask={(task) => {
+                      setNewTaskDueDate(null);
                       setEditingTask(task);
                       setIsTaskModalOpen(true);
                     }}
                     onDeleteTask={handleDeleteTask}
                     onEditProject={(proj) => {
+                      setNewProjectDefaults(null);
                       setEditingProject(proj);
                       setIsProjectModalOpen(true);
                     }}
@@ -1374,9 +1465,11 @@ export const HierarchicalApp: React.FC = () => {
                     onSelectProject={(pId) => setSelectedProjectId(pId)}
                     onNewProject={() => {
                       setEditingProject(null);
+                      setNewProjectDefaults(null);
                       setIsProjectModalOpen(true);
                     }}
                     onEditProject={(proj) => {
+                      setNewProjectDefaults(null);
                       setEditingProject(proj);
                       setIsProjectModalOpen(true);
                     }}
@@ -1391,7 +1484,7 @@ export const HierarchicalApp: React.FC = () => {
                   <VisionDetailView
                     pillar={currentPillar || pillars[0]}
                     vision={currentVision}
-                    valueGoals={goals.filter((g) => g.vision_id === currentVision.id || (g.pillar_id === currentVision.pillar_id && !g.vision_id))}
+                    valueGoals={goals.filter((g) => g.vision_id === currentVision.id)}
                     onSelectGoal={(gId) => setSelectedGoalId(gId)}
                     onNewGoal={() => {
                       setEditingGoal(null);
@@ -1526,15 +1619,19 @@ export const HierarchicalApp: React.FC = () => {
                 onSelectProject={handleJumpToProject}
                 onNewProject={() => {
                   setEditingProject(null);
+                  setNewProjectDefaults(null);
                   setIsProjectModalOpen(true);
                 }}
                 onEditProject={(proj) => {
+                  setNewProjectDefaults(null);
                   setEditingProject(proj);
                   setIsProjectModalOpen(true);
                 }}
                 onDeleteProject={handleDeleteProject}
                 onUpdateStatus={handleUpdateProjectStatus}
                 onUpdateCustomFields={handleUpdateProjectCustomFields}
+                customFields={customFieldDefinitions.filter((field) => field.entityType === 'project')}
+                onCustomFieldsChange={(fields) => setCustomFieldDefinitions((current) => [...current.filter((field) => field.entityType !== 'project'), ...fields])}
               />
             )}
 
@@ -1548,18 +1645,19 @@ export const HierarchicalApp: React.FC = () => {
                 onUpdateCustomFields={handleUpdateTaskCustomFields}
                 onNewTask={(defaultDate) => {
                   setEditingTask(null);
-                  if (defaultDate) {
-                    setEditingTask({ due_date: defaultDate } as any);
-                  }
+                  setNewTaskDueDate(defaultDate || null);
                   setIsTaskModalOpen(true);
                 }}
                 onEditTask={(task) => {
+                  setNewTaskDueDate(null);
                   setEditingTask(task);
                   setIsTaskModalOpen(true);
                 }}
                 onDeleteTask={handleDeleteTask}
                 onSelectProject={(pId) => handleJumpToProject(pId, projects.find(p => p.id === pId)?.goal_id || '')}
                 onStartFocus={handleStartFocus}
+                customFields={customFieldDefinitions.filter((field) => field.entityType === 'task')}
+                onCustomFieldsChange={(fields) => setCustomFieldDefinitions((current) => [...current.filter((field) => field.entityType !== 'task'), ...fields])}
               />
             )}
 
@@ -1574,6 +1672,7 @@ export const HierarchicalApp: React.FC = () => {
                 tasks={tasks}
                 onNewReview={(freq) => {
                   setDefaultReviewFrequency(freq || 'daily');
+                  setDefaultReviewPillarId(null);
                   setEditingReview(null);
                   setIsReviewModalOpen(true);
                 }}
@@ -1596,9 +1695,10 @@ export const HierarchicalApp: React.FC = () => {
                 onAddInboxItem={handleAddInboxItem}
                 onDeleteItem={handleDeleteInboxItem}
                 onConvertToTask={handleConvertInboxToTask}
+                onCreateProjectDraft={handleCreateProjectDraft}
                 onConvertToVault={handleConvertInboxToVault}
                 onConvertToHabit={handleConvertInboxToHabit}
-                onOpenVoiceAi={() => setIsVoiceAiModalOpen(true)}
+                onOpenVoiceAi={handleOpenVoiceAi}
               />
             )}
 
@@ -1629,6 +1729,7 @@ export const HierarchicalApp: React.FC = () => {
               <FocusSessionView
                 tasks={tasks}
                 projects={projects}
+                goals={goals}
                 pillars={pillars}
                 initialTask={activeFocusTask}
                 onToggleTaskStatus={handleToggleTaskStatus}
@@ -1644,9 +1745,11 @@ export const HierarchicalApp: React.FC = () => {
               <TimeBlockingView
                 tasks={tasks}
                 projects={projects}
+                goals={goals}
                 pillars={pillars}
                 timeBlocks={timeBlocks}
                 onSaveTimeBlock={handleSaveTimeBlock}
+                onSaveTimeBlocks={handleSaveTimeBlocks}
                 onDeleteTimeBlock={handleDeleteTimeBlock}
                 onToggleTimeBlockStatus={handleToggleTimeBlockStatus}
                 onStartFocusOnTask={handleStartFocus}
@@ -1654,10 +1757,12 @@ export const HierarchicalApp: React.FC = () => {
             )}
 
           </div>
+          </React.Suspense>
         </main>
       </div>
 
       {/* 3. MODALS */}
+      <React.Suspense fallback={null}>
 
       {/* Review Modal (Manual Reflection & Automated Smart Audit) */}
       <ReviewModal
@@ -1669,6 +1774,7 @@ export const HierarchicalApp: React.FC = () => {
         onSaveReview={handleSaveReview}
         initialReview={editingReview}
         defaultFrequency={defaultReviewFrequency}
+        defaultFocusPillarId={defaultReviewPillarId}
         pillars={pillars}
         visions={visions}
         goals={goals}
@@ -1690,7 +1796,7 @@ export const HierarchicalApp: React.FC = () => {
         onAddVision={handleSaveVision}
         onAddPillar={handleSavePillar}
         onAddInboxItem={handleAddInboxItem}
-        onOpenVoiceAi={() => setIsVoiceAiModalOpen(true)}
+        onOpenVoiceAi={handleOpenVoiceAi}
       />
 
       {/* Pillar Modal */}
@@ -1737,9 +1843,11 @@ export const HierarchicalApp: React.FC = () => {
         onClose={() => {
           setIsProjectModalOpen(false);
           setEditingProject(null);
+          setNewProjectDefaults(null);
         }}
         onSave={handleSaveProject}
         initialProject={editingProject}
+        defaultProject={newProjectDefaults}
         goalTitle={currentGoal?.title}
         goals={goals}
       />
@@ -1750,11 +1858,13 @@ export const HierarchicalApp: React.FC = () => {
         onClose={() => {
           setIsTaskModalOpen(false);
           setEditingTask(null);
+          setNewTaskDueDate(null);
         }}
         onSave={handleSaveTask}
         initialTask={editingTask}
         projectTitle={currentProject?.title}
         projects={projects}
+        defaultDueDate={newTaskDueDate}
       />
 
       {/* Supabase SQL Schema Modal */}
@@ -1773,6 +1883,7 @@ export const HierarchicalApp: React.FC = () => {
         onCommitHierarchy={handleVoiceAiCommit}
         onCommitSingleTask={handleSaveTask}
       />
+      </React.Suspense>
 
       {/* Real-time Toast Notifications */}
       <ToastContainer

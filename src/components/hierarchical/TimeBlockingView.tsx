@@ -18,15 +18,19 @@ import {
   Check,
   LayoutTemplate
 } from 'lucide-react';
-import { TimeBlock, TimeBlockCategory, Task, Project, Pillar } from '../../types/hierarchical';
+import { TimeBlock, TimeBlockCategory, Task, Project, Pillar, ValueGoal } from '../../types/hierarchical';
 import { CustomSelect } from './CustomSelect';
+import { createId } from '../../utils/id';
+import { shiftLocalDateKey, timeToMinutes, minutesToTime, toLocalDateKey } from '../../utils/date';
 
 interface TimeBlockingViewProps {
   tasks: Task[];
   projects: Project[];
+  goals: ValueGoal[];
   pillars: Pillar[];
   timeBlocks: TimeBlock[];
   onSaveTimeBlock: (block: TimeBlock) => void;
+  onSaveTimeBlocks: (blocks: TimeBlock[]) => void;
   onDeleteTimeBlock: (blockId: string) => void;
   onToggleTimeBlockStatus: (blockId: string) => void;
   onStartFocusOnTask?: (task: Task) => void;
@@ -87,16 +91,18 @@ const CATEGORY_CONFIG: Record<TimeBlockCategory, { label: string; bg: string; bo
 export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
   tasks,
   projects,
+  goals,
   pillars,
   timeBlocks,
   onSaveTimeBlock,
+  onSaveTimeBlocks,
   onDeleteTimeBlock,
   onToggleTimeBlockStatus,
   onStartFocusOnTask,
 }) => {
   // Selected Date state (YYYY-MM-DD)
   const [selectedDate, setSelectedDate] = useState<string>(
-    () => new Date().toISOString().split('T')[0]
+    () => toLocalDateKey()
   );
 
   // Live Current Time (HH:MM)
@@ -137,7 +143,7 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
   }, [timeBlocks, selectedDate]);
 
   // Active blocks right now
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = toLocalDateKey();
   const isToday = selectedDate === todayStr;
 
   const activeBlockNow = isToday
@@ -156,9 +162,8 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
     setEditingBlock(null);
     setFormStartTime(initialStart);
     // Add 1 hour by default
-    const [h, m] = initialStart.split(':').map(Number);
-    const endH = (h + 1).toString().padStart(2, '0');
-    setFormEndTime(`${endH}:${m.toString().padStart(2, '0')}`);
+    const startMinutes = timeToMinutes(initialStart) ?? 9 * 60;
+    setFormEndTime(minutesToTime(startMinutes + 60) ?? '23:59');
     setFormTitle(task ? task.title : '');
     setFormTaskId(task ? task.id : '');
     setFormCategory(task?.priority === 'high' ? 'deep_work' : 'shallow_work');
@@ -185,9 +190,26 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
 
     const matchedTask = tasks.find((t) => t.id === formTaskId);
     const matchedProject = matchedTask ? projects.find((p) => p.id === matchedTask.project_id) : undefined;
+    const matchedGoal = matchedProject ? goals.find((goal) => goal.id === matchedProject.goal_id) : undefined;
+    const startMinutes = timeToMinutes(formStartTime);
+    const endMinutes = timeToMinutes(formEndTime);
+    if (startMinutes === null || endMinutes === null || endMinutes <= startMinutes) {
+      alert('وقت النهاية يجب أن يكون بعد وقت البداية وفي اليوم نفسه.');
+      return;
+    }
+    const overlaps = timeBlocks.some((block) => {
+      if (block.date !== selectedDate || block.id === editingBlock?.id) return false;
+      const existingStart = timeToMinutes(block.start_time);
+      const existingEnd = timeToMinutes(block.end_time);
+      return existingStart !== null && existingEnd !== null && startMinutes < existingEnd && endMinutes > existingStart;
+    });
+    if (overlaps) {
+      alert('هذه الكتلة تتداخل مع كتلة أخرى في اليوم نفسه.');
+      return;
+    }
 
     const blockToSave: TimeBlock = {
-      id: editingBlock ? editingBlock.id : `tb-${Date.now()}`,
+      id: editingBlock ? editingBlock.id : createId(),
       date: selectedDate,
       start_time: formStartTime,
       end_time: formEndTime,
@@ -195,7 +217,7 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
       category: formCategory,
       task_id: formTaskId || null,
       project_id: matchedProject ? matchedProject.id : null,
-      pillar_id: matchedProject ? (matchedProject as any).pillar_id : null,
+      pillar_id: matchedGoal?.pillar_id ?? null,
       is_completed: editingBlock ? editingBlock.is_completed : false,
       notes: formNotes.trim() || undefined,
       created_at: editingBlock ? editingBlock.created_at : new Date().toISOString(),
@@ -207,9 +229,7 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
 
   // Date navigation helpers
   const changeDateBy = (days: number) => {
-    const current = new Date(selectedDate);
-    current.setDate(current.getDate() + days);
-    setSelectedDate(current.toISOString().split('T')[0]);
+    setSelectedDate(shiftLocalDateKey(selectedDate, days));
   };
 
   // Calculate day total metrics
@@ -274,13 +294,16 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
       },
     ];
 
-    templateBlocks.forEach((tb, i) => {
-      onSaveTimeBlock({
+    const hasExisting = timeBlocks.some((block) => block.date === selectedDate);
+    if (hasExisting) {
+      alert('يوجد حجب وقت بالفعل في هذا اليوم. احذفه أو اختر يومًا فارغًا لتجنب التكرار.');
+      return;
+    }
+    onSaveTimeBlocks(templateBlocks.map((tb) => ({
         ...tb,
-        id: `tb-tpl-${Date.now()}-${i}`,
+        id: createId(),
         created_at: new Date().toISOString(),
-      });
-    });
+      })));
   };
 
   return (

@@ -13,6 +13,7 @@ import {
   Clock3 
 } from 'lucide-react';
 import { CustomSelect } from './CustomSelect';
+import { toLocalDateKey } from '../../utils/date';
 
 interface HabitsTabViewProps {
   habits: Habit[];
@@ -46,13 +47,13 @@ export const HabitsTabView: React.FC<HabitsTabViewProps> = ({
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(today);
     d.setDate(d.getDate() - (6 - i));
-    const isoDate = d.toISOString().split('T')[0];
+    const isoDate = toLocalDateKey(d);
     const dayName = d.toLocaleDateString('ar-EG', { weekday: 'narrow' });
     const dayNumber = d.getDate();
     return { isoDate, dayName, dayNumber, isToday: i === 6 };
   });
 
-  const todayStr = today.toISOString().split('T')[0];
+  const todayStr = toLocalDateKey(today);
 
   const filteredHabits = habits.filter(h => {
     if (selectedPillarFilter === 'all') return true;

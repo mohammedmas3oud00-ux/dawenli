@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Folder, 
   Plus, 
@@ -21,7 +21,6 @@ import {
 import { Project, ValueGoal, Task, CustomFieldDefinition } from '../../types/hierarchical';
 import { ProgressBar } from './ProgressBar';
 import { CustomSelect } from './CustomSelect';
-import { getCustomFields } from '../../utils/customFieldsStore';
 import { CustomFieldsManagerModal } from './CustomFieldsManagerModal';
 
 interface ProjectsTabViewProps {
@@ -34,6 +33,8 @@ interface ProjectsTabViewProps {
   onDeleteProject: (projectId: string) => void;
   onUpdateStatus?: (projectId: string, status: Project['status']) => void;
   onUpdateCustomFields?: (projectId: string, customFields: Record<string, any>) => void;
+  customFields: CustomFieldDefinition[];
+  onCustomFieldsChange: (fields: CustomFieldDefinition[]) => void;
 }
 
 type ProjectViewMode = 'grid' | 'list' | 'board';
@@ -48,18 +49,15 @@ export const ProjectsTabView: React.FC<ProjectsTabViewProps> = ({
   onDeleteProject,
   onUpdateStatus,
   onUpdateCustomFields,
+  customFields,
+  onCustomFieldsChange,
 }) => {
   const [viewMode, setViewMode] = useState<ProjectViewMode>('grid');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [goalFilter, setGoalFilter] = useState<string>('all');
 
   // Custom Fields
-  const [customFields, setCustomFields] = useState<CustomFieldDefinition[]>([]);
   const [isFieldsModalOpen, setIsFieldsModalOpen] = useState(false);
-
-  useEffect(() => {
-    setCustomFields(getCustomFields('project'));
-  }, []);
 
   const handleCustomFieldChange = (projectId: string, fieldId: string, value: any) => {
     const proj = projects.find((p) => p.id === projectId);
@@ -574,7 +572,7 @@ export const ProjectsTabView: React.FC<ProjectsTabViewProps> = ({
         onClose={() => setIsFieldsModalOpen(false)}
         entityType="project"
         fields={customFields}
-        onFieldsChanged={(newFields) => setCustomFields(newFields)}
+        onFieldsChanged={onCustomFieldsChange}
       />
     </div>
   );
