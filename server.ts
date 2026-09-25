@@ -285,7 +285,9 @@ app.delete('/api/push/subscription', requireUserAuth, async (req, res) => {
   return res.json({ ok: true, data: { subscribed: false } });
 });
 
-app.get('/api/push/dispatch', async (req, res) => {
+// Supabase pg_net schedules this endpoint with POST while a direct health check
+// may use GET. Both are protected by the same Cron bearer secret.
+app.all('/api/push/dispatch', async (req, res) => {
   const cronSecret = (process.env.CRON_SECRET || '').trim();
   if (!cronSecret || req.headers.authorization !== `Bearer ${cronSecret}`) return apiError(res, 401, 'UNAUTHORIZED', 'Cron authorization required.');
   if (!adminClient || !vapidPublicKey || !vapidPrivateKey) return apiError(res, 503, 'NOT_CONFIGURED', 'خدمة الإشعارات الخلفية غير مهيأة.');
