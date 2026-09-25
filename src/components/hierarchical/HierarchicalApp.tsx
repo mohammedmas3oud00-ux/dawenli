@@ -67,7 +67,7 @@ import { createId } from '../../utils/id';
 import { toLocalDateKey } from '../../utils/date';
 import { calculateHabitStreak } from '../../utils/habitStreak';
 import { deleteGeminiCredential, hasStoredGeminiCredential, refreshGeminiCredentialStatus, saveGeminiCredential } from '../../utils/aiCredentials';
-import { subscribeToPush } from '../../utils/pushNotifications';
+import { subscribeToPush, PushNotificationPreferences } from '../../utils/pushNotifications';
 
 export const HierarchicalApp: React.FC = () => {
   // Core Entities State
@@ -1334,9 +1334,9 @@ export const HierarchicalApp: React.FC = () => {
     setQuranHifzTrackers((previous) => previous.map((tracker) => tracker.id === id ? { ...tracker, total_memorized_pages: Math.max(0, pages), updated_at: new Date().toISOString() } : tracker));
   };
 
-  const handleEnableWorshipNotifications = async () => {
+  const handleEnableWorshipNotifications = async (preferences: PushNotificationPreferences) => {
     try {
-      await subscribeToPush();
+      await subscribeToPush({}, preferences);
       setToasts((previous) => [...previous, { id: createId(), type: 'success', title: 'تم تفعيل التذكيرات', description: 'ستصل تنبيهات الصلاة والمهام والعبادات الموقّتة وفق إعدادات حسابك؛ لا يُرسل تنبيه للشروق.' }]);
     } catch (error) {
       setToasts((previous) => [...previous, { id: createId(), type: 'error', title: 'تعذر تفعيل التذكيرات', description: error instanceof Error ? error.message : 'حاول مرة أخرى.' }]);
@@ -1870,7 +1870,7 @@ export const HierarchicalApp: React.FC = () => {
                 onUpdateKhatma={handleUpdateKhatma}
                 sleepSchedules={sleepSchedules}
                 onUpdateSleep={handleUpdateSleep}
-                onEnableNotifications={() => void handleEnableWorshipNotifications()}
+                onEnableNotifications={(preferences) => void handleEnableWorshipNotifications(preferences)}
                 hifzTrackers={quranHifzTrackers}
                 onUpdateHifz={handleUpdateHifz}
               />

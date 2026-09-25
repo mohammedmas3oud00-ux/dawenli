@@ -4,6 +4,7 @@ import type { Pillar, ProgressionPath, QuranHifzTracker, QuranKhatma, SleepSched
 import { toLocalDateKey } from '../../utils/date';
 import { hijriDate, isEditableWorshipDate, isWhiteDay, progressionSuggestion, worshipInsights, worshipStreak, worshipSummary } from '../../utils/ibadat';
 import { analyzeWorshipInsight } from '../../utils/speechRecognition';
+import type { PushNotificationPreferences } from '../../utils/pushNotifications';
 
 type Props = {
   pillars: Pillar[]; definitions: WorshipDefinition[]; logs: WorshipLog[];
@@ -13,7 +14,7 @@ type Props = {
   progressionPaths: ProgressionPath[]; onApproveProgression: (pathId: string) => void;
   khatmas: QuranKhatma[]; onUpdateKhatma: (id: string, page: number) => void;
   sleepSchedules: SleepSchedule[]; onUpdateSleep: (id: string, changes: Partial<SleepSchedule>) => void;
-  onEnableNotifications: () => void;
+  onEnableNotifications: (preferences: PushNotificationPreferences) => void;
   hifzTrackers: QuranHifzTracker[]; onUpdateHifz: (id: string, pages: number) => void;
 };
 
@@ -29,6 +30,7 @@ export const IbadatDashboard: React.FC<Props> = ({ pillars, definitions, logs, o
   const [date, setDate] = useState(toLocalDateKey());
   const [aiInsight, setAiInsight] = useState<{ summary: string; suggestions: string[] } | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [notificationPreferences, setNotificationPreferences] = useState({ prayerEnabled: true, taskEnabled: true, worshipEnabled: true });
   const today = toLocalDateKey();
   const dayDefinitions = definitions.filter((item) => item.is_active && (item.frequency === 'daily' || item.frequency === 'custom'));
   const summary = useMemo(() => worshipSummary(definitions, logs, date), [definitions, logs, date]);
@@ -52,7 +54,7 @@ export const IbadatDashboard: React.FC<Props> = ({ pillars, definitions, logs, o
     finally { setIsAnalyzing(false); }
   };
   return <section className="space-y-5">
-    <div className="flex flex-wrap items-center justify-between gap-3"><div><h1 className="text-2xl font-black">🕌 العبادات والأوراد</h1><p className="text-sm text-slate-500">مرتبطة بركيزة {pillars.find((p) => p.id === definitions[0].pillar_id)?.title || 'العلاقة مع الله'}</p></div><div className="flex flex-wrap gap-2"><button type="button" onClick={onEnableNotifications} className="rounded-xl border px-3 py-2 text-sm dark:border-slate-700">تفعيل التذكيرات</button><button type="button" onClick={onSuggestTimeBlocks} className="rounded-xl bg-emerald-700 text-white px-3 py-2 text-sm">إضافة الكتل المقترحة</button><button type="button" onClick={onOpenTimeBlocking} className="rounded-xl border px-3 py-2 text-sm dark:border-slate-700">حجب الوقت</button></div></div>
+    <div className="flex flex-wrap items-center justify-between gap-3"><div><h1 className="text-2xl font-black">🕌 العبادات والأوراد</h1><p className="text-sm text-slate-500">مرتبطة بركيزة {pillars.find((p) => p.id === definitions[0].pillar_id)?.title || 'العلاقة مع الله'}</p></div><div className="flex flex-wrap items-center gap-2"><div className="flex flex-wrap items-center gap-2 rounded-xl border px-3 py-2 text-xs dark:border-slate-700" role="group" aria-label="إعدادات أنواع الإشعارات"><label className="inline-flex items-center gap-1"><input type="checkbox" checked={notificationPreferences.prayerEnabled} onChange={(e) => setNotificationPreferences((old) => ({ ...old, prayerEnabled: e.target.checked }))} /> الصلاة</label><label className="inline-flex items-center gap-1"><input type="checkbox" checked={notificationPreferences.taskEnabled} onChange={(e) => setNotificationPreferences((old) => ({ ...old, taskEnabled: e.target.checked }))} /> المهام</label><label className="inline-flex items-center gap-1"><input type="checkbox" checked={notificationPreferences.worshipEnabled} onChange={(e) => setNotificationPreferences((old) => ({ ...old, worshipEnabled: e.target.checked }))} /> العبادات</label></div><button type="button" onClick={() => onEnableNotifications(notificationPreferences)} className="rounded-xl border px-3 py-2 text-sm dark:border-slate-700">تفعيل التذكيرات</button><button type="button" onClick={onSuggestTimeBlocks} className="rounded-xl bg-emerald-700 text-white px-3 py-2 text-sm">إضافة الكتل المقترحة</button><button type="button" onClick={onOpenTimeBlocking} className="rounded-xl border px-3 py-2 text-sm dark:border-slate-700">حجب الوقت</button></div></div>
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3"><Stat label="التزام اليوم" value={`${summary.rate}%`} /><Stat label="المكتمل" value={`${summary.completed}/${summary.total}`} /><Stat label="الستريك" value={`${streak} يوم`} /><Stat label="التاريخ" value={date} /></div>
     <aside className="rounded-2xl border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/30 p-4"><p className="font-bold text-sm">✨ ملخص التزامك</p><ul className="mt-2 space-y-1 text-sm text-slate-700 dark:text-slate-200">{worshipInsights(definitions, logs, date).map((insight) => <li key={insight}>• {insight}</li>)}</ul></aside>
     <aside className="rounded-2xl border border-violet-200 dark:border-violet-900 bg-violet-50 dark:bg-violet-950/30 p-4"><div className="flex items-center justify-between gap-3"><p className="font-bold text-sm">✨ تحليل Gemini الاختياري</p><button type="button" disabled={isAnalyzing} onClick={() => void requestAiInsight()} className="rounded-lg bg-violet-700 text-white px-3 py-2 text-xs disabled:opacity-50">{isAnalyzing ? 'جاري التحليل…' : 'حلل التزامي'}</button></div>{aiInsight && <div className="mt-3 text-sm"><p>{aiInsight.summary}</p>{aiInsight.suggestions.map((item) => <p key={item} className="mt-1 text-slate-600 dark:text-slate-300">• {item}</p>)}</div>}</aside>

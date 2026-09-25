@@ -261,6 +261,7 @@ app.post('/api/push/subscription', requireUserAuth, async (req, res) => {
     return apiError(res, 400, 'BAD_REQUEST', 'اشتراك الإشعارات غير صالح.');
   }
   const client = userScopedClient(res.locals.accessToken as string);
+  const { data: existingSubscription } = await client!.from('push_subscriptions').select('prayer_times').eq('endpoint', subscription.endpoint).eq('user_id', res.locals.userId).maybeSingle();
   const { error } = await client!.from('push_subscriptions').upsert({
     user_id: res.locals.userId,
     endpoint: subscription.endpoint,
@@ -270,7 +271,7 @@ app.post('/api/push/subscription', requireUserAuth, async (req, res) => {
     task_enabled: req.body?.taskEnabled !== false,
     worship_enabled: req.body?.worshipEnabled !== false,
     timezone: typeof req.body?.timezone === 'string' ? req.body.timezone.slice(0, 80) : 'Africa/Cairo',
-    prayer_times: req.body?.prayerTimes && typeof req.body.prayerTimes === 'object' ? req.body.prayerTimes : {},
+    prayer_times: req.body?.prayerTimes && typeof req.body.prayerTimes === 'object' ? req.body.prayerTimes : existingSubscription?.prayer_times || {},
     updated_at: new Date().toISOString(),
   }, { onConflict: 'user_id,endpoint' });
   if (error) return apiError(res, 503, 'UPSTREAM_ERROR', 'تعذر حفظ اشتراك الإشعارات.');
