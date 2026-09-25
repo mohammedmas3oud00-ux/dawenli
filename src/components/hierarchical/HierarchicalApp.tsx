@@ -1318,6 +1318,10 @@ export const HierarchicalApp: React.FC = () => {
     setToasts((previous) => [...previous, { id: createId(), type: 'success', title: 'تم اعتماد المرحلة التالية', description: 'يمكنك دائمًا متابعة التدرج بالوتيرة المناسبة لك.' }]);
   };
 
+  const handleUpdateKhatma = (id: string, currentPage: number) => {
+    setQuranKhatmas((previous) => previous.map((khatma) => khatma.id === id ? { ...khatma, current_page: currentPage, current_juz: Math.min(30, Math.ceil(currentPage / 20)), is_completed: currentPage >= 604, end_date: currentPage >= 604 ? toLocalDateKey() : null, updated_at: new Date().toISOString() } : khatma));
+  };
+
   const handleCreateProjectDraft = (item: InboxItem, goalId: string) => {
     setEditingProject(null);
     setNewProjectDefaults({
@@ -1838,6 +1842,8 @@ export const HierarchicalApp: React.FC = () => {
                 onSuggestTimeBlocks={handleSuggestWorshipBlocks}
                 progressionPaths={progressionPaths}
                 onApproveProgression={handleApproveProgression}
+                khatmas={quranKhatmas}
+                onUpdateKhatma={handleUpdateKhatma}
               />
             )}
 

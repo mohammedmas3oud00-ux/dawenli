@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Check, Moon, Plus, Sparkles } from 'lucide-react';
-import type { Pillar, ProgressionPath, WorshipDefinition, WorshipLog } from '../../types/hierarchical';
+import type { Pillar, ProgressionPath, QuranKhatma, WorshipDefinition, WorshipLog } from '../../types/hierarchical';
 import { toLocalDateKey } from '../../utils/date';
 import { hijriDate, isEditableWorshipDate, isWhiteDay, progressionSuggestion, worshipStreak, worshipSummary } from '../../utils/ibadat';
 
@@ -10,6 +10,7 @@ type Props = {
   onSaveLog: (log: WorshipLog) => void;
   onOpenTimeBlocking: () => void; onSuggestTimeBlocks: () => void;
   progressionPaths: ProgressionPath[]; onApproveProgression: (pathId: string) => void;
+  khatmas: QuranKhatma[]; onUpdateKhatma: (id: string, page: number) => void;
 };
 
 const choices: Array<{ category: WorshipDefinition['category']; label: string }> = [
@@ -19,7 +20,7 @@ const choices: Array<{ category: WorshipDefinition['category']; label: string }>
   { category: 'custom_dua', label: 'أوراد وأدعية مخصصة' }, { category: 'quran_hifz', label: 'حفظ القرآن ومراجعته' },
 ];
 
-export const IbadatDashboard: React.FC<Props> = ({ pillars, definitions, logs, onSetup, onSaveLog, onOpenTimeBlocking, onSuggestTimeBlocks, progressionPaths, onApproveProgression }) => {
+export const IbadatDashboard: React.FC<Props> = ({ pillars, definitions, logs, onSetup, onSaveLog, onOpenTimeBlocking, onSuggestTimeBlocks, progressionPaths, onApproveProgression, khatmas, onUpdateKhatma }) => {
   const [selected, setSelected] = useState(choices.slice(0, 4).map((item) => item.category));
   const [date, setDate] = useState(toLocalDateKey());
   const today = toLocalDateKey();
@@ -50,6 +51,7 @@ export const IbadatDashboard: React.FC<Props> = ({ pillars, definitions, logs, o
       {definition.category === 'qiyam' && <div className="flex gap-2"><input aria-label="عدد ركعات قيام الليل" type="number" min="1" placeholder="الركعات" value={log?.rakaat_count || ''} onChange={(e) => save(definition, { rakaat_count: Number(e.target.value) || null, is_completed: Number(e.target.value) > 0 })} className="w-28 rounded-lg border p-2 dark:bg-slate-800 dark:border-slate-700" /><input aria-label="وقت قيام الليل" type="time" value={log?.performed_at_time || ''} onChange={(e) => save(definition, { performed_at_time: e.target.value || null })} className="rounded-lg border p-2 dark:bg-slate-800 dark:border-slate-700" /></div>}
     </article>; })}</div>
     {progressionPaths.map((path) => { const suggestion = progressionSuggestion(path, logs); const stage = path.stages[path.current_stage_index]; return <article key={path.id} className="rounded-2xl border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-900 p-4"><h2 className="font-bold">✨ {path.title}: {stage?.title}</h2><p className="text-sm mt-1">الالتزام الحالي: {path.consecutive_days}/{stage?.days_required || '—'} أيام</p>{suggestion ? <button type="button" onClick={() => onApproveProgression(path.id)} className="mt-3 rounded-lg bg-amber-600 text-white px-3 py-2 text-sm">{suggestion}</button> : <p className="text-xs text-slate-500 mt-2">التدرج اقتراحي فقط؛ لن تتغير مرحلتك تلقائيًا.</p>}</article>})}
+    {khatmas.map((khatma) => <article key={khatma.id} className="rounded-2xl border bg-white dark:bg-slate-900 dark:border-slate-800 p-4"><h2 className="font-bold">📖 الختمة #{khatma.khatma_number}</h2><p className="text-sm mt-1">صفحة {khatma.current_page}/604 · جزء {khatma.current_juz}</p><input aria-label="الصفحة الحالية للختمة" type="range" min="1" max="604" value={khatma.current_page} onChange={(e) => onUpdateKhatma(khatma.id, Number(e.target.value))} className="w-full accent-emerald-700 mt-3" /></article>)}
     <p className="text-xs text-slate-500 flex gap-1 items-center"><Sparkles className="w-3 h-3" />الذكاء الاصطناعي يعرض تحليلات وتشجيعًا فقط، ولا يصدر أحكامًا أو فتاوى.</p>
   </section>;
 };
