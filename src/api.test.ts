@@ -22,4 +22,10 @@ describe('API contracts', () => {
     expect(response.status).toBe(413);
     expect(response.body).toMatchObject({ ok: false, error: { code: 'PAYLOAD_TOO_LARGE' } });
   });
+
+  it('requires an authenticated session for worship insights', async () => {
+    const response = await request(app).post('/api/ai/worship-insight').send({ metrics: { completed: 1, total: 2 } });
+    expect(response.status).toBe(401);
+    expect(response.body).toMatchObject({ ok: false, error: { code: 'UNAUTHORIZED' } });
+  });
 });
