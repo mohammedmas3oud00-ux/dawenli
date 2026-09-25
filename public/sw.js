@@ -1,5 +1,5 @@
 const CACHE_NAME = 'dawenli-shell-v1';
-const SHELL = ['/', '/manifest.webmanifest', '/icons/icon.svg'];
+const SHELL = ['/', '/manifest.webmanifest', '/icons/icon.svg', '/icons/icon-192.svg', '/icons/icon-512.svg'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(SHELL)));
@@ -31,7 +31,7 @@ self.addEventListener('fetch', (event) => {
     }).catch(() => caches.match('/')));
     return;
   }
-  if (new URL(event.request.url).origin === self.location.origin) {
+  if (new URL(event.request.url).origin === self.location.origin && !new URL(event.request.url).pathname.startsWith('/api/')) {
     event.respondWith(caches.match(event.request).then((cached) => cached || fetch(event.request).then((response) => {
       const copy = response.clone();
       void caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));

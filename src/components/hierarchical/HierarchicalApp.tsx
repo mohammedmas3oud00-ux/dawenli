@@ -377,7 +377,7 @@ export const HierarchicalApp: React.FC = () => {
       queueSnapshotSave(repository, snapshot).catch((error: unknown) => {
         setToasts((previous) => [...previous, {
           id: createId(), type: 'error', title: 'فشل الحفظ',
-          description: error instanceof Error ? error.message : 'احتفظنا بالتعديلات محليًا مؤقتًا. أعد المحاولة.',
+          description: error instanceof Error ? error.message : 'لم تُحفظ التعديلات سحابيًا. أعد المحاولة بعد التحقق من الاتصال.',
           actionLabel: 'إعادة المحاولة',
           onAction: () => queueSnapshotSave(repository, snapshot).catch(() => undefined),
         }]);
