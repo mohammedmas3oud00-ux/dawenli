@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Edit2, Trash2, ChevronLeft } from 'lucide-react';
-import { Pillar, Task, Project, ValueGoal } from '../../types/hierarchical';
+import { Pillar, Task, Project, ValueGoal, WorshipDefinition, WorshipLog } from '../../types/hierarchical';
+import { worshipStreak, worshipSummary } from '../../utils/ibadat';
 import { ProgressBar } from './ProgressBar';
 import { NextBestTaskSpotlight } from './NextBestTaskSpotlight';
 import { PrayerTimesCard } from './PrayerTimesCard';
@@ -19,6 +20,9 @@ interface PillarsListViewProps {
   onOpenTimeBlocking?: () => void;
   onSelectProject?: (projectId: string) => void;
   onAdhanNotify?: (prayerName: string) => void;
+  worshipDefinitions?: WorshipDefinition[];
+  worshipLogs?: WorshipLog[];
+  onOpenIbadat?: () => void;
 }
 
 export const PillarsListView: React.FC<PillarsListViewProps> = ({
@@ -35,6 +39,7 @@ export const PillarsListView: React.FC<PillarsListViewProps> = ({
   onOpenTimeBlocking,
   onSelectProject,
   onAdhanNotify,
+  worshipDefinitions = [], worshipLogs = [], onOpenIbadat,
 }) => {
   const [selectedGroup, setSelectedGroup] = useState<string>('all');
 
@@ -45,6 +50,7 @@ export const PillarsListView: React.FC<PillarsListViewProps> = ({
     if (selectedGroup !== 'all' && p.pillar_group !== selectedGroup) return false;
     return true;
   });
+  const worship = worshipSummary(worshipDefinitions, worshipLogs);
 
   return (
     <div className="space-y-6">
@@ -65,6 +71,8 @@ export const PillarsListView: React.FC<PillarsListViewProps> = ({
 
       {/* 1. Daily Prayer Times & Adhan Schedule */}
       <PrayerTimesCard onAdhanNotify={onAdhanNotify} />
+
+      {onOpenIbadat && <button type="button" onClick={onOpenIbadat} className="w-full text-right rounded-2xl border border-emerald-200 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-950/30 p-4 hover:bg-emerald-100 dark:hover:bg-emerald-950/50 transition-colors"><div className="flex items-center justify-between"><div><p className="font-black">🕌 عباداتك اليوم</p><p className="text-xs text-slate-600 dark:text-slate-300 mt-1">{worship.completed}/{worship.total} مكتملة · التزام {worship.rate}% · ستريك {worshipStreak(worshipDefinitions, worshipLogs)} يوم</p></div><ChevronLeft className="w-5 h-5" /></div></button>}
 
       {/* 2. Pillars Header Section */}
       <div className="bg-white dark:bg-slate-900 border border-[#e8e5de] dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-2xs">

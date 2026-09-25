@@ -1678,6 +1678,9 @@ export const HierarchicalApp: React.FC = () => {
                     onOpenTimeBlocking={() => setCurrentTab('timeblocking')}
                     onSelectProject={handleJumpToProject}
                     onAdhanNotify={handleAdhanNotify}
+                    worshipDefinitions={worshipDefinitions}
+                    worshipLogs={worshipLogs}
+                    onOpenIbadat={() => setCurrentTab('ibadat')}
                   />
                 )}
               </>
