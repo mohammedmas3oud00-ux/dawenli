@@ -3,6 +3,7 @@ import { Check, Moon, Plus, Sparkles } from 'lucide-react';
 import type { Pillar, ProgressionPath, QuranHifzTracker, QuranKhatma, SleepSchedule, WorshipDefinition, WorshipLog } from '../../types/hierarchical';
 import { toLocalDateKey } from '../../utils/date';
 import { hijriDate, isEditableWorshipDate, isWhiteDay, progressionSuggestion, worshipInsights, worshipStreak, worshipSummary } from '../../utils/ibadat';
+import { analyzeWorshipInsight } from '../../utils/speechRecognition';
 
 type Props = {
   pillars: Pillar[]; definitions: WorshipDefinition[]; logs: WorshipLog[];
@@ -26,6 +27,8 @@ const choices: Array<{ category: WorshipDefinition['category']; label: string }>
 export const IbadatDashboard: React.FC<Props> = ({ pillars, definitions, logs, onSetup, onSaveLog, onOpenTimeBlocking, onSuggestTimeBlocks, progressionPaths, onApproveProgression, khatmas, onUpdateKhatma, sleepSchedules, onUpdateSleep, onEnableNotifications, hifzTrackers, onUpdateHifz }) => {
   const [selected, setSelected] = useState(choices.slice(0, 4).map((item) => item.category));
   const [date, setDate] = useState(toLocalDateKey());
+  const [aiInsight, setAiInsight] = useState<{ summary: string; suggestions: string[] } | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const today = toLocalDateKey();
   const dayDefinitions = definitions.filter((item) => item.is_active && (item.frequency === 'daily' || item.frequency === 'custom'));
   const summary = useMemo(() => worshipSummary(definitions, logs, date), [definitions, logs, date]);
@@ -42,10 +45,17 @@ export const IbadatDashboard: React.FC<Props> = ({ pillars, definitions, logs, o
     onSaveLog({ id: prior?.id || crypto.randomUUID(), worship_id: definition.id, date, is_completed: false, created_at: prior?.created_at || new Date().toISOString(), ...prior, ...patch, completed_at: patch.is_completed ? new Date().toISOString() : null });
   };
   const streak = worshipStreak(definitions, logs);
+  const requestAiInsight = async () => {
+    setIsAnalyzing(true);
+    try { setAiInsight(await analyzeWorshipInsight({ completionRate: summary.rate, completed: summary.completed, total: summary.total, streak, date })); }
+    catch { setAiInsight({ summary: 'تعذر الاتصال بتحليل Gemini. تأكد من حفظ مفتاح Gemini للحساب.', suggestions: [] }); }
+    finally { setIsAnalyzing(false); }
+  };
   return <section className="space-y-5">
     <div className="flex flex-wrap items-center justify-between gap-3"><div><h1 className="text-2xl font-black">🕌 العبادات والأوراد</h1><p className="text-sm text-slate-500">مرتبطة بركيزة {pillars.find((p) => p.id === definitions[0].pillar_id)?.title || 'العلاقة مع الله'}</p></div><div className="flex flex-wrap gap-2"><button type="button" onClick={onEnableNotifications} className="rounded-xl border px-3 py-2 text-sm dark:border-slate-700">تفعيل التذكيرات</button><button type="button" onClick={onSuggestTimeBlocks} className="rounded-xl bg-emerald-700 text-white px-3 py-2 text-sm">إضافة الكتل المقترحة</button><button type="button" onClick={onOpenTimeBlocking} className="rounded-xl border px-3 py-2 text-sm dark:border-slate-700">حجب الوقت</button></div></div>
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3"><Stat label="التزام اليوم" value={`${summary.rate}%`} /><Stat label="المكتمل" value={`${summary.completed}/${summary.total}`} /><Stat label="الستريك" value={`${streak} يوم`} /><Stat label="التاريخ" value={date} /></div>
     <aside className="rounded-2xl border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/30 p-4"><p className="font-bold text-sm">✨ ملخص التزامك</p><ul className="mt-2 space-y-1 text-sm text-slate-700 dark:text-slate-200">{worshipInsights(definitions, logs, date).map((insight) => <li key={insight}>• {insight}</li>)}</ul></aside>
+    <aside className="rounded-2xl border border-violet-200 dark:border-violet-900 bg-violet-50 dark:bg-violet-950/30 p-4"><div className="flex items-center justify-between gap-3"><p className="font-bold text-sm">✨ تحليل Gemini الاختياري</p><button type="button" disabled={isAnalyzing} onClick={() => void requestAiInsight()} className="rounded-lg bg-violet-700 text-white px-3 py-2 text-xs disabled:opacity-50">{isAnalyzing ? 'جاري التحليل…' : 'حلل التزامي'}</button></div>{aiInsight && <div className="mt-3 text-sm"><p>{aiInsight.summary}</p>{aiInsight.suggestions.map((item) => <p key={item} className="mt-1 text-slate-600 dark:text-slate-300">• {item}</p>)}</div>}</aside>
     <div className="flex flex-wrap items-center gap-2"><label className="text-sm font-semibold">تسجيل يوم:</label><input aria-label="تاريخ سجل العبادة" type="date" value={date} max={today} onChange={(e) => setDate(e.target.value)} className="rounded-lg border p-2 dark:bg-slate-800 dark:border-slate-700" /><span className="text-xs text-slate-500">{hijri.label}{isWhiteDay(new Date(`${date}T12:00:00`)) ? ' · من الأيام البيض' : ''}</span>{!isEditableWorshipDate(date) && <span className="text-xs text-rose-600">التعديل متاح لآخر 30 يومًا فقط</span>}</div>
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">{dayDefinitions.map((definition) => { const log = logs.find((item) => item.worship_id === definition.id && item.date === date); return <article key={definition.id} className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 space-y-3"><div className="flex justify-between gap-3"><h2 className="font-bold">{definition.category === 'salah' ? '🕌' : definition.category === 'quran_wird' ? '📖' : '📿'} {definition.title}</h2><button aria-label={`تسجيل ${definition.title}`} disabled={!isEditableWorshipDate(date)} onClick={() => save(definition, { is_completed: !log?.is_completed })} className={`rounded-lg px-3 py-1.5 text-sm font-bold ${log?.is_completed ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-slate-100 dark:bg-slate-800'}`}><Check className="inline w-4 h-4" /> {log?.is_completed ? 'تم' : 'تسجيل'}</button></div>
       {definition.category === 'salah' && <div className="flex flex-wrap gap-2"><select aria-label={`أداء ${definition.title}`} value={log?.performance || ''} onChange={(e) => save(definition, { performance: e.target.value as WorshipLog['performance'], is_completed: e.target.value === 'ada' || e.target.value === 'qada' })} className="rounded-lg border p-2 text-sm dark:bg-slate-800 dark:border-slate-700"><option value="">نوع الأداء</option><option value="ada">أداء</option><option value="qada">قضاء</option><option value="missed">فاتت</option></select><select aria-label={`جماعة ${definition.title}`} value={log?.congregation || ''} onChange={(e) => save(definition, { congregation: e.target.value as WorshipLog['congregation'] })} className="rounded-lg border p-2 text-sm dark:bg-slate-800 dark:border-slate-700"><option value="">جماعة / فرد</option><option value="jamaah">جماعة</option><option value="fard">فرد</option></select></div>}
