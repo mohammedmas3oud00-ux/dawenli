@@ -1,5 +1,5 @@
 -- Background push delivery: one job per minute, configured through Supabase Vault.
--- After this migration, run dawelnli_configure_push_cron from the SQL editor once.
+-- After this migration, run dawenli_configure_push_cron from the SQL editor once.
 
 create table if not exists public.push_delivery_log (
   id uuid primary key default gen_random_uuid(),
