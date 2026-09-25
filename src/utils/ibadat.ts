@@ -1,6 +1,13 @@
 import type { ProgressionPath, WorshipDefinition, WorshipLog } from '../types/hierarchical';
-import { toLocalDateKey } from './date';
-import { shiftLocalDateKey } from './date';
+import { shiftLocalDateKey, toLocalDateKey } from './date';
+
+export type HijriDate = { day: number; month: number; year: number; label: string };
+export function hijriDate(date = new Date()): HijriDate {
+  const parts = new Intl.DateTimeFormat('en-u-ca-islamic', { day: 'numeric', month: 'numeric', year: 'numeric' }).formatToParts(date);
+  const value = (type: string) => Number(parts.find((part) => part.type === type)?.value || 0);
+  return { day: value('day'), month: value('month'), year: value('year'), label: new Intl.DateTimeFormat('ar-EG-u-ca-islamic', { dateStyle: 'long' }).format(date) };
+}
+export const isWhiteDay = (date = new Date()) => [13, 14, 15].includes(hijriDate(date).day);
 
 export const isEditableWorshipDate = (date: string, today = toLocalDateKey()) => {
   const delta = Math.floor((new Date(`${today}T12:00:00`).getTime() - new Date(`${date}T12:00:00`).getTime()) / 86_400_000);

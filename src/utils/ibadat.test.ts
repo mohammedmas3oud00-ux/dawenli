@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { WorshipDefinition, WorshipLog } from '../types/hierarchical';
-import { isEditableWorshipDate, progressionSuggestion, worshipStreak, worshipSummary } from './ibadat';
+import { hijriDate, isEditableWorshipDate, progressionSuggestion, worshipStreak, worshipSummary } from './ibadat';
 
 const definition = (id: string): WorshipDefinition => ({ id, pillar_id: 'pillar', title: id, category: 'salah', tracking_type: 'multi_option', frequency: 'daily', is_active: true, sort_order: 0, created_at: '2026-09-01T00:00:00Z' });
 const log = (worship_id: string, date: string): WorshipLog => ({ id: `${worship_id}-${date}`, worship_id, date, is_completed: true, created_at: `${date}T00:00:00Z` });
@@ -23,5 +23,12 @@ describe('ibadat calculations', () => {
   it('suggests, rather than auto-promotes, a completed progression stage', () => {
     const path = { id: 'path', worship_id: 'qiyam', title: 'قيام', stages: [{ index: 0, title: 'البداية', description: '', target_value: 2, days_required: 7 }, { index: 1, title: 'التالي', description: '', target_value: 4, days_required: 7 }], current_stage_index: 0, stage_start_date: '2026-09-01', consecutive_days: 7, auto_promote: false, created_at: '2026-09-01' };
     expect(progressionSuggestion(path, [])).toContain('هل تريد');
+  });
+
+  it('returns a usable Hijri date without relying on UTC string conversion', () => {
+    const value = hijriDate(new Date(2026, 8, 25, 12));
+    expect(value.day).toBeGreaterThanOrEqual(1);
+    expect(value.month).toBeGreaterThanOrEqual(1);
+    expect(value.year).toBeGreaterThan(1400);
   });
 });
