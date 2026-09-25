@@ -1310,6 +1310,14 @@ export const HierarchicalApp: React.FC = () => {
     setToasts((previous) => [...previous, { id: createId(), type: 'success', title: 'أُضيفت كتل عبادة مقترحة', description: 'يمكنك تعديلها من حجب الوقت.' }]);
   };
 
+  const handleApproveProgression = (pathId: string) => {
+    setProgressionPaths((previous) => previous.map((path) => {
+      if (path.id !== pathId || path.current_stage_index >= path.stages.length - 1) return path;
+      return { ...path, current_stage_index: path.current_stage_index + 1, consecutive_days: 0, stage_start_date: toLocalDateKey(), last_promotion_date: toLocalDateKey(), updated_at: new Date().toISOString() };
+    }));
+    setToasts((previous) => [...previous, { id: createId(), type: 'success', title: 'تم اعتماد المرحلة التالية', description: 'يمكنك دائمًا متابعة التدرج بالوتيرة المناسبة لك.' }]);
+  };
+
   const handleCreateProjectDraft = (item: InboxItem, goalId: string) => {
     setEditingProject(null);
     setNewProjectDefaults({
@@ -1828,6 +1836,8 @@ export const HierarchicalApp: React.FC = () => {
                 onSaveLog={handleSaveWorshipLog}
                 onOpenTimeBlocking={() => setCurrentTab('timeblocking')}
                 onSuggestTimeBlocks={handleSuggestWorshipBlocks}
+                progressionPaths={progressionPaths}
+                onApproveProgression={handleApproveProgression}
               />
             )}
 

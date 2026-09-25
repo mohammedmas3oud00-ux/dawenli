@@ -1,14 +1,15 @@
 import React, { useMemo, useState } from 'react';
 import { Check, Moon, Plus, Sparkles } from 'lucide-react';
-import type { Pillar, WorshipDefinition, WorshipLog } from '../../types/hierarchical';
+import type { Pillar, ProgressionPath, WorshipDefinition, WorshipLog } from '../../types/hierarchical';
 import { toLocalDateKey } from '../../utils/date';
-import { hijriDate, isEditableWorshipDate, isWhiteDay, worshipStreak, worshipSummary } from '../../utils/ibadat';
+import { hijriDate, isEditableWorshipDate, isWhiteDay, progressionSuggestion, worshipStreak, worshipSummary } from '../../utils/ibadat';
 
 type Props = {
   pillars: Pillar[]; definitions: WorshipDefinition[]; logs: WorshipLog[];
   onSetup: (categories: WorshipDefinition['category'][]) => void;
   onSaveLog: (log: WorshipLog) => void;
   onOpenTimeBlocking: () => void; onSuggestTimeBlocks: () => void;
+  progressionPaths: ProgressionPath[]; onApproveProgression: (pathId: string) => void;
 };
 
 const choices: Array<{ category: WorshipDefinition['category']; label: string }> = [
@@ -18,7 +19,7 @@ const choices: Array<{ category: WorshipDefinition['category']; label: string }>
   { category: 'custom_dua', label: 'أوراد وأدعية مخصصة' }, { category: 'quran_hifz', label: 'حفظ القرآن ومراجعته' },
 ];
 
-export const IbadatDashboard: React.FC<Props> = ({ pillars, definitions, logs, onSetup, onSaveLog, onOpenTimeBlocking, onSuggestTimeBlocks }) => {
+export const IbadatDashboard: React.FC<Props> = ({ pillars, definitions, logs, onSetup, onSaveLog, onOpenTimeBlocking, onSuggestTimeBlocks, progressionPaths, onApproveProgression }) => {
   const [selected, setSelected] = useState(choices.slice(0, 4).map((item) => item.category));
   const [date, setDate] = useState(toLocalDateKey());
   const today = toLocalDateKey();
@@ -48,6 +49,7 @@ export const IbadatDashboard: React.FC<Props> = ({ pillars, definitions, logs, o
       {definition.tracking_type === 'amount' && <input aria-label={`مبلغ ${definition.title}`} type="number" min="0" placeholder="مبلغ اختياري خاص" value={log?.amount || ''} onChange={(e) => save(definition, { amount: Number(e.target.value) || null, is_completed: Boolean(e.target.value) })} className="w-44 rounded-lg border p-2 text-sm dark:bg-slate-800 dark:border-slate-700" />}
       {definition.category === 'qiyam' && <div className="flex gap-2"><input aria-label="عدد ركعات قيام الليل" type="number" min="1" placeholder="الركعات" value={log?.rakaat_count || ''} onChange={(e) => save(definition, { rakaat_count: Number(e.target.value) || null, is_completed: Number(e.target.value) > 0 })} className="w-28 rounded-lg border p-2 dark:bg-slate-800 dark:border-slate-700" /><input aria-label="وقت قيام الليل" type="time" value={log?.performed_at_time || ''} onChange={(e) => save(definition, { performed_at_time: e.target.value || null })} className="rounded-lg border p-2 dark:bg-slate-800 dark:border-slate-700" /></div>}
     </article>; })}</div>
+    {progressionPaths.map((path) => { const suggestion = progressionSuggestion(path, logs); const stage = path.stages[path.current_stage_index]; return <article key={path.id} className="rounded-2xl border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-900 p-4"><h2 className="font-bold">✨ {path.title}: {stage?.title}</h2><p className="text-sm mt-1">الالتزام الحالي: {path.consecutive_days}/{stage?.days_required || '—'} أيام</p>{suggestion ? <button type="button" onClick={() => onApproveProgression(path.id)} className="mt-3 rounded-lg bg-amber-600 text-white px-3 py-2 text-sm">{suggestion}</button> : <p className="text-xs text-slate-500 mt-2">التدرج اقتراحي فقط؛ لن تتغير مرحلتك تلقائيًا.</p>}</article>})}
     <p className="text-xs text-slate-500 flex gap-1 items-center"><Sparkles className="w-3 h-3" />الذكاء الاصطناعي يعرض تحليلات وتشجيعًا فقط، ولا يصدر أحكامًا أو فتاوى.</p>
   </section>;
 };
