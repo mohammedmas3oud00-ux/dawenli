@@ -6,7 +6,7 @@ async function authHeaders() {
   return { Authorization: `Bearer ${data.session.access_token}`, 'Content-Type': 'application/json' };
 }
 
-export async function subscribeToPush(prayerTimes: Record<string, string> = {}): Promise<void> {
+export async function subscribeToPush(prayerTimes: Record<string, string> = {}, options: { prayerEnabled?: boolean; taskEnabled?: boolean; worshipEnabled?: boolean } = {}): Promise<void> {
   if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
     throw new Error('هذا المتصفح لا يدعم إشعارات الخلفية.');
   }
@@ -17,7 +17,7 @@ export async function subscribeToPush(prayerTimes: Record<string, string> = {}):
   if (!keyResponse.ok || !keyBody.data?.publicKey) throw new Error(keyBody.error?.message || 'إشعارات الخلفية غير مهيأة.');
   const registration = await navigator.serviceWorker.ready;
   const subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(keyBody.data.publicKey) as unknown as BufferSource });
-  const response = await fetch('/api/push/subscription', { method: 'POST', headers: await authHeaders(), body: JSON.stringify({ subscription, prayerEnabled: true, taskEnabled: true, prayerTimes, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone }) });
+  const response = await fetch('/api/push/subscription', { method: 'POST', headers: await authHeaders(), body: JSON.stringify({ subscription, prayerEnabled: options.prayerEnabled !== false, taskEnabled: options.taskEnabled !== false, worshipEnabled: options.worshipEnabled !== false, prayerTimes, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone }) });
   if (!response.ok) throw new Error('تعذر حفظ إعداد إشعارات الخلفية.');
 }
 

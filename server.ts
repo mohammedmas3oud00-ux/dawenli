@@ -268,6 +268,7 @@ app.post('/api/push/subscription', requireUserAuth, async (req, res) => {
     auth: subscription.keys.auth,
     prayer_enabled: req.body?.prayerEnabled !== false,
     task_enabled: req.body?.taskEnabled !== false,
+    worship_enabled: req.body?.worshipEnabled !== false,
     timezone: typeof req.body?.timezone === 'string' ? req.body.timezone.slice(0, 80) : 'Africa/Cairo',
     prayer_times: req.body?.prayerTimes && typeof req.body.prayerTimes === 'object' ? req.body.prayerTimes : {},
     updated_at: new Date().toISOString(),
