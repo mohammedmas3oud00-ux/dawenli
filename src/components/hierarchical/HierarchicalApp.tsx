@@ -59,7 +59,7 @@ import { findLegacySnapshot, remapSnapshotIds, removeLegacyDawenliKeys } from '.
 import { createId } from '../../utils/id';
 import { toLocalDateKey } from '../../utils/date';
 import { calculateHabitStreak } from '../../utils/habitStreak';
-import { clearGeminiAuthorizationKey, getGeminiAuthorizationKey, setGeminiAuthorizationKey } from '../../utils/aiCredentials';
+import { deleteGeminiCredential, hasStoredGeminiCredential, refreshGeminiCredentialStatus, saveGeminiCredential } from '../../utils/aiCredentials';
 
 export const HierarchicalApp: React.FC = () => {
   // Core Entities State
@@ -176,7 +176,6 @@ export const HierarchicalApp: React.FC = () => {
   };
 
   const handleSignOut = async () => {
-    clearGeminiAuthorizationKey();
     if (isSupabaseConfigured && supabase) {
       try {
         await supabase.auth.signOut();
@@ -266,24 +265,27 @@ export const HierarchicalApp: React.FC = () => {
     setCustomFieldDefinitions(snapshot.customFieldDefinitions);
   };
 
-  const handleConfigureAiKey = (): boolean => {
+  const handleConfigureAiKey = async (): Promise<boolean> => {
     if (currentUser?.isGuest || authStatus !== 'authenticated') {
       alert('ميزات Gemini متاحة للحسابات المسجلة فقط.');
       return false;
     }
-    const entered = window.prompt('أدخل Gemini authorization key. سيبقى في الذاكرة فقط حتى تحديث الصفحة أو تسجيل الخروج.', getGeminiAuthorizationKey());
-    if (entered === null) return Boolean(getGeminiAuthorizationKey());
+    const alreadyConfigured = await refreshGeminiCredentialStatus().catch(() => false);
+    const entered = window.prompt(alreadyConfigured
+      ? 'أدخل مفتاح Gemini جديدًا لاستبدال المفتاح المحفوظ، أو اترك الحقل فارغًا للاحتفاظ بالحالي.'
+      : 'أدخل مفتاح Gemini. سيُشفّر ويُحفظ لخزينة حسابك ولا يظهر كاملًا مرة أخرى.');
+    if (entered === null) return alreadyConfigured;
     if (!entered.trim()) {
-      clearGeminiAuthorizationKey();
-      return false;
+      return alreadyConfigured;
     }
-    setGeminiAuthorizationKey(entered);
-    setToasts((previous) => [...previous, { id: createId(), type: 'success', title: 'تم تفعيل Gemini', description: 'المفتاح محفوظ مؤقتًا في ذاكرة الصفحة فقط.' }]);
+    await saveGeminiCredential(entered);
+    setToasts((previous) => [...previous, { id: createId(), type: 'success', title: 'تم حفظ Gemini بأمان', description: 'المفتاح مشفّر ومربوط بحسابك فقط.' }]);
     return true;
   };
 
-  const handleOpenVoiceAi = () => {
-    if ((getGeminiAuthorizationKey() || handleConfigureAiKey()) && authStatus === 'authenticated') {
+  const handleOpenVoiceAi = async () => {
+    const configured = hasStoredGeminiCredential() || await refreshGeminiCredentialStatus().catch(() => false);
+    if ((configured || await handleConfigureAiKey()) && authStatus === 'authenticated') {
       setIsVoiceAiModalOpen(true);
     }
   };
@@ -1395,25 +1397,6 @@ export const HierarchicalApp: React.FC = () => {
                 <span className="hidden md:inline max-w-[110px] truncate text-[11px]">
                   {currentUser?.isGuest ? 'ضيف المنظومة' : (currentUser?.email?.split('@')[0] || 'حسابي')}
                 </span>
-              </button>
-
-              {/* SQL Schema button */}
-              <button
-                onClick={() => setIsSqlModalOpen(true)}
-                className="hidden lg:flex items-center gap-1.5 px-3 py-2 bg-[#f8f7f4] dark:bg-slate-800 hover:bg-[#edeae2] dark:hover:bg-slate-700 text-[#404c45] dark:text-slate-200 rounded-xl text-xs font-bold transition-colors cursor-pointer border border-[#e2ddd5] dark:border-slate-700"
-                title="عرض مخطط SQL وتريجرات الحساب التلقائي لـ Supabase"
-              >
-                <Database className="w-3.5 h-3.5 text-[#174235] dark:text-emerald-400" />
-                <span>مخطط SQL</span>
-              </button>
-
-              {/* Reset seed data button */}
-              <button
-                onClick={handleResetData}
-                className="hidden sm:flex p-2 text-[#7d8982] dark:text-slate-400 hover:text-[#1a2420] dark:hover:text-slate-100 hover:bg-[#f2efe8] dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
-                title="استعادة البيانات الأولية"
-              >
-                <RotateCcw className="w-4 h-4" />
               </button>
 
             </div>

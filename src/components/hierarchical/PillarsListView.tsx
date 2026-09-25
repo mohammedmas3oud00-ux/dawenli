@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Edit2, Trash2, ChevronLeft, Database } from 'lucide-react';
+import { Plus, Edit2, Trash2, ChevronLeft } from 'lucide-react';
 import { Pillar, Task, Project, ValueGoal } from '../../types/hierarchical';
 import { ProgressBar } from './ProgressBar';
 import { NextBestTaskSpotlight } from './NextBestTaskSpotlight';
@@ -14,7 +14,7 @@ interface PillarsListViewProps {
   onNewPillar: () => void;
   onEditPillar: (pillar: Pillar) => void;
   onDeletePillar: (pillarId: string) => void;
-  onOpenSqlModal: () => void;
+  onOpenSqlModal?: () => void;
   onStartFocus?: (task: Task) => void;
   onCompleteTask?: (taskId: string) => void;
   onOpenTimeBlocking?: () => void;
@@ -87,16 +87,6 @@ export const PillarsListView: React.FC<PillarsListViewProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 shrink-0">
-            <button
-              type="button"
-              onClick={onOpenSqlModal}
-              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 bg-white dark:bg-slate-800 hover:bg-[#f6f5f1] dark:hover:bg-slate-700 text-[#3a443f] dark:text-slate-200 border border-[#e3dfd7] dark:border-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs whitespace-nowrap"
-              title="عرض كود SQL التأسيسي لـ Supabase والتريجرات"
-            >
-              <Database className="w-3.5 h-3.5 text-[#174235] dark:text-emerald-400" />
-              <span>مخطط SQL</span>
-            </button>
-
             <button
               type="button"
               onClick={onNewPillar}

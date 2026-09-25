@@ -32,6 +32,13 @@ interface PrayerItem {
   icon: React.ReactNode;
 }
 
+const formatPrayerTime = (time: string) => {
+  const [hours, minutes] = time.split(':').map(Number);
+  const suffix = hours >= 12 ? 'م' : 'ص';
+  const hour12 = hours % 12 || 12;
+  return `${String(hour12).padStart(2, '0')}:${String(minutes).padStart(2, '0')} ${suffix}`;
+};
+
 export const PrayerTimesCard: React.FC<PrayerTimesCardProps> = ({
   onAdhanNotify,
   className = '',
@@ -123,7 +130,7 @@ export const PrayerTimesCard: React.FC<PrayerTimesCardProps> = ({
         }
 
         if (diff > 0) {
-          setNextPrayer({ name: p.name, minutesRemaining: diff, timeStr: p.timeStr });
+          setNextPrayer({ name: p.name, minutesRemaining: diff, timeStr: formatPrayerTime(p.timeStr) });
           return;
         }
       }
@@ -131,7 +138,7 @@ export const PrayerTimesCard: React.FC<PrayerTimesCardProps> = ({
       // If all passed today, next is Fajr tomorrow
       const [fajrH, fajrM] = data.Fajr.split(':').map(Number);
       const fajrMinutesTomorrow = 24 * 60 - currentMinutes + (fajrH * 60 + fajrM);
-      setNextPrayer({ name: 'الفجر', minutesRemaining: fajrMinutesTomorrow, timeStr: data.Fajr });
+      setNextPrayer({ name: 'الفجر', minutesRemaining: fajrMinutesTomorrow, timeStr: formatPrayerTime(data.Fajr) });
     };
 
     calculateNext();
@@ -280,7 +287,7 @@ export const PrayerTimesCard: React.FC<PrayerTimesCardProps> = ({
                 </span>
               </div>
               <div className={`text-xs font-mono font-black ${isNext ? 'text-white' : 'text-[#1a2420] dark:text-slate-100'}`}>
-                {prayer.timeStr}
+                {formatPrayerTime(prayer.timeStr)}
               </div>
             </div>
           );

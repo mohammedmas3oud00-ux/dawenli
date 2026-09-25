@@ -4,7 +4,7 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { GoogleGenAI, Type } from '@google/genai';
 import { createClient } from '@supabase/supabase-js';
-import { randomUUID } from 'crypto';
+import { createCipheriv, createDecipheriv, createHash, randomBytes, randomUUID } from 'crypto';
 
 dotenv.config();
 
@@ -133,26 +133,106 @@ function apiError(res: express.Response, status: number, code: ApiErrorCode, mes
 const supabaseUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').trim();
 const supabaseAnonKey = (process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '').trim();
 const authClient = supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey, { auth: { persistSession: false } }) : null;
+const credentialEncryptionSecret = (process.env.GEMINI_KEY_ENCRYPTION_SECRET || '').trim();
 const localRateLimits = new Map<string, { count: number; resetAt: number }>();
 
-async function requireAiAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
+function credentialEncryptionKey(): Buffer | null {
+  return credentialEncryptionSecret ? createHash('sha256').update(credentialEncryptionSecret).digest() : null;
+}
+
+function encryptCredential(value: string) {
+  const key = credentialEncryptionKey();
+  if (!key) throw new Error('Credential encryption is not configured');
+  const iv = randomBytes(12);
+  const cipher = createCipheriv('aes-256-gcm', key, iv);
+  const ciphertext = Buffer.concat([cipher.update(value, 'utf8'), cipher.final()]);
+  return { ciphertext: ciphertext.toString('base64'), iv: iv.toString('base64'), authTag: cipher.getAuthTag().toString('base64') };
+}
+
+function decryptCredential(value: { ciphertext: string; iv: string; auth_tag: string }): string {
+  const key = credentialEncryptionKey();
+  if (!key) throw new Error('Credential encryption is not configured');
+  const decipher = createDecipheriv('aes-256-gcm', key, Buffer.from(value.iv, 'base64'));
+  decipher.setAuthTag(Buffer.from(value.auth_tag, 'base64'));
+  return Buffer.concat([decipher.update(Buffer.from(value.ciphertext, 'base64')), decipher.final()]).toString('utf8');
+}
+
+function userScopedClient(token: string) {
+  if (!supabaseUrl || !supabaseAnonKey) return null;
+  return createClient(supabaseUrl, supabaseAnonKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: { headers: { Authorization: `Bearer ${token}` } },
+  });
+}
+
+async function requireUserAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
   if (!authClient) return apiError(res, 503, 'NOT_CONFIGURED', 'خدمة المصادقة غير مهيأة.');
   const token = req.headers.authorization?.match(/^Bearer\s+(.+)$/i)?.[1];
-  const geminiKey = typeof req.headers['x-gemini-api-key'] === 'string' ? req.headers['x-gemini-api-key'].trim() : '';
-  if (!token || !geminiKey) return apiError(res, 401, 'UNAUTHORIZED', 'الجلسة ومفتاح Gemini المؤقت مطلوبان.');
+  if (!token) return apiError(res, 401, 'UNAUTHORIZED', 'جلسة المستخدم مطلوبة.');
   const { data, error } = await authClient.auth.getUser(token);
   if (error || !data.user) return apiError(res, 401, 'UNAUTHORIZED', 'جلسة المستخدم غير صالحة أو منتهية.');
 
-  const now = Date.now();
-  const current = localRateLimits.get(data.user.id);
-  const bucket = !current || current.resetAt <= now ? { count: 0, resetAt: now + 60_000 } : current;
-  if (bucket.count >= 20) return apiError(res, 429, 'RATE_LIMITED', 'تم بلوغ حد الطلبات المؤقت. حاول بعد دقيقة.');
-  bucket.count += 1;
-  localRateLimits.set(data.user.id, bucket);
   res.locals.userId = data.user.id;
-  res.locals.geminiKey = geminiKey;
+  res.locals.accessToken = token;
   next();
 }
+
+async function requireAiAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
+  await requireUserAuth(req, res, async () => {
+    const token = res.locals.accessToken as string;
+    const client = userScopedClient(token);
+    if (!client || !credentialEncryptionKey()) return apiError(res, 503, 'NOT_CONFIGURED', 'خزينة مفاتيح Gemini غير مهيأة.');
+    const { data, error } = await client.rpc('dawenli_get_gemini_credential');
+    const record = Array.isArray(data) ? data[0] : data;
+    if (error || !record) return apiError(res, 401, 'UNAUTHORIZED', 'أضف مفتاح Gemini إلى خزينة حسابك أولًا.');
+    try {
+      res.locals.geminiKey = decryptCredential(record);
+    } catch {
+      return apiError(res, 503, 'NOT_CONFIGURED', 'تعذر فتح مفتاح Gemini المحفوظ. أضف المفتاح مجددًا.');
+    }
+
+    const now = Date.now();
+    const current = localRateLimits.get(res.locals.userId as string);
+    const bucket = !current || current.resetAt <= now ? { count: 0, resetAt: now + 60_000 } : current;
+    if (bucket.count >= 20) return apiError(res, 429, 'RATE_LIMITED', 'تم بلوغ حد الطلبات المؤقت. حاول بعد دقيقة.');
+    bucket.count += 1;
+    localRateLimits.set(res.locals.userId as string, bucket);
+    next();
+  });
+}
+
+app.get('/api/ai/credential', requireUserAuth, async (req, res) => {
+  const client = userScopedClient(res.locals.accessToken as string);
+  const { data, error } = await client!.rpc('dawenli_get_gemini_credential');
+  if (error) return apiError(res, 503, 'NOT_CONFIGURED', 'تعذر الوصول إلى خزينة Gemini.');
+  const record = Array.isArray(data) ? data[0] : data;
+  return res.json({ ok: true, data: { configured: Boolean(record) } });
+});
+
+app.post('/api/ai/credential', requireUserAuth, async (req, res) => {
+  const geminiKey = typeof req.body?.key === 'string' ? req.body.key.trim() : '';
+  if (geminiKey.length < 16 || geminiKey.length > 512) return apiError(res, 400, 'BAD_REQUEST', 'مفتاح Gemini غير صالح.');
+  try {
+    const encrypted = encryptCredential(geminiKey);
+    const client = userScopedClient(res.locals.accessToken as string);
+    const { error } = await client!.rpc('dawenli_save_gemini_credential', {
+      p_ciphertext: encrypted.ciphertext,
+      p_iv: encrypted.iv,
+      p_auth_tag: encrypted.authTag,
+    });
+    if (error) return apiError(res, 503, 'NOT_CONFIGURED', 'تعذر حفظ مفتاح Gemini المشفّر.');
+    return res.json({ ok: true, data: { configured: true } });
+  } catch {
+    return apiError(res, 503, 'NOT_CONFIGURED', 'خزينة مفاتيح Gemini غير مهيأة.');
+  }
+});
+
+app.delete('/api/ai/credential', requireUserAuth, async (req, res) => {
+  const client = userScopedClient(res.locals.accessToken as string);
+  const { error } = await client!.rpc('dawenli_delete_gemini_credential');
+  if (error) return apiError(res, 503, 'NOT_CONFIGURED', 'تعذر حذف مفتاح Gemini.');
+  return res.json({ ok: true, data: { configured: false } });
+});
 
 app.use('/api/ai', requireAiAuth);
 

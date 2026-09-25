@@ -1,7 +1,6 @@
 /**
  * Speech Recognition, AI Processing and Utility Service for Dawenli
  */
-import { getGeminiAuthorizationKey } from './aiCredentials';
 import { supabase } from './supabaseClient';
 
 // Robust Arabic & General Speech De-duplicator
@@ -85,12 +84,9 @@ export interface AiVoiceAnalysisResult {
 
 async function getAiHeaders(): Promise<Record<string, string>> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  const customKey = getGeminiAuthorizationKey();
   const { data } = await supabase?.auth.getSession() ?? { data: { session: null } };
   if (!data.session?.access_token) throw new Error('سجّل الدخول لاستخدام ميزات Gemini.');
-  if (!customKey) throw new Error('أدخل مفتاح Gemini authorization المؤقت أولًا.');
   headers.Authorization = `Bearer ${data.session.access_token}`;
-  headers['x-gemini-api-key'] = customKey;
   return headers;
 }
 

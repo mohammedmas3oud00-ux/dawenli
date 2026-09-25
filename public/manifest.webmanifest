@@ -1,0 +1,12 @@
+{
+  "name": "دوّنلي",
+  "short_name": "دوّنلي",
+  "description": "منظومة الحياة والتنفيذ",
+  "start_url": "/",
+  "display": "standalone",
+  "dir": "rtl",
+  "lang": "ar",
+  "theme_color": "#174235",
+  "background_color": "#f8f7f4",
+  "icons": []
+}
