@@ -59,7 +59,7 @@ import { findLegacySnapshot, remapSnapshotIds, removeLegacyDawenliKeys } from '.
 import { createId } from '../../utils/id';
 import { toLocalDateKey } from '../../utils/date';
 import { calculateHabitStreak } from '../../utils/habitStreak';
-import { deleteGeminiCredential, hasStoredGeminiCredential, refreshGeminiCredentialStatus, saveGeminiCredential } from '../../utils/aiCredentials';
+import { hasStoredGeminiCredential, refreshGeminiCredentialStatus, saveGeminiCredential } from '../../utils/aiCredentials';
 
 export const HierarchicalApp: React.FC = () => {
   // Core Entities State
@@ -104,6 +104,7 @@ export const HierarchicalApp: React.FC = () => {
   const [dataReady, setDataReady] = useState(false);
   const repositoryRef = useRef<DataRepository | null>(null);
   const lastSavedSnapshotRef = useRef<AppDataSnapshot>(emptySnapshot());
+  const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
 
   // Supabase Auth Session Synchronization
   useEffect(() => {
@@ -345,7 +346,7 @@ export const HierarchicalApp: React.FC = () => {
     };
     const repository = repositoryRef.current;
     const timer = window.setTimeout(() => {
-      repository.save(snapshot).then(() => {
+      saveQueueRef.current = saveQueueRef.current.then(() => repository.save(snapshot)).then(() => {
         lastSavedSnapshotRef.current = snapshot;
       }).catch((error: unknown) => {
         applySnapshot(lastSavedSnapshotRef.current);

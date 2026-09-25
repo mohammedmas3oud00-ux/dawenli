@@ -291,6 +291,11 @@ export const VoiceAiCaptureModal: React.FC<VoiceAiCaptureModalProps> = ({
   // Commit Analyzed Hierarchy into System
   const handleSaveToSystem = () => {
     if (!analysisResult) return;
+    const pillarId = selectedPillarId || pillars[0]?.id;
+    if (!pillarId) {
+      setSpeechError('أنشئ ركيزة واحدة على الأقل قبل حفظ نتيجة الذكاء الاصطناعي.');
+      return;
+    }
 
     const chosenTasks = analysisResult.tasks.filter((_, idx) => selectedTasks[idx]);
 
@@ -298,7 +303,7 @@ export const VoiceAiCaptureModal: React.FC<VoiceAiCaptureModalProps> = ({
     const matchingGoal = goals.find((g) => g.pillar_id === selectedPillarId);
 
     onCommitHierarchy({
-      pillarId: selectedPillarId || pillars[0]?.id,
+      pillarId,
       goalId: matchingGoal?.id,
       projectTitle: analysisResult.projectTitle || analysisResult.cleanedTranscription.slice(0, 40),
       projectDescription: analysisResult.projectDescription || analysisResult.summary,
@@ -429,7 +434,7 @@ export const VoiceAiCaptureModal: React.FC<VoiceAiCaptureModalProps> = ({
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
                   placeholder="سيظهر ما تقوله هنا بصوتك بعد تنقيته من أي تكرار أو يمكنك كتابته مباشرة..."
-                  className="w-full p-3.5 bg-[#faf8f5] border border-[#d8d4cc] rounded-xl text-[#1a2420] dark:text-slate-100 placeholder:text-[#9aa69f] focus:bg-white focus:border-[#174235] focus:ring-1 focus:ring-[#174235]/20 outline-hidden leading-relaxed"
+                  className="w-full p-3.5 bg-[#faf8f5] dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-[#1a2420] dark:text-slate-100 placeholder:text-[#9aa69f] focus:bg-white dark:focus:bg-slate-800 focus:border-[#174235] dark:focus:border-emerald-500 focus:ring-1 focus:ring-[#174235]/20 outline-hidden leading-relaxed"
                 />
 
                 <div className="flex items-center justify-between mt-1 text-[11px] text-[#7a8880] dark:text-slate-400">
@@ -552,7 +557,7 @@ export const VoiceAiCaptureModal: React.FC<VoiceAiCaptureModalProps> = ({
                   </div>
 
                   <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-                    {analysisResult.tasks.map((task, idx) => {
+                            {analysisResult.tasks.map((task, idx) => {
                       const isChecked = selectedTasks[idx] ?? true;
 
                       return (
@@ -578,13 +583,22 @@ export const VoiceAiCaptureModal: React.FC<VoiceAiCaptureModalProps> = ({
                           </div>
 
                           <div className="flex-1 min-w-0">
-                            <span className="font-bold text-[#1a2420] dark:text-slate-100 block leading-snug">
-                              {task.title}
-                            </span>
+                            <input
+                              aria-label={`عنوان المهمة ${idx + 1}`}
+                              value={task.title}
+                              onChange={(event) => setAnalysisResult({ ...analysisResult, tasks: analysisResult.tasks.map((item, itemIndex) => itemIndex === idx ? { ...item, title: event.target.value } : item) })}
+                              onClick={(event) => event.stopPropagation()}
+                              className="w-full bg-transparent border-b border-transparent focus:border-emerald-500 outline-hidden font-bold text-[#1a2420] dark:text-slate-100 leading-snug"
+                            />
                             {task.description && (
-                              <p className="text-[11px] text-[#637169] dark:text-slate-400 mt-0.5 line-clamp-1">
-                                {task.description}
-                              </p>
+                              <textarea
+                                aria-label={`وصف المهمة ${idx + 1}`}
+                                value={task.description}
+                                onChange={(event) => setAnalysisResult({ ...analysisResult, tasks: analysisResult.tasks.map((item, itemIndex) => itemIndex === idx ? { ...item, description: event.target.value } : item) })}
+                                onClick={(event) => event.stopPropagation()}
+                                rows={2}
+                                className="w-full bg-transparent border border-transparent focus:border-slate-400 rounded p-1 text-[11px] text-[#637169] dark:text-slate-400 mt-0.5 outline-hidden resize-y"
+                              />
                             )}
                             <div className="flex items-center gap-2 mt-1.5 text-[10px] text-[#717e77] dark:text-slate-400">
                               <span className="px-1.5 py-0.5 rounded bg-[#f0ede6] dark:bg-slate-700 text-[#404c45] dark:text-slate-300 font-medium">
