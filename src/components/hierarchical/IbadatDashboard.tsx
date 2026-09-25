@@ -12,6 +12,7 @@ type Props = {
   progressionPaths: ProgressionPath[]; onApproveProgression: (pathId: string) => void;
   khatmas: QuranKhatma[]; onUpdateKhatma: (id: string, page: number) => void;
   sleepSchedules: SleepSchedule[]; onUpdateSleep: (id: string, changes: Partial<SleepSchedule>) => void;
+  onEnableNotifications: () => void;
 };
 
 const choices: Array<{ category: WorshipDefinition['category']; label: string }> = [
@@ -21,7 +22,7 @@ const choices: Array<{ category: WorshipDefinition['category']; label: string }>
   { category: 'custom_dua', label: 'أوراد وأدعية مخصصة' }, { category: 'quran_hifz', label: 'حفظ القرآن ومراجعته' },
 ];
 
-export const IbadatDashboard: React.FC<Props> = ({ pillars, definitions, logs, onSetup, onSaveLog, onOpenTimeBlocking, onSuggestTimeBlocks, progressionPaths, onApproveProgression, khatmas, onUpdateKhatma, sleepSchedules, onUpdateSleep }) => {
+export const IbadatDashboard: React.FC<Props> = ({ pillars, definitions, logs, onSetup, onSaveLog, onOpenTimeBlocking, onSuggestTimeBlocks, progressionPaths, onApproveProgression, khatmas, onUpdateKhatma, sleepSchedules, onUpdateSleep, onEnableNotifications }) => {
   const [selected, setSelected] = useState(choices.slice(0, 4).map((item) => item.category));
   const [date, setDate] = useState(toLocalDateKey());
   const today = toLocalDateKey();
@@ -41,7 +42,7 @@ export const IbadatDashboard: React.FC<Props> = ({ pillars, definitions, logs, o
   };
   const streak = worshipStreak(definitions, logs);
   return <section className="space-y-5">
-    <div className="flex flex-wrap items-center justify-between gap-3"><div><h1 className="text-2xl font-black">🕌 العبادات والأوراد</h1><p className="text-sm text-slate-500">مرتبطة بركيزة {pillars.find((p) => p.id === definitions[0].pillar_id)?.title || 'العلاقة مع الله'}</p></div><div className="flex gap-2"><button type="button" onClick={onSuggestTimeBlocks} className="rounded-xl bg-emerald-700 text-white px-3 py-2 text-sm">إضافة الكتل المقترحة</button><button type="button" onClick={onOpenTimeBlocking} className="rounded-xl border px-3 py-2 text-sm dark:border-slate-700">حجب الوقت</button></div></div>
+    <div className="flex flex-wrap items-center justify-between gap-3"><div><h1 className="text-2xl font-black">🕌 العبادات والأوراد</h1><p className="text-sm text-slate-500">مرتبطة بركيزة {pillars.find((p) => p.id === definitions[0].pillar_id)?.title || 'العلاقة مع الله'}</p></div><div className="flex flex-wrap gap-2"><button type="button" onClick={onEnableNotifications} className="rounded-xl border px-3 py-2 text-sm dark:border-slate-700">تفعيل التذكيرات</button><button type="button" onClick={onSuggestTimeBlocks} className="rounded-xl bg-emerald-700 text-white px-3 py-2 text-sm">إضافة الكتل المقترحة</button><button type="button" onClick={onOpenTimeBlocking} className="rounded-xl border px-3 py-2 text-sm dark:border-slate-700">حجب الوقت</button></div></div>
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3"><Stat label="التزام اليوم" value={`${summary.rate}%`} /><Stat label="المكتمل" value={`${summary.completed}/${summary.total}`} /><Stat label="الستريك" value={`${streak} يوم`} /><Stat label="التاريخ" value={date} /></div>
     <div className="flex flex-wrap items-center gap-2"><label className="text-sm font-semibold">تسجيل يوم:</label><input aria-label="تاريخ سجل العبادة" type="date" value={date} max={today} onChange={(e) => setDate(e.target.value)} className="rounded-lg border p-2 dark:bg-slate-800 dark:border-slate-700" /><span className="text-xs text-slate-500">{hijri.label}{isWhiteDay(new Date(`${date}T12:00:00`)) ? ' · من الأيام البيض' : ''}</span>{!isEditableWorshipDate(date) && <span className="text-xs text-rose-600">التعديل متاح لآخر 30 يومًا فقط</span>}</div>
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">{dayDefinitions.map((definition) => { const log = logs.find((item) => item.worship_id === definition.id && item.date === date); return <article key={definition.id} className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 space-y-3"><div className="flex justify-between gap-3"><h2 className="font-bold">{definition.category === 'salah' ? '🕌' : definition.category === 'quran_wird' ? '📖' : '📿'} {definition.title}</h2><button aria-label={`تسجيل ${definition.title}`} disabled={!isEditableWorshipDate(date)} onClick={() => save(definition, { is_completed: !log?.is_completed })} className={`rounded-lg px-3 py-1.5 text-sm font-bold ${log?.is_completed ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-slate-100 dark:bg-slate-800'}`}><Check className="inline w-4 h-4" /> {log?.is_completed ? 'تم' : 'تسجيل'}</button></div>

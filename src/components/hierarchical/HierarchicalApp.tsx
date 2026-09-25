@@ -67,6 +67,7 @@ import { createId } from '../../utils/id';
 import { toLocalDateKey } from '../../utils/date';
 import { calculateHabitStreak } from '../../utils/habitStreak';
 import { deleteGeminiCredential, hasStoredGeminiCredential, refreshGeminiCredentialStatus, saveGeminiCredential } from '../../utils/aiCredentials';
+import { subscribeToPush } from '../../utils/pushNotifications';
 
 export const HierarchicalApp: React.FC = () => {
   // Core Entities State
@@ -1327,6 +1328,15 @@ export const HierarchicalApp: React.FC = () => {
     setSleepSchedules((previous) => previous.map((schedule) => schedule.id === id ? { ...schedule, ...changes, updated_at: new Date().toISOString() } : schedule));
   };
 
+  const handleEnableWorshipNotifications = async () => {
+    try {
+      await subscribeToPush();
+      setToasts((previous) => [...previous, { id: createId(), type: 'success', title: 'تم تفعيل التذكيرات', description: 'ستصل تنبيهات الصلاة والمهام وفق إعدادات حسابك؛ لا يُرسل تنبيه للشروق.' }]);
+    } catch (error) {
+      setToasts((previous) => [...previous, { id: createId(), type: 'error', title: 'تعذر تفعيل التذكيرات', description: error instanceof Error ? error.message : 'حاول مرة أخرى.' }]);
+    }
+  };
+
   const handleCreateProjectDraft = (item: InboxItem, goalId: string) => {
     setEditingProject(null);
     setNewProjectDefaults({
@@ -1851,6 +1861,7 @@ export const HierarchicalApp: React.FC = () => {
                 onUpdateKhatma={handleUpdateKhatma}
                 sleepSchedules={sleepSchedules}
                 onUpdateSleep={handleUpdateSleep}
+                onEnableNotifications={() => void handleEnableWorshipNotifications()}
               />
             )}
 
