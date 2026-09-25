@@ -1285,6 +1285,7 @@ export const HierarchicalApp: React.FC = () => {
     setPillars((previous) => [...previous, pillar]);
     setWorshipDefinitions(definitions);
     if (qiyam) setProgressionPaths([{ id: createId(), worship_id: qiyam.id, title: 'مسار قيام الليل', stages: [{ index: 0, title: 'البداية', description: 'ركعتان بعد العشاء', target_value: 2, days_required: 7 }, { index: 1, title: 'التثبيت', description: 'أربع ركعات بعد العشاء', target_value: 4, days_required: 10 }, { index: 2, title: 'الثلث الأخير', description: 'أربع إلى ثمان ركعات قبل الفجر', target_value: 4, days_required: 14 }], current_stage_index: 0, stage_start_date: toLocalDateKey(), consecutive_days: 0, auto_promote: false, created_at: now }]);
+    if (qiyam) setSleepSchedules([{ id: createId(), pillar_id: pillar.id, ultimate_bedtime: '21:30', ultimate_waketime: '04:00', current_bedtime: '23:00', current_waketime: '05:30', adjustment_minutes: 15, adjustment_frequency_days: 7, is_active: true, created_at: now }]);
     if (quran) setQuranKhatmas([{ id: createId(), worship_id: quran.id, khatma_number: 1, start_date: toLocalDateKey(), current_page: 1, current_juz: 1, daily_target_pages: quran.target_pages || 1, is_completed: false, created_at: now }]);
     setToasts((previous) => [...previous, { id: createId(), type: 'success', title: 'تم تفعيل منظومة العبادات', description: 'أُنشئت ركيزة «العلاقة مع الله» وربطت بالعبادات المختارة.' }]);
   };
@@ -1320,6 +1321,10 @@ export const HierarchicalApp: React.FC = () => {
 
   const handleUpdateKhatma = (id: string, currentPage: number) => {
     setQuranKhatmas((previous) => previous.map((khatma) => khatma.id === id ? { ...khatma, current_page: currentPage, current_juz: Math.min(30, Math.ceil(currentPage / 20)), is_completed: currentPage >= 604, end_date: currentPage >= 604 ? toLocalDateKey() : null, updated_at: new Date().toISOString() } : khatma));
+  };
+
+  const handleUpdateSleep = (id: string, changes: Partial<SleepSchedule>) => {
+    setSleepSchedules((previous) => previous.map((schedule) => schedule.id === id ? { ...schedule, ...changes, updated_at: new Date().toISOString() } : schedule));
   };
 
   const handleCreateProjectDraft = (item: InboxItem, goalId: string) => {
@@ -1844,6 +1849,8 @@ export const HierarchicalApp: React.FC = () => {
                 onApproveProgression={handleApproveProgression}
                 khatmas={quranKhatmas}
                 onUpdateKhatma={handleUpdateKhatma}
+                sleepSchedules={sleepSchedules}
+                onUpdateSleep={handleUpdateSleep}
               />
             )}
 
