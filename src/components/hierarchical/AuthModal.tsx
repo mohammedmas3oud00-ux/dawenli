@@ -31,6 +31,8 @@ interface AuthModalProps {
   currentUser?: AuthUser | null;
   onSignOut?: () => void;
   canDismiss?: boolean;
+  onExportData?: () => void;
+  onImportData?: (file: File) => void;
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({
@@ -40,6 +42,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   currentUser,
   onSignOut,
   canDismiss = true,
+  onExportData,
+  onImportData,
 }) => {
   const [tab, setTab] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
@@ -140,8 +144,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         </div>
 
         {currentUser && (
-          <div className="p-4 bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-between text-xs">
+          <div className="p-4 bg-emerald-50 dark:bg-emerald-950/50 flex flex-wrap items-center gap-2 text-xs">
             <span className="min-w-0 truncate font-bold text-[#174235] dark:text-emerald-300">{currentUser.email}</span>
+            {onExportData && <button type="button" onClick={onExportData} className="px-2.5 py-1.5 border border-emerald-300 text-emerald-800 dark:text-emerald-200 rounded-xl">تصدير البيانات</button>}
+            {onImportData && !currentUser.isGuest && <label className="px-2.5 py-1.5 border border-slate-300 dark:border-slate-600 rounded-xl cursor-pointer">استيراد JSON<input type="file" accept="application/json" className="sr-only" onChange={(event) => { const file = event.target.files?.[0]; if (file) onImportData(file); event.currentTarget.value = ''; }} /></label>}
             {onSignOut && <button type="button" onClick={onSignOut} className="px-3 py-1.5 border border-rose-300 text-rose-700 rounded-xl">تسجيل الخروج</button>}
           </div>
         )}

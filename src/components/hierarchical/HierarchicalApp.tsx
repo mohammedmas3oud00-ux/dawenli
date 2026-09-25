@@ -48,18 +48,18 @@ const ValueGoalModal = lazy(() => entityModals().then((module) => ({ default: mo
 const ProjectModal = lazy(() => entityModals().then((module) => ({ default: module.ProjectModal })));
 const TaskModal = lazy(() => entityModals().then((module) => ({ default: module.TaskModal })));
 const QuickAddModal = lazy(() => import('./QuickAddModal').then((module) => ({ default: module.QuickAddModal })));
-const SqlSchemaModal = lazy(() => import('./SqlSchemaModal').then((module) => ({ default: module.SqlSchemaModal })));
 const VoiceAiCaptureModal = lazy(() => import('./VoiceAiCaptureModal').then((module) => ({ default: module.VoiceAiCaptureModal })));
 import { AuthModal } from './AuthModal';
+import { InstallAppButton } from './InstallAppButton';
 import { ToastContainer, ToastMessage } from './ToastNotification';
-import { Database, RotateCcw, Plus, Menu, Mic, Sparkles, Sun, Moon, User, LogIn, LogOut, KeyRound } from 'lucide-react';
+import { Plus, Menu, Mic, Sparkles, Sun, Moon, User, LogIn, LogOut, KeyRound, Trash2 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../../utils/supabaseClient';
-import { createSnapshotBackup, DataRepository, emptySnapshot, GuestLocalRepository, SupabaseRepository } from '../../data/repository';
-import { findLegacySnapshot, remapSnapshotIds, removeLegacyDawenliKeys } from '../../data/legacyMigration';
+import { createSnapshotBackup, DataRepository, emptySnapshot, GuestLocalRepository, normalizeSnapshot, SupabaseRepository } from '../../data/repository';
+import { remapSnapshotIds } from '../../data/legacyMigration';
 import { createId } from '../../utils/id';
 import { toLocalDateKey } from '../../utils/date';
 import { calculateHabitStreak } from '../../utils/habitStreak';
-import { hasStoredGeminiCredential, refreshGeminiCredentialStatus, saveGeminiCredential } from '../../utils/aiCredentials';
+import { deleteGeminiCredential, hasStoredGeminiCredential, refreshGeminiCredentialStatus, saveGeminiCredential } from '../../utils/aiCredentials';
 
 export const HierarchicalApp: React.FC = () => {
   // Core Entities State
@@ -93,7 +93,6 @@ export const HierarchicalApp: React.FC = () => {
 
   // Modals state
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
-  const [isSqlModalOpen, setIsSqlModalOpen] = useState(false);
   const [isVoiceAiModalOpen, setIsVoiceAiModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -105,6 +104,13 @@ export const HierarchicalApp: React.FC = () => {
   const repositoryRef = useRef<DataRepository | null>(null);
   const lastSavedSnapshotRef = useRef<AppDataSnapshot>(emptySnapshot());
   const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
+
+  const queueSnapshotSave = (repository: DataRepository, snapshot: AppDataSnapshot) => {
+    saveQueueRef.current = saveQueueRef.current.catch(() => undefined).then(() => repository.save(snapshot)).then(() => {
+      lastSavedSnapshotRef.current = snapshot;
+    });
+    return saveQueueRef.current;
+  };
 
   // Supabase Auth Session Synchronization
   useEffect(() => {
@@ -279,9 +285,24 @@ export const HierarchicalApp: React.FC = () => {
     if (!entered.trim()) {
       return alreadyConfigured;
     }
-    await saveGeminiCredential(entered);
-    setToasts((previous) => [...previous, { id: createId(), type: 'success', title: 'تم حفظ Gemini بأمان', description: 'المفتاح مشفّر ومربوط بحسابك فقط.' }]);
-    return true;
+    try {
+      await saveGeminiCredential(entered);
+      setToasts((previous) => [...previous, { id: createId(), type: 'success', title: 'تم حفظ Gemini بأمان', description: 'المفتاح مشفّر ومربوط بحسابك فقط.' }]);
+      return true;
+    } catch (error) {
+      setToasts((previous) => [...previous, { id: createId(), type: 'error', title: 'تعذر حفظ مفتاح Gemini', description: error instanceof Error ? error.message : 'حاول مرة أخرى.' }]);
+      return false;
+    }
+  };
+
+  const handleDeleteAiKey = async () => {
+    if (!confirm('حذف مفتاح Gemini من هذا الحساب؟')) return;
+    try {
+      await deleteGeminiCredential();
+      setToasts((previous) => [...previous, { id: createId(), type: 'success', title: 'تم حذف مفتاح Gemini', description: 'لن تعمل ميزات الذكاء حتى تضيف مفتاحًا جديدًا.' }]);
+    } catch (error) {
+      setToasts((previous) => [...previous, { id: createId(), type: 'error', title: 'تعذر حذف مفتاح Gemini', description: error instanceof Error ? error.message : 'حاول مرة أخرى.' }]);
+    }
   };
 
   const handleOpenVoiceAi = async () => {
@@ -310,22 +331,8 @@ export const HierarchicalApp: React.FC = () => {
     repository.load().then(async (loadedSnapshot) => {
       if (!active) return;
       let snapshot = loadedSnapshot;
-      const cloudIsEmpty = !currentUser.isGuest && [snapshot.pillars, snapshot.visions, snapshot.goals, snapshot.projects, snapshot.tasks, snapshot.inboxItems, snapshot.habits, snapshot.vaults].every((items) => items.length === 0);
-      const legacy = currentUser.isGuest ? null : findLegacySnapshot();
-      const migrationPrompt = cloudIsEmpty
-        ? `عُثر على ${legacy?.count ?? 0} عنصرًا محليًا قديمًا. هل تريد تنزيل نسخة احتياطية ثم استيرادها إلى حسابك السحابي؟`
-        : `عُثر على بيانات محلية قديمة، لكن الحساب السحابي غير فارغ ولن يُدمج تلقائيًا. هل تريد تنزيل نسخة JSON فقط؟`;
-      if (legacy && !legacy.isSeedOnly && legacy.count > 0 && window.confirm(migrationPrompt)) {
-        createSnapshotBackup(legacy.snapshot);
-        if (cloudIsEmpty) {
-          const migrated = remapSnapshotIds(legacy.snapshot);
-          await repository.save(migrated);
-          removeLegacyDawenliKeys();
-          snapshot = migrated;
-        } else {
-          setToasts((previous) => [...previous, { id: createId(), type: 'info', title: 'تم تصدير البيانات المحلية', description: 'لم تُدمج تلقائيًا لأن الحساب السحابي يحتوي بيانات بالفعل.' }]);
-        }
-      }
+      // Cloud accounts are intentionally isolated from legacy local storage.
+      // Legacy import/export, if reintroduced, must be an explicit account action.
       applySnapshot(snapshot);
       lastSavedSnapshotRef.current = snapshot;
       setDataReady(true);
@@ -346,11 +353,13 @@ export const HierarchicalApp: React.FC = () => {
     };
     const repository = repositoryRef.current;
     const timer = window.setTimeout(() => {
-      saveQueueRef.current = saveQueueRef.current.then(() => repository.save(snapshot)).then(() => {
-        lastSavedSnapshotRef.current = snapshot;
-      }).catch((error: unknown) => {
-        applySnapshot(lastSavedSnapshotRef.current);
-        setToasts((previous) => [...previous, { id: createId(), type: 'warning', title: 'فشل الحفظ', description: error instanceof Error ? error.message : 'أُعيدت آخر حالة محفوظة.' }]);
+      queueSnapshotSave(repository, snapshot).catch((error: unknown) => {
+        setToasts((previous) => [...previous, {
+          id: createId(), type: 'error', title: 'فشل الحفظ',
+          description: error instanceof Error ? error.message : 'احتفظنا بالتعديلات محليًا مؤقتًا. أعد المحاولة.',
+          actionLabel: 'إعادة المحاولة',
+          onAction: () => queueSnapshotSave(repository, snapshot).catch(() => undefined),
+        }]);
       });
     }, 400);
     return () => window.clearTimeout(timer);
@@ -917,7 +926,7 @@ export const HierarchicalApp: React.FC = () => {
     setReviews(updatedReviews);
   };
 
-  const handleVoiceAiCommit = (data: {
+  const handleVoiceAiCommit = async (data: {
     pillarId: string;
     goalId?: string;
     projectTitle: string;
@@ -929,7 +938,7 @@ export const HierarchicalApp: React.FC = () => {
       energyLevel?: 'high' | 'medium' | 'low';
       estimatedHours?: number;
     }>;
-  }) => {
+  }): Promise<void> => {
     const today = toLocalDateKey();
     const newProjectId = createId();
 
@@ -984,6 +993,14 @@ export const HierarchicalApp: React.FC = () => {
 
     const updatedProjects = [...projects, newProject];
     const updatedTasks = [...tasks, ...newTasks];
+
+    const nextSnapshot: AppDataSnapshot = {
+      schemaVersion: 3,
+      pillars, visions, goals: updatedGoals, projects: updatedProjects, tasks: updatedTasks,
+      reviews, inboxItems, habits, vaults, focusSessions, timeBlocks, customFieldDefinitions,
+    };
+    if (!repositoryRef.current) throw new Error('المستودع غير جاهز للحفظ.');
+    await queueSnapshotSave(repositoryRef.current, nextSnapshot);
 
     applyStateUpdate(pillars, visions, updatedGoals, updatedProjects, updatedTasks);
 
@@ -1246,6 +1263,24 @@ export const HierarchicalApp: React.FC = () => {
     }
   };
 
+  const handleExportData = () => createSnapshotBackup({
+    schemaVersion: 3, pillars, visions, goals, projects, tasks, reviews,
+    inboxItems, habits, vaults, focusSessions, timeBlocks, customFieldDefinitions,
+  });
+
+  const handleImportData = async (file: File) => {
+    try {
+      const parsed = normalizeSnapshot(JSON.parse(await file.text()));
+      const imported = remapSnapshotIds(parsed);
+      if (!repositoryRef.current) throw new Error('المستودع غير جاهز للحفظ.');
+      await queueSnapshotSave(repositoryRef.current, imported);
+      applySnapshot(imported);
+      setToasts((previous) => [...previous, { id: createId(), type: 'success', title: 'تم استيراد النسخة الاحتياطية', description: 'أُضيفت البيانات بمعرفات جديدة دون دمج تلقائي.' }]);
+    } catch (error) {
+      setToasts((previous) => [...previous, { id: createId(), type: 'error', title: 'تعذر استيراد النسخة', description: error instanceof Error ? error.message : 'ملف JSON غير صالح.' }]);
+    }
+  };
+
   if (authStatus === 'loading') {
     return <div className="min-h-screen flex items-center justify-center bg-[#f8f7f4] dark:bg-slate-950" dir="rtl">جاري التحقق من الجلسة...</div>;
   }
@@ -1359,13 +1394,25 @@ export const HierarchicalApp: React.FC = () => {
               {!currentUser.isGuest && (
                 <button
                   onClick={handleConfigureAiKey}
-                  aria-label="إعداد مفتاح Gemini المؤقت"
+                  aria-label="إعداد مفتاح Gemini المحفوظ للحساب"
                   className="p-2 rounded-xl text-[#55615a] dark:text-slate-300 hover:bg-[#f2efe8] dark:hover:bg-slate-800 border border-[#e8e5de] dark:border-slate-700"
-                  title="إعداد مفتاح Gemini المؤقت"
+                  title="إعداد مفتاح Gemini المحفوظ للحساب"
                 >
                   <KeyRound className="w-4 h-4" />
                 </button>
               )}
+              {!currentUser.isGuest && hasStoredGeminiCredential() && (
+                <button
+                  onClick={handleDeleteAiKey}
+                  aria-label="حذف مفتاح Gemini من الحساب"
+                  className="p-2 rounded-xl text-rose-600 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-rose-200 dark:border-rose-900"
+                  title="حذف مفتاح Gemini"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
+
+              <InstallAppButton />
 
               {/* PRIMARY ACTION BUTTON: Deep Forest Green matching Dawenli */}
               <button
@@ -1522,7 +1569,6 @@ export const HierarchicalApp: React.FC = () => {
                       setIsPillarModalOpen(true);
                     }}
                     onDeletePillar={handleDeletePillar}
-                    onOpenSqlModal={() => setIsSqlModalOpen(true)}
                     onStartFocus={handleStartFocus}
                     onCompleteTask={handleToggleTaskStatus}
                     onOpenTimeBlocking={() => setCurrentTab('timeblocking')}
@@ -1553,7 +1599,6 @@ export const HierarchicalApp: React.FC = () => {
                   setIsPillarModalOpen(true);
                 }}
                 onDeletePillar={handleDeletePillar}
-                onOpenSqlModal={() => setIsSqlModalOpen(true)}
               />
             )}
 
@@ -1851,12 +1896,6 @@ export const HierarchicalApp: React.FC = () => {
         defaultDueDate={newTaskDueDate}
       />
 
-      {/* Supabase SQL Schema Modal */}
-      <SqlSchemaModal
-        isOpen={isSqlModalOpen}
-        onClose={() => setIsSqlModalOpen(false)}
-      />
-
       {/* Voice & Gemini AI Intelligent Capture & Decomposition Modal */}
       <VoiceAiCaptureModal
         isOpen={isVoiceAiModalOpen}
@@ -1882,6 +1921,8 @@ export const HierarchicalApp: React.FC = () => {
         currentUser={currentUser}
         onAuthSuccess={handleAuthSuccess}
         onSignOut={handleSignOut}
+        onExportData={handleExportData}
+        onImportData={(file: File) => { void handleImportData(file); }}
       />
 
     </div>

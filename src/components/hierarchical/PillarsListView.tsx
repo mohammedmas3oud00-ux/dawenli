@@ -14,7 +14,6 @@ interface PillarsListViewProps {
   onNewPillar: () => void;
   onEditPillar: (pillar: Pillar) => void;
   onDeletePillar: (pillarId: string) => void;
-  onOpenSqlModal?: () => void;
   onStartFocus?: (task: Task) => void;
   onCompleteTask?: (taskId: string) => void;
   onOpenTimeBlocking?: () => void;
@@ -31,7 +30,6 @@ export const PillarsListView: React.FC<PillarsListViewProps> = ({
   onNewPillar,
   onEditPillar,
   onDeletePillar,
-  onOpenSqlModal,
   onStartFocus,
   onCompleteTask,
   onOpenTimeBlocking,

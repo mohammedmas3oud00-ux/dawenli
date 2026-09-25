@@ -8,5 +8,7 @@
   "lang": "ar",
   "theme_color": "#174235",
   "background_color": "#f8f7f4",
-  "icons": []
+  "icons": [
+    { "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
 }

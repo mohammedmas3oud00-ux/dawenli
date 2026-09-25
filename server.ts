@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import { GoogleGenAI, Type } from '@google/genai';
 import { createClient } from '@supabase/supabase-js';
 import { createCipheriv, createDecipheriv, createHash, randomBytes, randomUUID } from 'crypto';
+import webpush from 'web-push';
 
 dotenv.config();
 
@@ -133,8 +134,14 @@ function apiError(res: express.Response, status: number, code: ApiErrorCode, mes
 const supabaseUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').trim();
 const supabaseAnonKey = (process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '').trim();
 const authClient = supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey, { auth: { persistSession: false } }) : null;
+const serviceRoleKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+const adminClient = supabaseUrl && serviceRoleKey ? createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false } }) : null;
 const credentialEncryptionSecret = (process.env.GEMINI_KEY_ENCRYPTION_SECRET || '').trim();
 const localRateLimits = new Map<string, { count: number; resetAt: number }>();
+const vapidPublicKey = (process.env.VAPID_PUBLIC_KEY || '').trim();
+const vapidPrivateKey = (process.env.VAPID_PRIVATE_KEY || '').trim();
+const vapidSubject = (process.env.VAPID_SUBJECT || 'mailto:admin@example.com').trim();
+if (vapidPublicKey && vapidPrivateKey) webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
 
 function credentialEncryptionKey(): Buffer | null {
   return credentialEncryptionSecret ? createHash('sha256').update(credentialEncryptionSecret).digest() : null;
@@ -166,39 +173,45 @@ function userScopedClient(token: string) {
 }
 
 async function requireUserAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
-  if (!authClient) return apiError(res, 503, 'NOT_CONFIGURED', 'خدمة المصادقة غير مهيأة.');
-  const token = req.headers.authorization?.match(/^Bearer\s+(.+)$/i)?.[1];
-  if (!token) return apiError(res, 401, 'UNAUTHORIZED', 'جلسة المستخدم مطلوبة.');
-  const { data, error } = await authClient.auth.getUser(token);
-  if (error || !data.user) return apiError(res, 401, 'UNAUTHORIZED', 'جلسة المستخدم غير صالحة أو منتهية.');
-
-  res.locals.userId = data.user.id;
-  res.locals.accessToken = token;
+  const authenticated = await authenticateRequest(req, res);
+  if (!authenticated) return;
+  res.locals.userId = authenticated.userId;
+  res.locals.accessToken = authenticated.token;
   next();
 }
 
 async function requireAiAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
-  await requireUserAuth(req, res, async () => {
-    const token = res.locals.accessToken as string;
-    const client = userScopedClient(token);
-    if (!client || !credentialEncryptionKey()) return apiError(res, 503, 'NOT_CONFIGURED', 'خزينة مفاتيح Gemini غير مهيأة.');
-    const { data, error } = await client.rpc('dawenli_get_gemini_credential');
-    const record = Array.isArray(data) ? data[0] : data;
-    if (error || !record) return apiError(res, 401, 'UNAUTHORIZED', 'أضف مفتاح Gemini إلى خزينة حسابك أولًا.');
-    try {
-      res.locals.geminiKey = decryptCredential(record);
-    } catch {
-      return apiError(res, 503, 'NOT_CONFIGURED', 'تعذر فتح مفتاح Gemini المحفوظ. أضف المفتاح مجددًا.');
-    }
+  const authenticated = await authenticateRequest(req, res);
+  if (!authenticated) return;
+  res.locals.userId = authenticated.userId;
+  res.locals.accessToken = authenticated.token;
+  const client = userScopedClient(authenticated.token);
+  if (!client || !credentialEncryptionKey()) return apiError(res, 503, 'NOT_CONFIGURED', 'خزينة مفاتيح Gemini غير مهيأة.');
+  const { data, error } = await client.rpc('dawenli_get_gemini_credential');
+  const record = Array.isArray(data) ? data[0] : data;
+  if (error || !record) return apiError(res, 401, 'UNAUTHORIZED', 'أضف مفتاح Gemini إلى خزينة حسابك أولًا.');
+  try {
+    res.locals.geminiKey = decryptCredential(record);
+  } catch {
+    return apiError(res, 503, 'NOT_CONFIGURED', 'تعذر فتح مفتاح Gemini المحفوظ. أضف المفتاح مجددًا.');
+  }
 
-    const now = Date.now();
-    const current = localRateLimits.get(res.locals.userId as string);
-    const bucket = !current || current.resetAt <= now ? { count: 0, resetAt: now + 60_000 } : current;
-    if (bucket.count >= 20) return apiError(res, 429, 'RATE_LIMITED', 'تم بلوغ حد الطلبات المؤقت. حاول بعد دقيقة.');
-    bucket.count += 1;
-    localRateLimits.set(res.locals.userId as string, bucket);
-    next();
-  });
+  const now = Date.now();
+  const current = localRateLimits.get(authenticated.userId);
+  const bucket = !current || current.resetAt <= now ? { count: 0, resetAt: now + 60_000 } : current;
+  if (bucket.count >= 20) return apiError(res, 429, 'RATE_LIMITED', 'تم بلوغ حد الطلبات المؤقت. حاول بعد دقيقة.');
+  bucket.count += 1;
+  localRateLimits.set(authenticated.userId, bucket);
+  next();
+}
+
+async function authenticateRequest(req: express.Request, res: express.Response): Promise<{ userId: string; token: string } | null> {
+  if (!authClient) { apiError(res, 503, 'NOT_CONFIGURED', 'خدمة المصادقة غير مهيأة.'); return null; }
+  const token = req.headers.authorization?.match(/^Bearer\s+(.+)$/i)?.[1];
+  if (!token) { apiError(res, 401, 'UNAUTHORIZED', 'جلسة المستخدم مطلوبة.'); return null; }
+  const { data, error } = await authClient.auth.getUser(token);
+  if (error || !data.user) { apiError(res, 401, 'UNAUTHORIZED', 'جلسة المستخدم غير صالحة أو منتهية.'); return null; }
+  return { userId: data.user.id, token };
 }
 
 app.get('/api/ai/credential', requireUserAuth, async (req, res) => {
@@ -232,6 +245,76 @@ app.delete('/api/ai/credential', requireUserAuth, async (req, res) => {
   const { error } = await client!.rpc('dawenli_delete_gemini_credential');
   if (error) return apiError(res, 503, 'NOT_CONFIGURED', 'تعذر حذف مفتاح Gemini.');
   return res.json({ ok: true, data: { configured: false } });
+});
+
+app.get('/api/push/public-key', (_req, res) => {
+  if (!vapidPublicKey) return apiError(res, 503, 'NOT_CONFIGURED', 'إشعارات الخلفية غير مهيأة.');
+  return res.json({ ok: true, data: { publicKey: vapidPublicKey } });
+});
+
+app.post('/api/push/subscription', requireUserAuth, async (req, res) => {
+  if (!vapidPublicKey || !vapidPrivateKey) return apiError(res, 503, 'NOT_CONFIGURED', 'إشعارات الخلفية غير مهيأة.');
+  const subscription = req.body?.subscription;
+  if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
+    return apiError(res, 400, 'BAD_REQUEST', 'اشتراك الإشعارات غير صالح.');
+  }
+  const client = userScopedClient(res.locals.accessToken as string);
+  const { error } = await client!.from('push_subscriptions').upsert({
+    user_id: res.locals.userId,
+    endpoint: subscription.endpoint,
+    p256dh: subscription.keys.p256dh,
+    auth: subscription.keys.auth,
+    prayer_enabled: req.body?.prayerEnabled !== false,
+    task_enabled: req.body?.taskEnabled !== false,
+    timezone: typeof req.body?.timezone === 'string' ? req.body.timezone.slice(0, 80) : 'Africa/Cairo',
+    prayer_times: req.body?.prayerTimes && typeof req.body.prayerTimes === 'object' ? req.body.prayerTimes : {},
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'user_id,endpoint' });
+  if (error) return apiError(res, 503, 'UPSTREAM_ERROR', 'تعذر حفظ اشتراك الإشعارات.');
+  return res.json({ ok: true, data: { subscribed: true } });
+});
+
+app.delete('/api/push/subscription', requireUserAuth, async (req, res) => {
+  const endpoint = typeof req.body?.endpoint === 'string' ? req.body.endpoint : '';
+  if (!endpoint) return apiError(res, 400, 'BAD_REQUEST', 'رابط الاشتراك مطلوب.');
+  const client = userScopedClient(res.locals.accessToken as string);
+  const { error } = await client!.from('push_subscriptions').delete().eq('endpoint', endpoint).eq('user_id', res.locals.userId);
+  if (error) return apiError(res, 503, 'UPSTREAM_ERROR', 'تعذر حذف اشتراك الإشعارات.');
+  return res.json({ ok: true, data: { subscribed: false } });
+});
+
+app.get('/api/push/dispatch', async (req, res) => {
+  const cronSecret = (process.env.CRON_SECRET || '').trim();
+  if (!cronSecret || req.headers.authorization !== `Bearer ${cronSecret}`) return apiError(res, 401, 'UNAUTHORIZED', 'Cron authorization required.');
+  if (!adminClient || !vapidPublicKey || !vapidPrivateKey) return apiError(res, 503, 'NOT_CONFIGURED', 'خدمة الإشعارات الخلفية غير مهيأة.');
+  const { data: subscriptions, error } = await adminClient.from('push_subscriptions').select('*');
+  if (error) return apiError(res, 503, 'UPSTREAM_ERROR', 'تعذر تحميل اشتراكات الإشعارات.');
+  const delivered: string[] = [];
+  const now = new Date();
+  for (const subscription of subscriptions ?? []) {
+    const localParts = new Intl.DateTimeFormat('en-CA', { timeZone: subscription.timezone || 'Africa/Cairo', hour: '2-digit', minute: '2-digit', hour12: false, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(now);
+    const values = Object.fromEntries(localParts.map((part) => [part.type, part.value]));
+    const hhmm = `${values.hour}:${values.minute}`;
+    const today = `${values.year}-${values.month}-${values.day}`;
+    const messages: Array<{ title: string; body: string }> = [];
+    if (subscription.prayer_enabled) {
+      const prayer = Object.entries(subscription.prayer_times || {}).find(([, time]) => String(time).slice(0, 5) === hhmm);
+      if (prayer) messages.push({ title: `حان موعد ${prayer[0] === 'Fajr' ? 'الفجر' : prayer[0] === 'Dhuhr' ? 'الظهر' : prayer[0] === 'Asr' ? 'العصر' : prayer[0] === 'Maghrib' ? 'المغرب' : 'العشاء'} 🕌`, body: 'دوّنلي يذكّرك بموعد الصلاة.' });
+    }
+    if (subscription.task_enabled) {
+      const { data: tasks } = await adminClient.from('tasks').select('title').eq('user_id', subscription.user_id).eq('due_date', today).neq('status', 'done').limit(3);
+      if (tasks?.length) messages.push({ title: 'مهامك المستحقة اليوم', body: tasks.map((task) => task.title).join('، ') });
+    }
+    for (const message of messages) {
+      try {
+        await webpush.sendNotification({ endpoint: subscription.endpoint, keys: { p256dh: subscription.p256dh, auth: subscription.auth } }, JSON.stringify({ ...message, url: '/' }));
+        delivered.push(subscription.id);
+      } catch (pushError: any) {
+        if (pushError?.statusCode === 404 || pushError?.statusCode === 410) await adminClient.from('push_subscriptions').delete().eq('id', subscription.id);
+      }
+    }
+  }
+  return res.json({ ok: true, data: { delivered: delivered.length } });
 });
 
 app.use('/api/ai', requireAiAuth);

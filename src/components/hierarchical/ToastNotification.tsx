@@ -3,9 +3,11 @@ import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
 
 export interface ToastMessage {
   id: string;
-  type: 'success' | 'info' | 'warning';
+  type: 'success' | 'info' | 'warning' | 'error';
   title: string;
   description?: string;
+  actionLabel?: string;
+  onAction?: () => void;
 }
 
 interface ToastContainerProps {
@@ -26,6 +28,7 @@ export const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, onDismis
       {toasts.map((toast) => {
         const isSuccess = toast.type === 'success';
         const isWarning = toast.type === 'warning';
+        const isError = toast.type === 'error';
 
         return (
           <div
@@ -36,13 +39,16 @@ export const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, onDismis
                 ? 'bg-white/95 dark:bg-slate-900/95 text-[#1a2420] dark:text-slate-100 border-[#b9dbcb] dark:border-emerald-800 shadow-emerald-950/10'
                 : isWarning
                 ? 'bg-white/95 dark:bg-slate-900/95 text-[#1a2420] dark:text-slate-100 border-amber-300 dark:border-amber-800 shadow-amber-950/10'
+                : isError
+                ? 'bg-white/95 dark:bg-slate-900/95 text-[#1a2420] dark:text-slate-100 border-rose-300 dark:border-rose-800 shadow-rose-950/10'
                 : 'bg-white/95 dark:bg-slate-900/95 text-[#1a2420] dark:text-slate-100 border-[#d9d5cb] dark:border-slate-700 shadow-stone-950/10'
             }`}
           >
             <div className="mt-0.5 shrink-0">
               {isSuccess && <CheckCircle2 className="w-4 h-4 text-[#174235] dark:text-emerald-400" />}
               {isWarning && <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400" />}
-              {!isSuccess && !isWarning && <Info className="w-4 h-4 text-sky-700 dark:text-sky-400" />}
+              {isError && <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400" />}
+              {!isSuccess && !isWarning && !isError && <Info className="w-4 h-4 text-sky-700 dark:text-sky-400" />}
             </div>
 
             <div className="flex-1 min-w-0">
@@ -51,6 +57,11 @@ export const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, onDismis
                 <p className="text-[11px] text-[#4d5d54] dark:text-slate-400 mt-0.5 leading-relaxed">
                   {toast.description}
                 </p>
+              )}
+              {toast.actionLabel && toast.onAction && (
+                <button type="button" onClick={toast.onAction} className="mt-2 text-[11px] font-bold underline underline-offset-2">
+                  {toast.actionLabel}
+                </button>
               )}
             </div>
 

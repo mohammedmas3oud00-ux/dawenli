@@ -101,15 +101,16 @@ export class SupabaseRepository implements DataRepository {
 
   async save(snapshot: AppDataSnapshot): Promise<void> {
     try {
-      for (const [table, key] of TABLES) {
-        const rows = (snapshot[key] as unknown as Array<Record<string, unknown>>).map((row) => toDatabaseRow(row, this.userId));
-        await this.replaceTable(table, rows);
-      }
-      const definitions = snapshot.customFieldDefinitions.map((definition) => {
-        const { entityType, ...rest } = definition;
-        return toDatabaseRow({ ...rest, entity_type: entityType }, this.userId);
-      });
-      await this.replaceTable('custom_field_definitions', definitions);
+      const payload = {
+        ...snapshot,
+        ...Object.fromEntries(TABLES.map(([table, key]) => [table, (snapshot[key] as unknown as Array<Record<string, unknown>>).map((row) => toDatabaseRow(row, this.userId))])),
+        custom_field_definitions: snapshot.customFieldDefinitions.map((definition) => {
+          const { entityType, ...rest } = definition;
+          return toDatabaseRow({ ...rest, entity_type: entityType }, this.userId);
+        }),
+      };
+      const { error } = await this.client.rpc('dawenli_save_snapshot', { p_snapshot: payload });
+      if (error) throw error;
     } catch (error) {
       throw mapRepositoryError(error, 'فشلت المزامنة. لم يُسجّل نجاح محلي بديل.');
     }
@@ -128,20 +129,6 @@ export class SupabaseRepository implements DataRepository {
     }
   }
 
-  private async replaceTable(table: string, rows: Array<Record<string, unknown>>): Promise<void> {
-    const { data: existing, error: readError } = await this.client.from(table).select('id').eq('user_id', this.userId);
-    if (readError) throw readError;
-    const currentIds = new Set(rows.map((row) => String(row.id)));
-    const removedIds = (existing ?? []).map((row) => String(row.id)).filter((id) => !currentIds.has(id));
-    if (removedIds.length) {
-      const { error } = await this.client.from(table).delete().eq('user_id', this.userId).in('id', removedIds);
-      if (error) throw error;
-    }
-    if (rows.length) {
-      const { error } = await this.client.from(table).upsert(rows, { onConflict: 'id,user_id' });
-      if (error) throw error;
-    }
-  }
 }
 
 function toDatabaseRow(row: Record<string, unknown>, userId: string): Record<string, unknown> {
@@ -157,12 +144,15 @@ function fromDatabaseRow(row: Record<string, unknown>): Record<string, unknown> 
 }
 
 function mapRepositoryError(error: unknown, fallback: string): RepositoryError {
-  const message = error instanceof Error ? error.message : fallback;
+  const typed = error as { message?: string; code?: string; details?: string } | null;
+  const message = typed?.message || (error instanceof Error ? error.message : fallback);
+  const errorCode = String(typed?.code || '').toLowerCase();
   const lower = message.toLowerCase();
-  if (lower.includes('jwt') || lower.includes('auth') || lower.includes('permission')) return new RepositoryError('unauthorized', fallback, error);
+  if (errorCode === '42501' || lower.includes('jwt') || lower.includes('auth') || lower.includes('permission')) return new RepositoryError('unauthorized', `${fallback} (${message})`, error);
   if (lower.includes('fetch') || lower.includes('network')) return new RepositoryError('network', fallback, error);
-  if (lower.includes('duplicate') || lower.includes('conflict')) return new RepositoryError('conflict', fallback, error);
-  return new RepositoryError('unknown', fallback, error);
+  if (errorCode === '23505' || errorCode === '23503' || lower.includes('duplicate') || lower.includes('conflict')) return new RepositoryError('conflict', `${fallback} (${message})`, error);
+  if (errorCode === '22p02' || errorCode === '23514') return new RepositoryError('validation', `${fallback} (${message})`, error);
+  return new RepositoryError('unknown', `${fallback} (${message})`, error);
 }
 
 export function normalizeSnapshot(value: Partial<AppDataSnapshot>): AppDataSnapshot {

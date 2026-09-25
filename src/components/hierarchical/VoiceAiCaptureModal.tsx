@@ -44,7 +44,7 @@ interface VoiceAiCaptureModalProps {
       energyLevel?: 'high' | 'medium' | 'low';
       estimatedHours?: number;
     }>;
-  }) => void;
+  }) => Promise<void>;
   onCommitSingleTask?: (task: Partial<Task>) => void;
 }
 
@@ -71,6 +71,7 @@ export const VoiceAiCaptureModal: React.FC<VoiceAiCaptureModalProps> = ({
   const [selectedTasks, setSelectedTasks] = useState<Record<number, boolean>>({});
   const [selectedPillarId, setSelectedPillarId] = useState<string>(pillars[0]?.id || '');
   const [activeStep, setActiveStep] = useState<'input' | 'result'>('input');
+  const [isSaving, setIsSaving] = useState(false);
 
   // Media references
   const recognitionRef = useRef<any>(null);
@@ -289,7 +290,7 @@ export const VoiceAiCaptureModal: React.FC<VoiceAiCaptureModalProps> = ({
   };
 
   // Commit Analyzed Hierarchy into System
-  const handleSaveToSystem = () => {
+  const handleSaveToSystem = async () => {
     if (!analysisResult) return;
     const pillarId = selectedPillarId || pillars[0]?.id;
     if (!pillarId) {
@@ -300,23 +301,33 @@ export const VoiceAiCaptureModal: React.FC<VoiceAiCaptureModalProps> = ({
     const chosenTasks = analysisResult.tasks.filter((_, idx) => selectedTasks[idx]);
 
     // Check if user has an existing goal in this pillar, or we find matching
-    const matchingGoal = goals.find((g) => g.pillar_id === selectedPillarId);
+    const matchingGoal = goals.find((g) => g.pillar_id === pillarId);
 
-    onCommitHierarchy({
-      pillarId,
-      goalId: matchingGoal?.id,
-      projectTitle: analysisResult.projectTitle || analysisResult.cleanedTranscription.slice(0, 40),
-      projectDescription: analysisResult.projectDescription || analysisResult.summary,
-      tasks: chosenTasks.map((t) => ({
-        title: t.title,
-        description: t.description,
-        priority: t.priority || 'medium',
-        energyLevel: t.energyLevel || 'medium',
-        estimatedHours: t.estimatedHours || 1,
-      })),
-    });
-
-    onClose();
+    if (!chosenTasks.length) {
+      setSpeechError('اختر مهمة واحدة على الأقل قبل الحفظ.');
+      return;
+    }
+    setIsSaving(true);
+    try {
+      await onCommitHierarchy({
+        pillarId,
+        goalId: matchingGoal?.id,
+        projectTitle: analysisResult.projectTitle || analysisResult.cleanedTranscription.slice(0, 40),
+        projectDescription: analysisResult.projectDescription || analysisResult.summary,
+        tasks: chosenTasks.map((t) => ({
+          title: t.title.trim(),
+          description: t.description?.trim(),
+          priority: t.priority || 'medium',
+          energyLevel: t.energyLevel || 'medium',
+          estimatedHours: t.estimatedHours || 1,
+        })),
+      });
+      onClose();
+    } catch (error) {
+      setSpeechError(error instanceof Error ? error.message : 'تعذر حفظ النتيجة. لم يتم إغلاق المراجعة.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -496,7 +507,13 @@ export const VoiceAiCaptureModal: React.FC<VoiceAiCaptureModalProps> = ({
                   </div>
 
                   <p className="text-xs font-semibold text-[#1a2420] dark:text-slate-100 leading-relaxed">
-                    {analysisResult.summary}
+                    <textarea
+                      aria-label="ملخص تحليل الذكاء الاصطناعي"
+                      value={analysisResult.summary}
+                      onChange={(event) => setAnalysisResult({ ...analysisResult, summary: event.target.value })}
+                      rows={3}
+                      className="w-full bg-transparent border border-transparent focus:border-emerald-500 rounded p-1 text-xs font-semibold text-[#1a2420] dark:text-slate-100 leading-relaxed outline-hidden resize-y"
+                    />
                   </p>
 
                   <div className="text-[11px] text-[#526058] dark:text-slate-300 bg-white/80 dark:bg-slate-800/80 p-2 rounded-lg border border-[#dcebe3] dark:border-slate-700">
@@ -524,6 +541,16 @@ export const VoiceAiCaptureModal: React.FC<VoiceAiCaptureModalProps> = ({
                           setAnalysisResult({ ...analysisResult, projectTitle: e.target.value })
                         }
                         className="w-full p-2 bg-white dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-lg text-xs font-bold text-[#1a2420] dark:text-slate-100 dark:text-slate-100 outline-hidden focus:border-[#174235]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-[#5a6861] dark:text-slate-300 mb-1">وصف المشروع:</label>
+                      <textarea
+                        aria-label="وصف المشروع المقترح"
+                        value={analysisResult.projectDescription || ''}
+                        onChange={(event) => setAnalysisResult({ ...analysisResult, projectDescription: event.target.value })}
+                        rows={2}
+                        className="w-full p-2 bg-white dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-lg text-xs text-[#1a2420] dark:text-slate-100 outline-hidden resize-y"
                       />
                     </div>
 
@@ -569,7 +596,7 @@ export const VoiceAiCaptureModal: React.FC<VoiceAiCaptureModalProps> = ({
                           className={`p-2.5 rounded-xl border transition-all cursor-pointer flex items-start gap-2.5 ${
                             isChecked
                               ? 'bg-white dark:bg-slate-800 border-[#174235]/40 dark:border-emerald-600/40 shadow-2xs'
-                              : 'bg-[#f8f7f4] dark:bg-slate-850 border-[#e2ded5] dark:border-slate-700 opacity-60'
+                              : 'bg-[#f8f7f4] dark:bg-slate-800 border-[#e2ded5] dark:border-slate-700 opacity-60'
                           }`}
                         >
                           <div
@@ -590,16 +617,15 @@ export const VoiceAiCaptureModal: React.FC<VoiceAiCaptureModalProps> = ({
                               onClick={(event) => event.stopPropagation()}
                               className="w-full bg-transparent border-b border-transparent focus:border-emerald-500 outline-hidden font-bold text-[#1a2420] dark:text-slate-100 leading-snug"
                             />
-                            {task.description && (
-                              <textarea
+                            <textarea
                                 aria-label={`وصف المهمة ${idx + 1}`}
-                                value={task.description}
+                                placeholder="وصف المهمة (اختياري)"
+                                value={task.description || ''}
                                 onChange={(event) => setAnalysisResult({ ...analysisResult, tasks: analysisResult.tasks.map((item, itemIndex) => itemIndex === idx ? { ...item, description: event.target.value } : item) })}
                                 onClick={(event) => event.stopPropagation()}
                                 rows={2}
                                 className="w-full bg-transparent border border-transparent focus:border-slate-400 rounded p-1 text-[11px] text-[#637169] dark:text-slate-400 mt-0.5 outline-hidden resize-y"
                               />
-                            )}
                             <div className="flex items-center gap-2 mt-1.5 text-[10px] text-[#717e77] dark:text-slate-400">
                               <span className="px-1.5 py-0.5 rounded bg-[#f0ede6] dark:bg-slate-700 text-[#404c45] dark:text-slate-300 font-medium">
                                 أولوية: {task.priority === 'high' ? '🔴 عليا' : task.priority === 'medium' ? '🟡 متوسطة' : '🟢 عادية'}
@@ -661,11 +687,12 @@ export const VoiceAiCaptureModal: React.FC<VoiceAiCaptureModalProps> = ({
           ) : (
             <button
               type="button"
+              disabled={isSaving}
               onClick={handleSaveToSystem}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-[#174235] hover:bg-[#12352a] active:scale-95 transition-all shadow-sm cursor-pointer"
             >
               <Check className="w-4 h-4" />
-              <span>إدراج المشروع والمهام في النظام فوراً</span>
+              <span>{isSaving ? 'جاري الحفظ والتحقق...' : 'مراجعة واعتماد المشروع والمهام'}</span>
             </button>
           )}
         </div>

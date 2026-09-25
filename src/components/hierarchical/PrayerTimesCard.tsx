@@ -4,6 +4,7 @@ import {
   PrayerTimesData 
 } from '../../utils/speechRecognition';
 import { playFocusSound, stopAdhanSound } from '../../utils/audioChime';
+import { subscribeToPush } from '../../utils/pushNotifications';
 import { 
   Bell, 
   BellOff, 
@@ -53,6 +54,7 @@ export const PrayerTimesCard: React.FC<PrayerTimesCardProps> = ({
   const [lastNotifiedPrayer, setLastNotifiedPrayer] = useState<string>('');
   const [cityLabel, setCityLabel] = useState<string>('القاهرة / التوقيت المحلي');
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [pushEnabled, setPushEnabled] = useState(false);
 
   // Load Prayer Times
   const loadTimes = async (useLocation = false) => {
@@ -162,6 +164,15 @@ export const PrayerTimesCard: React.FC<PrayerTimesCardProps> = ({
     }
   };
 
+  const enableBackgroundNotifications = async () => {
+    try {
+      await subscribeToPush(data ? { Fajr: data.Fajr, Dhuhr: data.Dhuhr, Asr: data.Asr, Maghrib: data.Maghrib, Isha: data.Isha } : {});
+      setPushEnabled(true);
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : 'تعذر تفعيل الإشعارات الخلفية.');
+    }
+  };
+
   const prayersList: PrayerItem[] = data
     ? [
         { id: 'Fajr', name: 'الفجر', timeStr: data.Fajr, icon: <Moon className="w-3.5 h-3.5 text-indigo-500" /> },
@@ -240,6 +251,16 @@ export const PrayerTimesCard: React.FC<PrayerTimesCardProps> = ({
             title="استخدام موقعي لتحديث المواقيت"
           >
             <RefreshCw className="w-3.5 h-3.5" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => void enableBackgroundNotifications()}
+            aria-label="تفعيل إشعارات الخلفية للأذان والمهام"
+            title="تفعيل إشعارات الخلفية"
+            className={`p-1.5 sm:p-2 rounded-xl border text-xs transition-all cursor-pointer ${pushEnabled ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800' : 'bg-white dark:bg-slate-800 text-[#55635b] dark:text-slate-300 border-[#e8e4db] dark:border-slate-700'}`}
+          >
+            <Bell className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
