@@ -22,3 +22,16 @@
 ## النشر على Vercel
 
 اضبط `VITE_SUPABASE_URL` و`VITE_SUPABASE_ANON_KEY` في بيئة Vercel. ملفات TypeScript داخل `api/` تشغّل API، بينما يعالج fallback في `vercel.json` روابط SPA العميقة بعد أولوية نظام الملفات.
+
+## جدولة إشعارات الخلفية عبر Supabase Cron
+
+بعد تطبيق migration `202609250005_push_cron.sql` وتعيين `CRON_SECRET` نفسه في Vercel، فعّل إضافات **pg_cron** و**pg_net** و**Supabase Vault** من لوحة Supabase. بعدها، شغّل التالي مرة واحدة من SQL Editor؛ لا تحفظ المفتاح في ملف أو في الواجهة:
+
+```sql
+select public.dawenli_configure_push_cron(
+  'https://YOUR-DEPLOYMENT.vercel.app/api/push/dispatch',
+  'THE_SAME_CRON_SECRET_FROM_VERCEL'
+);
+```
+
+تنشئ العملية مهمة كل دقيقة. ملخص المهام يرسل عند 09:00 فقط حسب المنطقة الزمنية للاشتراك، والأذان يرسل عند دقيقته. سجل التسليم يمنع الإرسال المكرر عند إعادة تشغيل المهمة.

@@ -143,6 +143,8 @@ const vapidPrivateKey = (process.env.VAPID_PRIVATE_KEY || '').trim();
 const vapidSubject = (process.env.VAPID_SUBJECT || 'mailto:admin@example.com').trim();
 if (vapidPublicKey && vapidPrivateKey) webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
 
+const taskDigestTime = { hour: '09', minute: '00' };
+
 function credentialEncryptionKey(): Buffer | null {
   return credentialEncryptionSecret ? createHash('sha256').update(credentialEncryptionSecret).digest() : null;
 }
@@ -296,20 +298,32 @@ app.get('/api/push/dispatch', async (req, res) => {
     const values = Object.fromEntries(localParts.map((part) => [part.type, part.value]));
     const hhmm = `${values.hour}:${values.minute}`;
     const today = `${values.year}-${values.month}-${values.day}`;
-    const messages: Array<{ title: string; body: string }> = [];
+    const messages: Array<{ title: string; body: string; deliveryKey: string }> = [];
     if (subscription.prayer_enabled) {
-      const prayer = Object.entries(subscription.prayer_times || {}).find(([, time]) => String(time).slice(0, 5) === hhmm);
-      if (prayer) messages.push({ title: `حان موعد ${prayer[0] === 'Fajr' ? 'الفجر' : prayer[0] === 'Dhuhr' ? 'الظهر' : prayer[0] === 'Asr' ? 'العصر' : prayer[0] === 'Maghrib' ? 'المغرب' : 'العشاء'} 🕌`, body: 'دوّنلي يذكّرك بموعد الصلاة.' });
+      const prayer = Object.entries(subscription.prayer_times || {}).find(([name, time]) => name !== 'Sunrise' && String(time).slice(0, 5) === hhmm);
+      if (prayer) messages.push({
+        title: `حان موعد ${prayer[0] === 'Fajr' ? 'الفجر' : prayer[0] === 'Dhuhr' ? 'الظهر' : prayer[0] === 'Asr' ? 'العصر' : prayer[0] === 'Maghrib' ? 'المغرب' : 'العشاء'} 🕌`,
+        body: 'دوّنلي يذكّرك بموعد الصلاة.',
+        deliveryKey: `prayer:${today}:${hhmm}:${prayer[0]}`,
+      });
     }
-    if (subscription.task_enabled) {
+    if (subscription.task_enabled && values.hour === taskDigestTime.hour && values.minute === taskDigestTime.minute) {
       const { data: tasks } = await adminClient.from('tasks').select('title').eq('user_id', subscription.user_id).eq('due_date', today).neq('status', 'done').limit(3);
-      if (tasks?.length) messages.push({ title: 'مهامك المستحقة اليوم', body: tasks.map((task) => task.title).join('، ') });
+      if (tasks?.length) messages.push({ title: 'مهامك المستحقة اليوم', body: tasks.map((task) => task.title).join('، '), deliveryKey: `tasks:${today}` });
     }
     for (const message of messages) {
+      const { data: reservation, error: reservationError } = await adminClient
+        .from('push_delivery_log')
+        .insert({ subscription_id: subscription.id, delivery_key: message.deliveryKey })
+        .select('id')
+        .maybeSingle();
+      // The unique reservation makes repeated Cron runs idempotent. A duplicate is expected.
+      if (reservationError || !reservation) continue;
       try {
         await webpush.sendNotification({ endpoint: subscription.endpoint, keys: { p256dh: subscription.p256dh, auth: subscription.auth } }, JSON.stringify({ ...message, url: '/' }));
         delivered.push(subscription.id);
       } catch (pushError: any) {
+        await adminClient.from('push_delivery_log').delete().eq('id', reservation.id);
         if (pushError?.statusCode === 404 || pushError?.statusCode === 410) await adminClient.from('push_subscriptions').delete().eq('id', subscription.id);
       }
     }
