@@ -16,7 +16,13 @@ import {
   FocusSessionRecord,
   TimeBlock,
   CustomFieldDefinition,
-  AppDataSnapshot
+  AppDataSnapshot,
+  WorshipDefinition,
+  WorshipLog,
+  ProgressionPath,
+  QuranKhatma,
+  QuranHifzTracker,
+  SleepSchedule
 } from '../../types/hierarchical';
 import { 
   recalculateAllHierarchicalProgress
@@ -41,6 +47,7 @@ const HabitsTabView = lazy(() => import('./HabitsTabView').then((module) => ({ d
 const VaultsTabView = lazy(() => import('./VaultsTabView').then((module) => ({ default: module.VaultsTabView })));
 const FocusSessionView = lazy(() => import('./FocusSessionView').then((module) => ({ default: module.FocusSessionView })));
 const TimeBlockingView = lazy(() => import('./TimeBlockingView').then((module) => ({ default: module.TimeBlockingView })));
+const IbadatDashboard = lazy(() => import('./IbadatDashboard').then((module) => ({ default: module.IbadatDashboard })));
 const entityModals = () => import('./EntityFormModals');
 const PillarModal = lazy(() => entityModals().then((module) => ({ default: module.PillarModal })));
 const VisionModal = lazy(() => entityModals().then((module) => ({ default: module.VisionModal })));
@@ -79,6 +86,12 @@ export const HierarchicalApp: React.FC = () => {
   const [focusSessions, setFocusSessions] = useState<FocusSessionRecord[]>([]);
   const [timeBlocks, setTimeBlocks] = useState<TimeBlock[]>([]);
   const [customFieldDefinitions, setCustomFieldDefinitions] = useState<CustomFieldDefinition[]>([]);
+  const [worshipDefinitions, setWorshipDefinitions] = useState<WorshipDefinition[]>([]);
+  const [worshipLogs, setWorshipLogs] = useState<WorshipLog[]>([]);
+  const [progressionPaths, setProgressionPaths] = useState<ProgressionPath[]>([]);
+  const [quranKhatmas, setQuranKhatmas] = useState<QuranKhatma[]>([]);
+  const [quranHifzTrackers, setQuranHifzTrackers] = useState<QuranHifzTracker[]>([]);
+  const [sleepSchedules, setSleepSchedules] = useState<SleepSchedule[]>([]);
   const [activeFocusTask, setActiveFocusTask] = useState<Task | null>(null);
 
   // Navigation State
@@ -270,6 +283,12 @@ export const HierarchicalApp: React.FC = () => {
     setFocusSessions(snapshot.focusSessions);
     setTimeBlocks(snapshot.timeBlocks);
     setCustomFieldDefinitions(snapshot.customFieldDefinitions);
+    setWorshipDefinitions(snapshot.worshipDefinitions);
+    setWorshipLogs(snapshot.worshipLogs);
+    setProgressionPaths(snapshot.progressionPaths);
+    setQuranKhatmas(snapshot.quranKhatmas);
+    setQuranHifzTrackers(snapshot.quranHifzTrackers);
+    setSleepSchedules(snapshot.sleepSchedules);
   };
 
   const handleConfigureAiKey = async (): Promise<boolean> => {
@@ -346,10 +365,11 @@ export const HierarchicalApp: React.FC = () => {
   useEffect(() => {
     if (!dataReady || !repositoryRef.current) return;
     const snapshot: AppDataSnapshot = {
-      schemaVersion: 3,
+      schemaVersion: 4,
       pillars, visions, goals, projects, tasks, reviews,
       inboxItems, habits, vaults, focusSessions, timeBlocks,
       customFieldDefinitions,
+      worshipDefinitions, worshipLogs, progressionPaths, quranKhatmas, quranHifzTrackers, sleepSchedules,
     };
     const repository = repositoryRef.current;
     const timer = window.setTimeout(() => {
@@ -363,7 +383,7 @@ export const HierarchicalApp: React.FC = () => {
       });
     }, 400);
     return () => window.clearTimeout(timer);
-  }, [dataReady, pillars, visions, goals, projects, tasks, reviews, inboxItems, habits, vaults, focusSessions, timeBlocks, customFieldDefinitions]);
+  }, [dataReady, pillars, visions, goals, projects, tasks, reviews, inboxItems, habits, vaults, focusSessions, timeBlocks, customFieldDefinitions, worshipDefinitions, worshipLogs, progressionPaths, quranKhatmas, quranHifzTrackers, sleepSchedules]);
 
   // Recalculate & Persist Helper
   const applyStateUpdate = (
@@ -865,7 +885,9 @@ export const HierarchicalApp: React.FC = () => {
             goals,
             projects,
             tasks,
-            reviewData.focus_pillar_id
+            reviewData.focus_pillar_id,
+            worshipDefinitions,
+            worshipLogs
           ),
         system_health_score: reviewData.system_health_score || 80,
         smart_summary: reviewData.smart_summary || '',
@@ -995,9 +1017,10 @@ export const HierarchicalApp: React.FC = () => {
     const updatedTasks = [...tasks, ...newTasks];
 
     const nextSnapshot: AppDataSnapshot = {
-      schemaVersion: 3,
+      schemaVersion: 4,
       pillars, visions, goals: updatedGoals, projects: updatedProjects, tasks: updatedTasks,
       reviews, inboxItems, habits, vaults, focusSessions, timeBlocks, customFieldDefinitions,
+      worshipDefinitions, worshipLogs, progressionPaths, quranKhatmas, quranHifzTrackers, sleepSchedules,
     };
     if (!repositoryRef.current) throw new Error('المستودع غير جاهز للحفظ.');
     await queueSnapshotSave(repositoryRef.current, nextSnapshot);
@@ -1236,6 +1259,40 @@ export const HierarchicalApp: React.FC = () => {
     setVaults(updated);
   };
 
+  const handleSetupIbadat = (categories: WorshipDefinition['category'][]) => {
+    const now = new Date().toISOString();
+    const pillar: Pillar = {
+      id: createId(), title: 'العلاقة مع الله', description: 'ركيزة للعبادات والأوراد والنمو الروحي.',
+      pillar_group: 'Spirituality', purpose: 'تقوية العلاقة مع الله بعبادة متدرجة وثابتة.',
+      priority: pillars.length + 1, show_on_home: true, status: 'active', progress: 0, created_at: now,
+    };
+    const templates: Array<Pick<WorshipDefinition, 'category' | 'title' | 'tracking_type' | 'frequency' | 'time_of_day' | 'target_count' | 'target_pages'>> = [
+      ...(['الفجر', 'الظهر', 'العصر', 'المغرب', 'العشاء'] as const).map((title, index) => ({ category: 'salah' as const, title, tracking_type: 'multi_option' as const, frequency: 'daily' as const, time_of_day: ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'][index] as WorshipDefinition['time_of_day'] })),
+      { category: 'adhkar', title: 'أذكار الصباح', tracking_type: 'checkbox', frequency: 'daily', time_of_day: 'morning' },
+      { category: 'adhkar', title: 'أذكار المساء', tracking_type: 'checkbox', frequency: 'daily', time_of_day: 'evening' },
+      { category: 'quran_wird', title: 'ورد القرآن', tracking_type: 'pages', frequency: 'daily', target_pages: 1 },
+      { category: 'qiyam', title: 'قيام الليل', tracking_type: 'multi_option', frequency: 'daily', time_of_day: 'night' },
+      { category: 'fasting', title: 'صيام التطوع', tracking_type: 'multi_option', frequency: 'custom' },
+      { category: 'sadaqah', title: 'الصدقة', tracking_type: 'amount', frequency: 'daily' },
+      { category: 'custom_dua', title: 'ورد مخصص', tracking_type: 'checkbox', frequency: 'daily' },
+      { category: 'quran_hifz', title: 'حفظ القرآن ومراجعته', tracking_type: 'pages', frequency: 'daily', target_pages: 1 },
+    ];
+    const definitions = templates.filter((template) => categories.includes(template.category)).map((template, sort_order) => ({
+      id: createId(), pillar_id: pillar.id, is_active: true, sort_order, created_at: now, ...template,
+    } as WorshipDefinition));
+    const qiyam = definitions.find((definition) => definition.category === 'qiyam');
+    const quran = definitions.find((definition) => definition.category === 'quran_wird');
+    setPillars((previous) => [...previous, pillar]);
+    setWorshipDefinitions(definitions);
+    if (qiyam) setProgressionPaths([{ id: createId(), worship_id: qiyam.id, title: 'مسار قيام الليل', stages: [{ index: 0, title: 'البداية', description: 'ركعتان بعد العشاء', target_value: 2, days_required: 7 }, { index: 1, title: 'التثبيت', description: 'أربع ركعات بعد العشاء', target_value: 4, days_required: 10 }, { index: 2, title: 'الثلث الأخير', description: 'أربع إلى ثمان ركعات قبل الفجر', target_value: 4, days_required: 14 }], current_stage_index: 0, stage_start_date: toLocalDateKey(), consecutive_days: 0, auto_promote: false, created_at: now }]);
+    if (quran) setQuranKhatmas([{ id: createId(), worship_id: quran.id, khatma_number: 1, start_date: toLocalDateKey(), current_page: 1, current_juz: 1, daily_target_pages: quran.target_pages || 1, is_completed: false, created_at: now }]);
+    setToasts((previous) => [...previous, { id: createId(), type: 'success', title: 'تم تفعيل منظومة العبادات', description: 'أُنشئت ركيزة «العلاقة مع الله» وربطت بالعبادات المختارة.' }]);
+  };
+
+  const handleSaveWorshipLog = (log: WorshipLog) => {
+    setWorshipLogs((previous) => [log, ...previous.filter((item) => item.id !== log.id)]);
+  };
+
   const handleCreateProjectDraft = (item: InboxItem, goalId: string) => {
     setEditingProject(null);
     setNewProjectDefaults({
@@ -1264,8 +1321,9 @@ export const HierarchicalApp: React.FC = () => {
   };
 
   const handleExportData = () => createSnapshotBackup({
-    schemaVersion: 3, pillars, visions, goals, projects, tasks, reviews,
+    schemaVersion: 4, pillars, visions, goals, projects, tasks, reviews,
     inboxItems, habits, vaults, focusSessions, timeBlocks, customFieldDefinitions,
+    worshipDefinitions, worshipLogs, progressionPaths, quranKhatmas, quranHifzTrackers, sleepSchedules,
   });
 
   const handleImportData = async (file: File) => {
@@ -1323,6 +1381,7 @@ export const HierarchicalApp: React.FC = () => {
           vaults: vaults.length,
           focus: focusSessions.length,
           timeBlocks: timeBlocks.filter(b => b.date === toLocalDateKey()).length,
+          ibadat: worshipDefinitions.filter((item) => item.is_active).length,
         }}
         isOpenMobile={isMobileSidebarOpen}
         onCloseMobile={() => setIsMobileSidebarOpen(false)}
@@ -1372,6 +1431,7 @@ export const HierarchicalApp: React.FC = () => {
                     {currentTab === 'projects' && 'المشروعات التنفيذية'}
                     {currentTab === 'tasks' && 'المهام اليومية'}
                     {currentTab === 'reviews' && 'المراجعات الدورية'}
+                    {currentTab === 'ibadat' && 'العبادات والأوراد'}
                   </span>
                 </div>
               )}
@@ -1739,6 +1799,17 @@ export const HierarchicalApp: React.FC = () => {
                 onToggleHabitDate={handleToggleHabitDate}
                 onSaveHabit={handleSaveHabit}
                 onDeleteHabit={handleDeleteHabit}
+              />
+            )}
+
+            {currentTab === 'ibadat' && (
+              <IbadatDashboard
+                pillars={pillars}
+                definitions={worshipDefinitions}
+                logs={worshipLogs}
+                onSetup={handleSetupIbadat}
+                onSaveLog={handleSaveWorshipLog}
+                onOpenTimeBlocking={() => setCurrentTab('timeblocking')}
               />
             )}
 

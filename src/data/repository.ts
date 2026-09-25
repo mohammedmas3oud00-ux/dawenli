@@ -22,7 +22,7 @@ export interface DataRepository {
 }
 
 export const emptySnapshot = (): AppDataSnapshot => ({
-  schemaVersion: 3,
+  schemaVersion: 4,
   pillars: [],
   visions: [],
   goals: [],
@@ -35,6 +35,12 @@ export const emptySnapshot = (): AppDataSnapshot => ({
   focusSessions: [],
   timeBlocks: [],
   customFieldDefinitions: [],
+  worshipDefinitions: [],
+  worshipLogs: [],
+  progressionPaths: [],
+  quranKhatmas: [],
+  quranHifzTrackers: [],
+  sleepSchedules: [],
 });
 
 const GUEST_KEY = 'dawenli_guest_snapshot_v3';
@@ -74,6 +80,12 @@ const TABLES = [
   ['vault_items', 'vaults'],
   ['focus_sessions', 'focusSessions'],
   ['time_blocks', 'timeBlocks'],
+  ['worship_definitions', 'worshipDefinitions'],
+  ['worship_logs', 'worshipLogs'],
+  ['progression_paths', 'progressionPaths'],
+  ['quran_khatmas', 'quranKhatmas'],
+  ['quran_hifz_trackers', 'quranHifzTrackers'],
+  ['sleep_schedules', 'sleepSchedules'],
 ] as const;
 
 export class SupabaseRepository implements DataRepository {
@@ -160,7 +172,7 @@ export function normalizeSnapshot(value: Partial<AppDataSnapshot>): AppDataSnaps
   return {
     ...base,
     ...value,
-    schemaVersion: 3,
+    schemaVersion: 4,
     pillars: Array.isArray(value.pillars) ? value.pillars : [],
     visions: Array.isArray(value.visions) ? value.visions : [],
     goals: Array.isArray(value.goals) ? value.goals : [],
@@ -178,6 +190,12 @@ export function normalizeSnapshot(value: Partial<AppDataSnapshot>): AppDataSnaps
     focusSessions: Array.isArray(value.focusSessions) ? value.focusSessions : [],
     timeBlocks: Array.isArray(value.timeBlocks) ? value.timeBlocks : [],
     customFieldDefinitions: Array.isArray(value.customFieldDefinitions) ? value.customFieldDefinitions : [],
+    worshipDefinitions: Array.isArray(value.worshipDefinitions) ? value.worshipDefinitions : [],
+    worshipLogs: Array.isArray(value.worshipLogs) ? value.worshipLogs : [],
+    progressionPaths: Array.isArray(value.progressionPaths) ? value.progressionPaths : [],
+    quranKhatmas: Array.isArray(value.quranKhatmas) ? value.quranKhatmas : [],
+    quranHifzTrackers: Array.isArray(value.quranHifzTrackers) ? value.quranHifzTrackers : [],
+    sleepSchedules: Array.isArray(value.sleepSchedules) ? value.sleepSchedules : [],
   };
 }
 

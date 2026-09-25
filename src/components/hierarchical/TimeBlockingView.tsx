@@ -65,6 +65,13 @@ const CATEGORY_CONFIG: Record<TimeBlockCategory, { label: string; bg: string; bo
     text: 'text-emerald-800 dark:text-emerald-300',
     icon: '🏃',
   },
+  worship: {
+    label: 'عبادة وورد',
+    bg: 'bg-emerald-50 dark:bg-emerald-950/60',
+    border: 'border-emerald-200 dark:border-emerald-800',
+    text: 'text-emerald-800 dark:text-emerald-300',
+    icon: '🕌',
+  },
   learning: {
     label: 'قراءة وتعلم وخزائن',
     bg: 'bg-amber-50 dark:bg-amber-950/60',

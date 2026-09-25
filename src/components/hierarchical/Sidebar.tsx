@@ -38,6 +38,7 @@ interface SidebarProps {
     vaults?: number;
     focus?: number;
     timeBlocks?: number;
+    ibadat?: number;
   };
   isOpenMobile: boolean;
   onCloseMobile: () => void;
@@ -106,6 +107,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: 'متتبع العادات',
       icon: <Repeat className="w-4 h-4" />,
       badge: counts.habits || 0,
+    },
+    {
+      id: 'ibadat',
+      label: 'العبادات والأوراد',
+      icon: <Moon className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />,
+      badge: counts.ibadat || 0,
     },
   ];
 

@@ -7,9 +7,12 @@ import {
   ReviewFrequency, 
   SystemReview, 
   SystemReviewSnapshot,
-  ReviewActionItem 
+  ReviewActionItem,
+  WorshipDefinition,
+  WorshipLog
 } from '../types/hierarchical';
 import { toLocalDateKey } from './date';
+import { worshipStreak, worshipSummary } from './ibadat';
 
 /**
  * Calculates a live diagnostic snapshot of the entire productivity system.
@@ -20,7 +23,9 @@ export function generateSystemSnapshot(
   goals: ValueGoal[],
   projects: Project[],
   tasks: Task[],
-  focusPillarId?: string | null
+  focusPillarId?: string | null,
+  worshipDefinitions: WorshipDefinition[] = [],
+  worshipLogs: WorshipLog[] = []
 ): SystemReviewSnapshot {
   const relevantProjects = focusPillarId 
     ? projects.filter(p => {
@@ -59,6 +64,7 @@ export function generateSystemSnapshot(
   const topActivePillar = sortedByProgress[0]?.title;
   const laggingPillar = sortedByProgress[sortedByProgress.length - 1]?.title;
 
+  const worship = worshipSummary(worshipDefinitions, worshipLogs);
   return {
     tasks_completed_count: tasksCompleted,
     tasks_pending_count: tasksPending,
@@ -68,6 +74,9 @@ export function generateSystemSnapshot(
     pillar_distribution: pillarDistribution,
     top_active_pillar: topActivePillar,
     lagging_pillar: laggingPillar,
+    worship_compliance_rate: worship.rate,
+    worship_streak: worshipStreak(worshipDefinitions, worshipLogs),
+    worship_progression_summary: worship.total ? `${worship.completed}/${worship.total} من عبادات اليوم` : 'لم تُفعّل العبادات بعد',
   };
 }
 
