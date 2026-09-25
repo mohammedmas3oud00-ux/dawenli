@@ -627,16 +627,50 @@ export const VoiceAiCaptureModal: React.FC<VoiceAiCaptureModalProps> = ({
                                 className="w-full bg-transparent border border-transparent focus:border-slate-400 rounded p-1 text-[11px] text-[#637169] dark:text-slate-400 mt-0.5 outline-hidden resize-y"
                               />
                             <div className="flex items-center gap-2 mt-1.5 text-[10px] text-[#717e77] dark:text-slate-400">
-                              <span className="px-1.5 py-0.5 rounded bg-[#f0ede6] dark:bg-slate-700 text-[#404c45] dark:text-slate-300 font-medium">
-                                أولوية: {task.priority === 'high' ? '🔴 عليا' : task.priority === 'medium' ? '🟡 متوسطة' : '🟢 عادية'}
-                              </span>
-                              <span className="px-1.5 py-0.5 rounded bg-[#f0ede6] dark:bg-slate-700 text-[#404c45] dark:text-slate-300 font-medium flex items-center gap-1">
+                              <label className="inline-flex items-center gap-1 rounded bg-[#f0ede6] dark:bg-slate-700 px-1.5 py-0.5 font-medium text-[#404c45] dark:text-slate-300">
+                                <span>الأولوية</span>
+                                <select
+                                  aria-label={`أولوية المهمة ${idx + 1}`}
+                                  value={task.priority}
+                                  onClick={(event) => event.stopPropagation()}
+                                  onChange={(event) => setAnalysisResult({ ...analysisResult, tasks: analysisResult.tasks.map((item, itemIndex) => itemIndex === idx ? { ...item, priority: event.target.value as 'high' | 'medium' | 'low' } : item) })}
+                                  className="rounded border-0 bg-transparent p-0 text-[10px] font-bold outline-hidden"
+                                >
+                                  <option value="high">عالية</option>
+                                  <option value="medium">متوسطة</option>
+                                  <option value="low">منخفضة</option>
+                                </select>
+                              </label>
+                              <label className="inline-flex items-center gap-1 rounded bg-[#f0ede6] dark:bg-slate-700 px-1.5 py-0.5 font-medium text-[#404c45] dark:text-slate-300">
                                 <Clock className="w-2.5 h-2.5" />
-                                <span>{task.estimatedHours} س</span>
-                              </span>
-                              <span className="px-1.5 py-0.5 rounded bg-[#f0ede6] dark:bg-slate-700 text-[#404c45] dark:text-slate-300 font-medium">
-                                {task.energyLevel === 'high' ? '🚀 تركيز عميق' : '⚡ طاقة معتدلة'}
-                              </span>
+                                <span>المدة</span>
+                                <input
+                                  aria-label={`مدة المهمة ${idx + 1} بالساعات`}
+                                  type="number"
+                                  min="0.25"
+                                  max="24"
+                                  step="0.25"
+                                  value={task.estimatedHours}
+                                  onClick={(event) => event.stopPropagation()}
+                                  onChange={(event) => setAnalysisResult({ ...analysisResult, tasks: analysisResult.tasks.map((item, itemIndex) => itemIndex === idx ? { ...item, estimatedHours: Math.max(0.25, Number(event.target.value) || 0.25) } : item) })}
+                                  className="w-12 rounded border-0 bg-transparent p-0 text-[10px] text-center font-bold outline-hidden"
+                                />
+                                <span>س</span>
+                              </label>
+                              <label className="inline-flex items-center gap-1 rounded bg-[#f0ede6] dark:bg-slate-700 px-1.5 py-0.5 font-medium text-[#404c45] dark:text-slate-300">
+                                <span>الطاقة</span>
+                                <select
+                                  aria-label={`طاقة المهمة ${idx + 1}`}
+                                  value={task.energyLevel}
+                                  onClick={(event) => event.stopPropagation()}
+                                  onChange={(event) => setAnalysisResult({ ...analysisResult, tasks: analysisResult.tasks.map((item, itemIndex) => itemIndex === idx ? { ...item, energyLevel: event.target.value as 'high' | 'medium' | 'low' } : item) })}
+                                  className="rounded border-0 bg-transparent p-0 text-[10px] font-bold outline-hidden"
+                                >
+                                  <option value="high">عالية</option>
+                                  <option value="medium">متوسطة</option>
+                                  <option value="low">منخفضة</option>
+                                </select>
+                              </label>
                             </div>
                           </div>
                         </div>
