@@ -37,3 +37,16 @@ export function progressionSuggestion(path: ProgressionPath, logs: WorshipLog[])
   if (!stage || !next || path.consecutive_days < stage.days_required) return null;
   return `أكملت مرحلة «${stage.title}». هل تريد الانتقال إلى «${next.title}»؟`;
 }
+
+/** Safe, deterministic insights. Gemini may summarize these facts but never supplies religious rulings. */
+export function worshipInsights(definitions: WorshipDefinition[], logs: WorshipLog[], today = toLocalDateKey()): string[] {
+  const todaySummary = worshipSummary(definitions, logs, today);
+  const insights: string[] = [];
+  if (!todaySummary.total) return ['فعّل ما يناسبك من العبادات لبدء المتابعة.'];
+  if (todaySummary.completed === todaySummary.total) insights.push('أتممت عباداتك المفعلة اليوم — بارك الله في ثباتك.');
+  else insights.push(`يتبقى ${todaySummary.total - todaySummary.completed} من العبادات المفعلة اليوم.`);
+  const evening = definitions.find((item) => item.category === 'adhkar' && item.time_of_day === 'evening');
+  const missedEvenings = evening ? [1, 2, 3].filter((offset) => !logs.some((log) => log.worship_id === evening.id && log.date === shiftLocalDateKey(today, -offset) && log.is_completed)).length : 0;
+  if (missedEvenings >= 2) insights.push('لاحظنا تكرار تفويت أذكار المساء؛ يمكنك تفعيل تذكير هادئ لها.');
+  return insights;
+}

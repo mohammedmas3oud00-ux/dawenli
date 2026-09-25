@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { WorshipDefinition, WorshipLog } from '../types/hierarchical';
-import { hijriDate, isEditableWorshipDate, progressionSuggestion, worshipStreak, worshipSummary } from './ibadat';
+import { hijriDate, isEditableWorshipDate, progressionSuggestion, worshipInsights, worshipStreak, worshipSummary } from './ibadat';
 
 const definition = (id: string): WorshipDefinition => ({ id, pillar_id: 'pillar', title: id, category: 'salah', tracking_type: 'multi_option', frequency: 'daily', is_active: true, sort_order: 0, created_at: '2026-09-01T00:00:00Z' });
 const log = (worship_id: string, date: string): WorshipLog => ({ id: `${worship_id}-${date}`, worship_id, date, is_completed: true, created_at: `${date}T00:00:00Z` });
@@ -30,5 +30,9 @@ describe('ibadat calculations', () => {
     expect(value.day).toBeGreaterThanOrEqual(1);
     expect(value.month).toBeGreaterThanOrEqual(1);
     expect(value.year).toBeGreaterThan(1400);
+  });
+
+  it('produces factual encouragement rather than religious rulings', () => {
+    expect(worshipInsights([definition('fajr')], [], '2026-09-25')[0]).toContain('يتبقى');
   });
 });
