@@ -25,7 +25,7 @@
 
 ## جدولة إشعارات الخلفية عبر Supabase Cron
 
-بعد تطبيق migration `202609250005_push_cron.sql` وتعيين `CRON_SECRET` نفسه في Vercel، فعّل إضافات **pg_cron** و**pg_net** و**Supabase Vault** من لوحة Supabase. بعدها، شغّل التالي مرة واحدة من SQL Editor؛ لا تحفظ المفتاح في ملف أو في الواجهة:
+بعد تطبيق migration `202609250008_push_cron.sql` وتعيين `CRON_SECRET` نفسه في Vercel، فعّل إضافات **pg_cron** و**pg_net** و**Supabase Vault** من لوحة Supabase. بعدها، شغّل التالي مرة واحدة من SQL Editor؛ لا تحفظ المفتاح في ملف أو في الواجهة:
 
 ```sql
 select public.dawenli_configure_push_cron(
