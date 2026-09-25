@@ -2,6 +2,22 @@ import React, { useState } from 'react';
 import { AlertCircle, ArrowRight, CheckCircle2, Key, Lock, LogIn, Mail, ShieldCheck, User, UserPlus, X } from 'lucide-react';
 import { isSupabaseConfigured, supabase } from '../../utils/supabaseClient';
 
+const googleAuthEnabled = import.meta.env.VITE_ENABLE_GOOGLE_AUTH === 'true';
+
+function getAuthErrorMessage(error: unknown) {
+  const message = error instanceof Error ? error.message : '';
+  if (/invalid login credentials/i.test(message)) {
+    return 'البريد الإلكتروني أو كلمة المرور غير صحيحين. إن كان الحساب جديدًا، أنشئه أولًا وأكّد البريد الإلكتروني.';
+  }
+  if (/email not confirmed/i.test(message)) {
+    return 'لم يتم تأكيد البريد الإلكتروني بعد. افتح رسالة التأكيد ثم أعد تسجيل الدخول.';
+  }
+  if (/email rate limit exceeded/i.test(message)) {
+    return 'تم إرسال طلبات كثيرة للبريد الإلكتروني. انتظر قليلًا ثم حاول مجددًا.';
+  }
+  return message || 'تعذر إتمام المصادقة. حاول لاحقًا.';
+}
+
 interface AuthUser {
   id?: string;
   email: string;
@@ -87,7 +103,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         onClose();
       }
     } catch (error) {
-      setErrorMsg(error instanceof Error ? error.message : 'تعذر إتمام المصادقة. حاول لاحقًا.');
+      setErrorMsg(getAuthErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -107,7 +123,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       });
       if (error) throw error;
     } catch (error) {
-      setErrorMsg(error instanceof Error ? error.message : 'تعذر بدء تسجيل الدخول عبر Google.');
+      setErrorMsg(getAuthErrorMessage(error));
       setLoading(false);
     }
   };
@@ -139,7 +155,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           {errorMsg && <div role="alert" className="p-3 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900 rounded-xl text-rose-700 dark:text-rose-300 flex gap-2"><AlertCircle className="w-4 h-4 shrink-0" />{errorMsg}</div>}
           {successMsg && <div role="status" className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 flex gap-2"><CheckCircle2 className="w-4 h-4 shrink-0" />{successMsg}</div>}
 
-          <button type="button" onClick={handleGoogleSignIn} disabled={loading} className="w-full py-2.5 px-4 border border-[#d8d4cc] dark:border-slate-700 rounded-xl font-bold disabled:opacity-50">المتابعة باستخدام Google</button>
+          {googleAuthEnabled && <button type="button" onClick={handleGoogleSignIn} disabled={loading} className="w-full py-2.5 px-4 border border-[#d8d4cc] dark:border-slate-700 rounded-xl font-bold disabled:opacity-50">المتابعة باستخدام Google</button>}
 
           <form onSubmit={handleEmailAuth} className="space-y-3">
             {tab === 'signup' && <label className="block font-bold">الاسم الكامل<input aria-label="الاسم الكامل" type="text" required value={fullName} onChange={(e) => setFullName(e.target.value)} className="mt-1 w-full px-3 py-2 bg-[#faf8f5] dark:bg-slate-800 border rounded-xl" /><User className="hidden" /></label>}
