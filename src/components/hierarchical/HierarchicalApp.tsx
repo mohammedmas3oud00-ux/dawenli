@@ -1293,6 +1293,23 @@ export const HierarchicalApp: React.FC = () => {
     setWorshipLogs((previous) => [log, ...previous.filter((item) => item.id !== log.id)]);
   };
 
+  const handleSuggestWorshipBlocks = () => {
+    const pillarId = worshipDefinitions[0]?.pillar_id;
+    if (!pillarId) return;
+    const date = toLocalDateKey();
+    const proposed: TimeBlock[] = [
+      { id: createId(), date, start_time: '05:30', end_time: '05:45', title: 'أذكار الصباح', pillar_id: pillarId, category: 'worship', is_completed: false, created_at: new Date().toISOString() },
+      { id: createId(), date, start_time: '21:30', end_time: '21:45', title: 'ورد القرآن', pillar_id: pillarId, category: 'worship', is_completed: false, created_at: new Date().toISOString() },
+    ];
+    const overlaps = proposed.some((candidate) => timeBlocks.some((block) => block.date === date && block.start_time < candidate.end_time && candidate.start_time < block.end_time));
+    if (overlaps || !confirm('سيُضاف ورد القرآن وأذكار الصباح إلى جدول اليوم. يمكنك تعديلهما لاحقًا.')) {
+      if (overlaps) setToasts((previous) => [...previous, { id: createId(), type: 'warning', title: 'تعارض في الجدول', description: 'لم نضف الكتل المقترحة لأن وقتًا موجودًا يتداخل معها.' }]);
+      return;
+    }
+    setTimeBlocks((previous) => [...proposed, ...previous]);
+    setToasts((previous) => [...previous, { id: createId(), type: 'success', title: 'أُضيفت كتل عبادة مقترحة', description: 'يمكنك تعديلها من حجب الوقت.' }]);
+  };
+
   const handleCreateProjectDraft = (item: InboxItem, goalId: string) => {
     setEditingProject(null);
     setNewProjectDefaults({
@@ -1810,6 +1827,7 @@ export const HierarchicalApp: React.FC = () => {
                 onSetup={handleSetupIbadat}
                 onSaveLog={handleSaveWorshipLog}
                 onOpenTimeBlocking={() => setCurrentTab('timeblocking')}
+                onSuggestTimeBlocks={handleSuggestWorshipBlocks}
               />
             )}
 
