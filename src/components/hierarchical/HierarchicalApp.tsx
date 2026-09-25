@@ -1337,7 +1337,7 @@ export const HierarchicalApp: React.FC = () => {
   const handleEnableWorshipNotifications = async () => {
     try {
       await subscribeToPush();
-      setToasts((previous) => [...previous, { id: createId(), type: 'success', title: 'تم تفعيل التذكيرات', description: 'ستصل تنبيهات الصلاة والمهام وفق إعدادات حسابك؛ لا يُرسل تنبيه للشروق.' }]);
+      setToasts((previous) => [...previous, { id: createId(), type: 'success', title: 'تم تفعيل التذكيرات', description: 'ستصل تنبيهات الصلاة والمهام والعبادات الموقّتة وفق إعدادات حسابك؛ لا يُرسل تنبيه للشروق.' }]);
     } catch (error) {
       setToasts((previous) => [...previous, { id: createId(), type: 'error', title: 'تعذر تفعيل التذكيرات', description: error instanceof Error ? error.message : 'حاول مرة أخرى.' }]);
     }
