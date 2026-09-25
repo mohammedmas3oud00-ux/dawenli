@@ -763,7 +763,12 @@ async function startServer() {
   });
 }
 
-if (process.env.VERCEL !== '1' && process.env.NODE_ENV !== 'test') {
+// API functions import this module on Vercel. Starting a second HTTP listener
+// during that import causes the function to fail before its route middleware
+// can return a structured API response.
+const isDirectServerExecution = Boolean(process.argv[1]) && path.resolve(process.argv[1]) === __filename;
+
+if (isDirectServerExecution && process.env.NODE_ENV !== 'test') {
   startServer().catch((error) => {
     console.error('Failed to start Dawenli server:', error);
     process.exitCode = 1;
