@@ -90,6 +90,14 @@ async function getAiHeaders(): Promise<Record<string, string>> {
   return headers;
 }
 
+export async function analyzeWorshipInsight(metrics: Record<string, unknown>): Promise<{ summary: string; suggestions: string[] }> {
+  const res = await fetch('/api/ai/worship-insight', { method: 'POST', headers: await getAiHeaders(), body: JSON.stringify({ metrics }) });
+  if (!res.ok) throw await readApiError(res, 'فشل تحليل الالتزام.');
+  const body = await res.json() as { data?: { summary?: string; suggestions?: string[] } };
+  if (!body.data?.summary) throw new Error('تعذر قراءة تحليل الالتزام.');
+  return { summary: body.data.summary, suggestions: body.data.suggestions || [] };
+}
+
 async function readApiError(response: Response, fallback: string): Promise<Error> {
   const body = await response.json().catch(() => null) as { error?: { message?: string } | string } | null;
   const message = typeof body?.error === 'string' ? body.error : body?.error?.message;

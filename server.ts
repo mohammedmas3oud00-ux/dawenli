@@ -904,6 +904,25 @@ app.get('/api/prayer-times', async (req, res) => {
   }
 });
 
+// Faith tracking insight: statistical encouragement only, never rulings, fatwas, or religious quotations.
+app.post('/api/ai/worship-insight', async (req, res) => {
+  try {
+    const metrics = req.body?.metrics;
+    if (!metrics || typeof metrics !== 'object') return apiError(res, 400, 'BAD_REQUEST', 'ملخص الالتزام مطلوب.');
+    const { response, modelUsed } = await generateContentWithFallback({
+      contents: `حلل ملخص الالتزام التالي بالعربية: ${JSON.stringify(metrics)}. أعط تشجيعًا عمليًا واقتراحين اختياريين للتذكير أو تنظيم الوقت. ممنوع تقديم فتوى أو حكم ديني أو اقتباس ديني أو لوم المستخدم.`,
+      customKey: res.locals.geminiKey as string,
+      config: { responseMimeType: 'application/json', responseSchema: { type: Type.OBJECT, properties: { summary: { type: Type.STRING }, suggestions: { type: Type.ARRAY, items: { type: Type.STRING } } }, required: ['summary', 'suggestions'] } },
+    });
+    const data = safeParseJson(response.text);
+    if (!data?.summary || !Array.isArray(data.suggestions)) throw new Error('Invalid worship insight');
+    return res.json({ ok: true, data: { summary: String(data.summary), suggestions: data.suggestions.slice(0, 3).map(String), modelUsed } });
+  } catch (error) {
+    console.error('Error in /api/ai/worship-insight');
+    return apiError(res, 502, 'UPSTREAM_ERROR', 'فشل تحليل الالتزام بالذكاء الاصطناعي.');
+  }
+});
+
 app.use((error: unknown, req: express.Request, res: express.Response, next: express.NextFunction) => {
   const bodyError = error as { type?: string; status?: number };
   if (bodyError.type === 'entity.too.large' || bodyError.status === 413) {
