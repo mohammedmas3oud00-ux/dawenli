@@ -314,6 +314,34 @@ app.all('/api/push/dispatch', async (req, res) => {
       const { data: tasks } = await adminClient.from('tasks').select('title').eq('user_id', subscription.user_id).eq('due_date', today).neq('status', 'done').limit(3);
       if (tasks?.length) messages.push({ title: 'مهامك المستحقة اليوم', body: tasks.map((task) => task.title).join('، '), deliveryKey: `tasks:${today}` });
     }
+    if (subscription.worship_enabled) {
+      const { data: worshipDefinitions } = await adminClient
+        .from('worship_definitions')
+        .select('id,title,category,time_of_day,frequency,is_active')
+        .eq('user_id', subscription.user_id)
+        .eq('is_active', true)
+        .eq('frequency', 'daily')
+        .eq('time_of_day', hhmm)
+        .limit(3);
+      const scheduled = (worshipDefinitions ?? []).filter((item) => item.category !== 'sadaqah');
+      if (scheduled.length) {
+        const ids = scheduled.map((item) => item.id);
+        const { data: completedLogs } = await adminClient
+          .from('worship_logs')
+          .select('worship_id')
+          .eq('user_id', subscription.user_id)
+          .eq('date', today)
+          .eq('is_completed', true)
+          .in('worship_id', ids);
+        const completed = new Set((completedLogs ?? []).map((log) => log.worship_id));
+        const pending = scheduled.filter((item) => !completed.has(item.id));
+        if (pending.length) messages.push({
+          title: 'تذكير عباداتك 🌙',
+          body: pending.map((item) => item.title).join('، '),
+          deliveryKey: `worship:${today}:${hhmm}:${pending.map((item) => item.id).join(',')}`,
+        });
+      }
+    }
     for (const message of messages) {
       const { data: reservation, error: reservationError } = await adminClient
         .from('push_delivery_log')
