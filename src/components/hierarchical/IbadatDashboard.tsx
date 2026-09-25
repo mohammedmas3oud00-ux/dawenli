@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Check, Moon, Plus, Sparkles } from 'lucide-react';
-import type { Pillar, ProgressionPath, QuranKhatma, SleepSchedule, WorshipDefinition, WorshipLog } from '../../types/hierarchical';
+import type { Pillar, ProgressionPath, QuranHifzTracker, QuranKhatma, SleepSchedule, WorshipDefinition, WorshipLog } from '../../types/hierarchical';
 import { toLocalDateKey } from '../../utils/date';
 import { hijriDate, isEditableWorshipDate, isWhiteDay, progressionSuggestion, worshipInsights, worshipStreak, worshipSummary } from '../../utils/ibadat';
 
@@ -13,6 +13,7 @@ type Props = {
   khatmas: QuranKhatma[]; onUpdateKhatma: (id: string, page: number) => void;
   sleepSchedules: SleepSchedule[]; onUpdateSleep: (id: string, changes: Partial<SleepSchedule>) => void;
   onEnableNotifications: () => void;
+  hifzTrackers: QuranHifzTracker[]; onUpdateHifz: (id: string, pages: number) => void;
 };
 
 const choices: Array<{ category: WorshipDefinition['category']; label: string }> = [
@@ -22,7 +23,7 @@ const choices: Array<{ category: WorshipDefinition['category']; label: string }>
   { category: 'custom_dua', label: 'أوراد وأدعية مخصصة' }, { category: 'quran_hifz', label: 'حفظ القرآن ومراجعته' },
 ];
 
-export const IbadatDashboard: React.FC<Props> = ({ pillars, definitions, logs, onSetup, onSaveLog, onOpenTimeBlocking, onSuggestTimeBlocks, progressionPaths, onApproveProgression, khatmas, onUpdateKhatma, sleepSchedules, onUpdateSleep, onEnableNotifications }) => {
+export const IbadatDashboard: React.FC<Props> = ({ pillars, definitions, logs, onSetup, onSaveLog, onOpenTimeBlocking, onSuggestTimeBlocks, progressionPaths, onApproveProgression, khatmas, onUpdateKhatma, sleepSchedules, onUpdateSleep, onEnableNotifications, hifzTrackers, onUpdateHifz }) => {
   const [selected, setSelected] = useState(choices.slice(0, 4).map((item) => item.category));
   const [date, setDate] = useState(toLocalDateKey());
   const today = toLocalDateKey();
@@ -56,6 +57,7 @@ export const IbadatDashboard: React.FC<Props> = ({ pillars, definitions, logs, o
     {progressionPaths.map((path) => { const suggestion = progressionSuggestion(path, logs); const stage = path.stages[path.current_stage_index]; return <article key={path.id} className="rounded-2xl border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-900 p-4"><h2 className="font-bold">✨ {path.title}: {stage?.title}</h2><p className="text-sm mt-1">الالتزام الحالي: {path.consecutive_days}/{stage?.days_required || '—'} أيام</p>{suggestion ? <button type="button" onClick={() => onApproveProgression(path.id)} className="mt-3 rounded-lg bg-amber-600 text-white px-3 py-2 text-sm">{suggestion}</button> : <p className="text-xs text-slate-500 mt-2">التدرج اقتراحي فقط؛ لن تتغير مرحلتك تلقائيًا.</p>}</article>})}
     {khatmas.map((khatma) => <article key={khatma.id} className="rounded-2xl border bg-white dark:bg-slate-900 dark:border-slate-800 p-4"><h2 className="font-bold">📖 الختمة #{khatma.khatma_number}</h2><p className="text-sm mt-1">صفحة {khatma.current_page}/604 · جزء {khatma.current_juz}</p><input aria-label="الصفحة الحالية للختمة" type="range" min="1" max="604" value={khatma.current_page} onChange={(e) => onUpdateKhatma(khatma.id, Number(e.target.value))} className="w-full accent-emerald-700 mt-3" /></article>)}
     {sleepSchedules.map((schedule) => <article key={schedule.id} className="rounded-2xl border bg-indigo-50 dark:bg-indigo-950/30 dark:border-indigo-900 p-4 space-y-2"><h2 className="font-bold">😴 جدول النوم التدريجي</h2><p className="text-sm">هدفك: النوم {schedule.ultimate_bedtime} والاستيقاظ {schedule.ultimate_waketime}</p><div className="flex flex-wrap gap-2"><label className="text-xs">الحالي <input aria-label="وقت النوم الحالي" type="time" value={schedule.current_bedtime} onChange={(e) => onUpdateSleep(schedule.id, { current_bedtime: e.target.value })} className="mr-1 rounded border p-1 dark:bg-slate-800" /></label><label className="text-xs">الاستيقاظ <input aria-label="وقت الاستيقاظ الحالي" type="time" value={schedule.current_waketime} onChange={(e) => onUpdateSleep(schedule.id, { current_waketime: e.target.value })} className="mr-1 rounded border p-1 dark:bg-slate-800" /></label></div><p className="text-xs text-slate-500">اقتراح تدريجي: قدّم وقت النوم {schedule.adjustment_minutes} دقيقة كل {schedule.adjustment_frequency_days} أيام بعد اعتمادك.</p></article>)}
+    {hifzTrackers.map((tracker) => <article key={tracker.id} className="rounded-2xl border bg-white dark:bg-slate-900 dark:border-slate-800 p-4"><h2 className="font-bold">📗 حفظ القرآن ومراجعته</h2><p className="text-sm mt-1">الصفحات المحفوظة: {tracker.total_memorized_pages}/604 · مراجعة يومية: {tracker.daily_review_pages} صفحة</p><input aria-label="إجمالي صفحات الحفظ" type="number" min="0" max="604" value={tracker.total_memorized_pages} onChange={(e) => onUpdateHifz(tracker.id, Number(e.target.value))} className="mt-3 w-28 rounded-lg border p-2 dark:bg-slate-800 dark:border-slate-700" /></article>)}
     <p className="text-xs text-slate-500 flex gap-1 items-center"><Sparkles className="w-3 h-3" />الذكاء الاصطناعي يعرض تحليلات وتشجيعًا فقط، ولا يصدر أحكامًا أو فتاوى.</p>
   </section>;
 };
