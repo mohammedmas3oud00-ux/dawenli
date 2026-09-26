@@ -140,7 +140,13 @@ export class SupabaseRepository implements DataRepository {
 }
 
 function toDatabaseRow(row: Record<string, unknown>, userId: string): Record<string, unknown> {
-  const normalized: Record<string, unknown> = { ...row, user_id: userId };
+  const normalized: Record<string, unknown> = {
+    ...row,
+    user_id: userId,
+    // Older local records were created before updated_at became mandatory.
+    // Supplying it here keeps the atomic RPC compatible with those records.
+    updated_at: row.updated_at || new Date().toISOString(),
+  };
   delete normalized.schemaVersion;
   return normalized;
 }
