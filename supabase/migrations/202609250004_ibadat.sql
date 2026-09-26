@@ -62,6 +62,10 @@ alter table public.quran_khatmas enable row level security;
 alter table public.quran_hifz_trackers enable row level security;
 alter table public.sleep_schedules enable row level security;
 do $$ declare t text; begin foreach t in array array['worship_definitions','worship_logs','progression_paths','quran_khatmas','quran_hifz_trackers','sleep_schedules'] loop
+  execute format('revoke all on table public.%I from anon', t);
+  execute format('grant select, insert, update, delete on table public.%I to authenticated', t);
+end loop; end $$;
+do $$ declare t text; begin foreach t in array array['worship_definitions','worship_logs','progression_paths','quran_khatmas','quran_hifz_trackers','sleep_schedules'] loop
   execute format('drop policy if exists %I on public.%I', t || '_owner', t);
   execute format('create policy %I on public.%I for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id)', t || '_owner', t);
 end loop; end $$;

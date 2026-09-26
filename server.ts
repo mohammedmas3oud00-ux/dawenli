@@ -270,6 +270,11 @@ app.post('/api/push/subscription', requireUserAuth, async (req, res) => {
     prayer_enabled: req.body?.prayerEnabled !== false,
     task_enabled: req.body?.taskEnabled !== false,
     worship_enabled: req.body?.worshipEnabled !== false,
+    adhkar_enabled: req.body?.adhkarEnabled !== false,
+    quran_enabled: req.body?.quranEnabled !== false,
+    qiyam_enabled: req.body?.qiyamEnabled !== false,
+    sleep_enabled: req.body?.sleepEnabled !== false,
+    streak_enabled: req.body?.streakEnabled !== false,
     timezone: typeof req.body?.timezone === 'string' ? req.body.timezone.slice(0, 80) : 'Africa/Cairo',
     prayer_times: req.body?.prayerTimes && typeof req.body.prayerTimes === 'object' ? req.body.prayerTimes : existingSubscription?.prayer_times || {},
     updated_at: new Date().toISOString(),
@@ -324,7 +329,14 @@ app.all('/api/push/dispatch', async (req, res) => {
         .eq('frequency', 'daily')
         .eq('time_of_day', hhmm)
         .limit(3);
-      const scheduled = (worshipDefinitions ?? []).filter((item) => item.category !== 'sadaqah');
+      const enabledForCategory = (category: string) => {
+        if (category === 'adhkar') return subscription.adhkar_enabled !== false;
+        if (category === 'quran_wird' || category === 'quran_hifz') return subscription.quran_enabled !== false;
+        if (category === 'qiyam') return subscription.qiyam_enabled !== false;
+        if (category === 'sadaqah') return false;
+        return true;
+      };
+      const scheduled = (worshipDefinitions ?? []).filter((item) => enabledForCategory(item.category));
       if (scheduled.length) {
         const ids = scheduled.map((item) => item.id);
         const { data: completedLogs } = await adminClient

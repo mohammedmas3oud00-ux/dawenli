@@ -1,11 +1,31 @@
 import { describe, expect, it } from 'vitest';
 import type { WorshipDefinition, WorshipLog } from '../types/hierarchical';
-import { hijriDate, isEditableWorshipDate, progressionSuggestion, worshipInsights, worshipStreak, worshipSummary } from './ibadat';
+import { hijriDate, isEditableWorshipDate, progressionSuggestion, updateWorshipLog, worshipInsights, worshipStreak, worshipSummary } from './ibadat';
 
 const definition = (id: string): WorshipDefinition => ({ id, pillar_id: 'pillar', title: id, category: 'salah', tracking_type: 'multi_option', frequency: 'daily', is_active: true, sort_order: 0, created_at: '2026-09-01T00:00:00Z' });
 const log = (worship_id: string, date: string): WorshipLog => ({ id: `${worship_id}-${date}`, worship_id, date, is_completed: true, created_at: `${date}T00:00:00Z` });
 
 describe('ibadat calculations', () => {
+  it('rejects empty, invalid and normalized dates', () => {
+    for (const value of ['', 'invalid', '2026-02-30', '2026-13-01']) {
+      expect(isEditableWorshipDate(value, '2026-03-01')).toBe(false);
+    }
+  });
+
+  it('retains completion time when editing prayer details and clears it on reopening', () => {
+    const prior = { ...log('fajr', '2026-09-25'), completed_at: '2026-09-25T03:00:00Z' };
+    const changed = updateWorshipLog(definition('fajr'), prior.date, prior, { congregation: 'jamaah' });
+    expect(changed.completed_at).toBe(prior.completed_at);
+    expect(changed.id).toBe(prior.id);
+    expect(updateWorshipLog(definition('fajr'), prior.date, changed, { is_completed: false }).completed_at).toBeNull();
+  });
+
+  it('keeps private amounts independent of completion', () => {
+    const prior = log('charity', '2026-09-25');
+    const changed = updateWorshipLog(definition('charity'), prior.date, prior, { amount: null });
+    expect(changed.is_completed).toBe(true);
+    expect(worshipSummary([definition('charity')], [changed], prior.date).rate).toBe(100);
+  });
   it('accepts today and the previous thirty days only', () => {
     expect(isEditableWorshipDate('2026-09-25', '2026-09-25')).toBe(true);
     expect(isEditableWorshipDate('2026-08-26', '2026-09-25')).toBe(true);

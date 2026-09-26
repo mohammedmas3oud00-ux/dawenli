@@ -8,7 +8,9 @@ export function toLocalDateKey(date: Date = new Date()): string {
 export function parseLocalDateKey(value: string): Date {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
   if (!match) throw new Error(`Invalid local date: ${value}`);
-  return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  if (toLocalDateKey(date) !== value) throw new Error(`Invalid local date: ${value}`);
+  return date;
 }
 
 export function shiftLocalDateKey(value: string, days: number): string {

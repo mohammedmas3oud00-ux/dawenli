@@ -1,5 +1,5 @@
 import type { ProgressionPath, WorshipDefinition, WorshipLog } from '../types/hierarchical';
-import { shiftLocalDateKey, toLocalDateKey } from './date';
+import { parseLocalDateKey, shiftLocalDateKey, toLocalDateKey } from './date';
 
 export type HijriDate = { day: number; month: number; year: number; label: string };
 export function hijriDate(date = new Date()): HijriDate {
@@ -10,9 +10,23 @@ export function hijriDate(date = new Date()): HijriDate {
 export const isWhiteDay = (date = new Date()) => [13, 14, 15].includes(hijriDate(date).day);
 
 export const isEditableWorshipDate = (date: string, today = toLocalDateKey()) => {
-  const delta = Math.floor((new Date(`${today}T12:00:00`).getTime() - new Date(`${date}T12:00:00`).getTime()) / 86_400_000);
-  return delta >= 0 && delta <= 30;
+  try {
+    parseLocalDateKey(date);
+    parseLocalDateKey(today);
+    // Calendar keys, not elapsed hours: DST days can contain 23 or 25 hours.
+    return date <= today && date >= shiftLocalDateKey(today, -30);
+  } catch { return false; }
 };
+
+export function updateWorshipLog(definition: WorshipDefinition, date: string, prior: WorshipLog | undefined, patch: Partial<WorshipLog>, now = new Date().toISOString()): WorshipLog {
+  const completed = patch.is_completed ?? prior?.is_completed ?? false;
+  return {
+    ...prior, ...patch,
+    id: prior?.id || crypto.randomUUID(), worship_id: definition.id, date,
+    created_at: prior?.created_at || now, is_completed: completed,
+    completed_at: completed ? (prior?.is_completed && prior.completed_at ? prior.completed_at : now) : null,
+  };
+}
 
 export function worshipSummary(definitions: WorshipDefinition[], logs: WorshipLog[], date = toLocalDateKey()) {
   const active = definitions.filter((item) => item.is_active && item.frequency === 'daily');
