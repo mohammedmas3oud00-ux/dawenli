@@ -130,11 +130,7 @@ export class SupabaseRepository implements DataRepository {
 
   async clear(): Promise<void> {
     try {
-      for (const [table] of [...TABLES].reverse()) {
-        const { error } = await this.client.from(table).delete().eq('user_id', this.userId);
-        if (error) throw error;
-      }
-      const { error } = await this.client.from('custom_field_definitions').delete().eq('user_id', this.userId);
+      const { error } = await this.client.rpc('dawenli_clear_snapshot');
       if (error) throw error;
     } catch (error) {
       throw mapRepositoryError(error, 'تعذر حذف بيانات الحساب.');
