@@ -65,6 +65,7 @@ import { Plus, Menu, Mic, Sparkles, Sun, Moon, User, LogIn, LogOut, KeyRound, Tr
 import { supabase } from '../../utils/supabaseClient';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import { useAppStore } from '../../app/store/appStore';
+import { createSnapshotSaveQueue, enqueueSnapshotSave } from '../../shared/services/snapshotPersistence';
 import { createSnapshotBackup, DataRepository, emptySnapshot, GuestLocalRepository, normalizeSnapshot, SupabaseRepository } from '../../data/repository';
 import { remapSnapshotIds } from '../../data/legacyMigration';
 import { createId } from '../../utils/id';
@@ -104,13 +105,12 @@ export const HierarchicalApp: React.FC = () => {
   const [dataReady, setDataReady] = useState(false);
   const repositoryRef = useRef<DataRepository | null>(null);
   const lastSavedSnapshotRef = useRef<AppDataSnapshot>(emptySnapshot());
-  const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const saveQueueRef = useRef(createSnapshotSaveQueue());
 
   const queueSnapshotSave = (repository: DataRepository, snapshot: AppDataSnapshot) => {
-    saveQueueRef.current = saveQueueRef.current.catch(() => undefined).then(() => repository.save(snapshot)).then(() => {
+    return enqueueSnapshotSave(saveQueueRef.current, repository, snapshot).then(() => {
       lastSavedSnapshotRef.current = snapshot;
     });
-    return saveQueueRef.current;
   };
 
   // Dark Mode Theme State
