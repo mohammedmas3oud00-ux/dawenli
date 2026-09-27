@@ -23,3 +23,11 @@
 ## Safety rule
 
 The adapters are not wired into the coordinator until their contract tests pass. Snapshot persistence remains the source of truth during the migration.
+
+## Phase 2/3 delivered
+
+- `AuthProvider` and `useAuth` now own Supabase session observation and sign-out.
+- `HierarchicalApp` consumes the auth boundary while retaining its existing UI and repository-selection behavior.
+- Shared entity state now lives in `useAppStore` (Zustand); existing handlers keep their setter-compatible API during migration.
+- `snapshotFromState` provides one typed projection for future persistence extraction.
+- The old atomic snapshot queue remains active; no data migration or schema change was made.

@@ -64,6 +64,7 @@ import { ToastContainer, ToastMessage } from './ToastNotification';
 import { Plus, Menu, Mic, Sparkles, Sun, Moon, User, LogIn, LogOut, KeyRound, Trash2 } from 'lucide-react';
 import { supabase } from '../../utils/supabaseClient';
 import { useAuth } from '../../features/auth/hooks/useAuth';
+import { useAppStore } from '../../app/store/appStore';
 import { createSnapshotBackup, DataRepository, emptySnapshot, GuestLocalRepository, normalizeSnapshot, SupabaseRepository } from '../../data/repository';
 import { remapSnapshotIds } from '../../data/legacyMigration';
 import { createId } from '../../utils/id';
@@ -74,29 +75,13 @@ import { subscribeToPush, PushNotificationPreferences } from '../../utils/pushNo
 
 export const HierarchicalApp: React.FC = () => {
   const { status: authStatus, user: currentUser, adoptUser, signOut: authSignOut } = useAuth();
-  // Core Entities State
-  const [pillars, setPillars] = useState<Pillar[]>([]);
-  const [visions, setVisions] = useState<Vision[]>([]);
-  const [goals, setGoals] = useState<ValueGoal[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [reviews, setReviews] = useState<SystemReview[]>([]);
-
-  // GTD & PPV Extensions State (Inbox, Habits, Vaults)
-  const [inboxItems, setInboxItems] = useState<InboxItem[]>([]);
-  const [habits, setHabits] = useState<Habit[]>([]);
-  const [vaults, setVaults] = useState<VaultItem[]>([]);
-
-  // Focus Sessions & Time Blocking State
-  const [focusSessions, setFocusSessions] = useState<FocusSessionRecord[]>([]);
-  const [timeBlocks, setTimeBlocks] = useState<TimeBlock[]>([]);
-  const [customFieldDefinitions, setCustomFieldDefinitions] = useState<CustomFieldDefinition[]>([]);
-  const [worshipDefinitions, setWorshipDefinitions] = useState<WorshipDefinition[]>([]);
-  const [worshipLogs, setWorshipLogs] = useState<WorshipLog[]>([]);
-  const [progressionPaths, setProgressionPaths] = useState<ProgressionPath[]>([]);
-  const [quranKhatmas, setQuranKhatmas] = useState<QuranKhatma[]>([]);
-  const [quranHifzTrackers, setQuranHifzTrackers] = useState<QuranHifzTracker[]>([]);
-  const [sleepSchedules, setSleepSchedules] = useState<SleepSchedule[]>([]);
+  const appStore = useAppStore();
+  // Feature data now lives in the shared store; handlers remain local during migration.
+  const { pillars, visions, goals, projects, tasks, reviews, inboxItems, habits, vaults, focusSessions, timeBlocks,
+    customFieldDefinitions, worshipDefinitions, worshipLogs, progressionPaths, quranKhatmas, quranHifzTrackers,
+    sleepSchedules, setPillars, setVisions, setGoals, setProjects, setTasks, setReviews, setInboxItems, setHabits,
+    setVaults, setFocusSessions, setTimeBlocks, setCustomFieldDefinitions, setWorshipDefinitions, setWorshipLogs,
+    setProgressionPaths, setQuranKhatmas, setQuranHifzTrackers, setSleepSchedules } = appStore;
   const [activeFocusTask, setActiveFocusTask] = useState<Task | null>(null);
 
   // Navigation State
