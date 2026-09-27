@@ -48,3 +48,4 @@ The adapters are not wired into the coordinator until their contract tests pass.
 
 - Tasks, habits, vaults, inbox, and ibadat now load through `src/features/*/components` boundaries.
 - Legacy components remain as implementation modules so the public props and visual behavior stay unchanged.
+- Added repository adapters and hooks for vaults and inbox, completing the feature boundary set for the primary CRUD entities.
