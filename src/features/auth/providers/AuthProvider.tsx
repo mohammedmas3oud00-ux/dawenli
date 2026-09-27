@@ -1,7 +1,8 @@
-import React, { createContext, useCallback, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useEffect, useMemo } from 'react';
 import { isSupabaseConfigured, supabase } from '../../../shared/services/supabaseClient';
 import { createAuthService } from '../services/authService';
 import type { AuthState } from '../services/authService';
+import { useAuthStore } from '../store/authStore';
 
 type AppUser = Exclude<AuthState, { status: 'loading' | 'signedOut' }>['user'];
 
@@ -15,7 +16,8 @@ export interface AuthContextValue {
 export const AuthContext = createContext<AuthContextValue | null>(null);
 
 export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
-  const [state, setState] = useState<AuthState>({ status: 'loading', user: null });
+  const state = useAuthStore((store) => store.state);
+  const setState = useAuthStore((store) => store.setAuthState);
   const service = useMemo(() => createAuthService(isSupabaseConfigured ? supabase : null), []);
 
   useEffect(() => {

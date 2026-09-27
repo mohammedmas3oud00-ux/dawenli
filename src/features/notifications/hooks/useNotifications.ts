@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { runNotificationAction } from '../services/notificationService';
+import { subscribeToPush, type PushNotificationPreferences } from '../../../utils/pushNotifications';
 
 export function useNotifications() {
   const [saving, setSaving] = useState(false);
@@ -10,5 +11,6 @@ export function useNotifications() {
     catch (cause) { const value = cause instanceof Error ? cause : new Error('تعذر تحديث الإشعارات.'); setError(value); throw value; }
     finally { setSaving(false); }
   }, []);
-  return { saving, error, run };
+  const subscribe = useCallback((preferences: PushNotificationPreferences) => run(() => subscribeToPush({}, preferences)), [run]);
+  return { saving, error, run, subscribe };
 }

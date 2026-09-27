@@ -1,4 +1,4 @@
-import React, { lazy, useState, useEffect, useRef } from 'react';
+import React, { lazy, useState, useEffect } from 'react';
 import { DailyOverview } from './DailyOverview';
 import { changeWorshipSettings, configuredProgression, targetStreak } from '../../utils/ibadat';
 import { 
@@ -8,10 +8,8 @@ import {
   Project, 
   Task, 
   BreadcrumbItem,
-  SidebarTab,
   SystemReview,
   ReviewFrequency,
-  ReviewActionItem,
   InboxItem,
   Habit,
   VaultItem,
@@ -26,10 +24,7 @@ import {
   QuranHifzTracker,
   SleepSchedule
 } from '../../types/hierarchical';
-import { 
-  recalculateAllHierarchicalProgress
-} from '../../utils/hierarchicalStore';
-import { generateSystemSnapshot } from '../../utils/reviewEngine';
+import { recalculateAllHierarchicalProgress } from '../../utils/hierarchicalStore';
 
 import { Breadcrumbs } from './Breadcrumbs';
 import { Sidebar } from './Sidebar';
@@ -62,40 +57,48 @@ import { AuthModal } from './AuthModal';
 import { InstallAppButton } from './InstallAppButton';
 import { ToastContainer, ToastMessage } from './ToastNotification';
 import { Plus, Menu, Mic, Sparkles, Sun, Moon, User, LogIn, LogOut, KeyRound, Trash2 } from 'lucide-react';
-import { supabase } from '../../utils/supabaseClient';
-import { createRepositoryForUser } from '../../shared/services/repositoryFactory';
 import { setTaskStatus, toggleTaskStatus, upsertTask } from '../../features/tasks/utils/taskActions';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import { useAppStore } from '../../app/store/appStore';
-import { createSnapshotSaveQueue, enqueueSnapshotSave } from '../../shared/services/snapshotPersistence';
-import { createSnapshotBackup, DataRepository, emptySnapshot, normalizeSnapshot } from '../../data/repository';
+import { useTaskStore } from '../../features/tasks/store/taskStore';
+import { useHabitStore } from '../../features/habits/store/habitStore';
+import { useDashboardNavigation } from '../../features/dashboard/hooks/useDashboardNavigation';
+import { useInboxStore } from '../../features/inbox/store/inboxStore';
+import { useVaultStore } from '../../features/vaults/store/vaultStore';
+import { useIbadatStore } from '../../features/ibadat/store/ibadatStore';
+import { useAppDataPersistence, emptyAppSnapshot } from '../../app/store/useAppDataPersistence';
+import { createSnapshotBackup, normalizeSnapshot } from '../../data/repository';
 import { remapSnapshotIds } from '../../data/legacyMigration';
 import { createId } from '../../utils/id';
 import { toLocalDateKey } from '../../utils/date';
 import { calculateHabitStreak } from '../../utils/habitStreak';
-import { deleteGeminiCredential, hasStoredGeminiCredential, refreshGeminiCredentialStatus, saveGeminiCredential } from '../../utils/aiCredentials';
-import { subscribeToPush, PushNotificationPreferences } from '../../utils/pushNotifications';
+import type { PushNotificationPreferences } from '../../utils/pushNotifications';
+import { useAI } from '../../features/ai/hooks/useAI';
+import { useNotifications } from '../../features/notifications/hooks/useNotifications';
+import { useReviews } from '../../features/reviews/hooks/useReviews';
+import { useHierarchyCrud } from '../../features/dashboard/hooks/useHierarchyCrud';
 
 export const HierarchicalApp: React.FC = () => {
   const { status: authStatus, user: currentUser, adoptUser, signOut: authSignOut } = useAuth();
+  const { configured: aiConfigured, refreshCredential, saveCredential, deleteCredential } = useAI();
+  const { subscribe: subscribeNotifications } = useNotifications();
   const appStore = useAppStore();
-  // Feature data now lives in the shared store; handlers remain local during migration.
-  const { pillars, visions, goals, projects, tasks, reviews, inboxItems, habits, vaults, focusSessions, timeBlocks,
-    customFieldDefinitions, worshipDefinitions, worshipLogs, progressionPaths, quranKhatmas, quranHifzTrackers,
-    sleepSchedules, setPillars, setVisions, setGoals, setProjects, setTasks, setReviews, setInboxItems, setHabits,
-    setVaults, setFocusSessions, setTimeBlocks, setCustomFieldDefinitions, setWorshipDefinitions, setWorshipLogs,
+  const { tasks, setTasks } = useTaskStore();
+  const { habits, setHabits } = useHabitStore();
+  const { inboxItems, setInboxItems } = useInboxStore();
+  const { vaults, setVaults } = useVaultStore();
+  const { worshipDefinitions, worshipLogs, setWorshipDefinitions, setWorshipLogs } = useIbadatStore();
+  // Remaining cross-feature collections stay in appStore during the incremental migration.
+  const { pillars, visions, goals, projects, reviews, focusSessions, timeBlocks,
+    customFieldDefinitions, progressionPaths, quranKhatmas, quranHifzTrackers,
+    sleepSchedules, setPillars, setVisions, setGoals, setProjects, setReviews,
+    setFocusSessions, setTimeBlocks, setCustomFieldDefinitions,
     setProgressionPaths, setQuranKhatmas, setQuranHifzTrackers, setSleepSchedules } = appStore;
-  const [activeFocusTask, setActiveFocusTask] = useState<Task | null>(null);
-
-  // Navigation State
-  const [currentTab, setCurrentTab] = useState<SidebarTab>('hierarchy');
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-
-  // Drill-Down Selection State (Hierarchical mode)
-  const [selectedPillarId, setSelectedPillarId] = useState<string | null>(null);
-  const [selectedVisionId, setSelectedVisionId] = useState<string | null>(null);
-  const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const {
+    activeFocusTask, setActiveFocusTask, currentTab, setCurrentTab, isMobileSidebarOpen, setIsMobileSidebarOpen,
+    selectedPillarId, setSelectedPillarId, selectedVisionId, setSelectedVisionId, selectedGoalId, setSelectedGoalId,
+    selectedProjectId, setSelectedProjectId,
+  } = useDashboardNavigation();
 
   // Modals state
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
@@ -103,17 +106,14 @@ export const HierarchicalApp: React.FC = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
-  // User Authentication State
-  const [dataReady, setDataReady] = useState(false);
-  const repositoryRef = useRef<DataRepository | null>(null);
-  const lastSavedSnapshotRef = useRef<AppDataSnapshot>(emptySnapshot());
-  const saveQueueRef = useRef(createSnapshotSaveQueue());
-
-  const queueSnapshotSave = (repository: DataRepository, snapshot: AppDataSnapshot) => {
-    return enqueueSnapshotSave(saveQueueRef.current, repository, snapshot).then(() => {
-      lastSavedSnapshotRef.current = snapshot;
-    });
-  };
+  const { dataReady, clearData, saveSnapshot, applySnapshot } = useAppDataPersistence({
+    user: currentUser,
+    authStatus,
+    onLoadError: (error) => setToasts((previous) => [...previous, {
+      id: createId(), type: 'error', title: 'تعذر مزامنة البيانات',
+      description: error instanceof Error ? error.message : 'تعذر تحميل أو حفظ البيانات.',
+    }]),
+  });
 
   // Dark Mode Theme State
   const [isDark, setIsDark] = useState<boolean>(() => {
@@ -155,7 +155,6 @@ export const HierarchicalApp: React.FC = () => {
 
   const handleSignOut = async () => {
     try { await authSignOut(); } catch (e) { console.warn('Supabase sign out error:', e); }
-    setDataReady(false);
     setIsAuthModalOpen(true);
     setToasts((prev) => [
       ...prev,
@@ -219,34 +218,12 @@ export const HierarchicalApp: React.FC = () => {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [newTaskDueDate, setNewTaskDueDate] = useState<string | null>(null);
 
-  const applySnapshot = (snapshot: AppDataSnapshot) => {
-    const calculated = recalculateAllHierarchicalProgress(snapshot.pillars, snapshot.visions, snapshot.goals, snapshot.projects, snapshot.tasks);
-    setPillars(calculated.pillars);
-    setVisions(calculated.visions);
-    setGoals(calculated.goals);
-    setProjects(calculated.projects);
-    setTasks(calculated.tasks);
-    setReviews(snapshot.reviews);
-    setInboxItems(snapshot.inboxItems);
-    setHabits(snapshot.habits);
-    setVaults(snapshot.vaults);
-    setFocusSessions(snapshot.focusSessions);
-    setTimeBlocks(snapshot.timeBlocks);
-    setCustomFieldDefinitions(snapshot.customFieldDefinitions);
-    setWorshipDefinitions(snapshot.worshipDefinitions);
-    setWorshipLogs(snapshot.worshipLogs);
-    setProgressionPaths(snapshot.progressionPaths);
-    setQuranKhatmas(snapshot.quranKhatmas);
-    setQuranHifzTrackers(snapshot.quranHifzTrackers);
-    setSleepSchedules(snapshot.sleepSchedules);
-  };
-
   const handleConfigureAiKey = async (): Promise<boolean> => {
     if (currentUser?.isGuest || authStatus !== 'authenticated') {
       alert('ميزات Gemini متاحة للحسابات المسجلة فقط.');
       return false;
     }
-    const alreadyConfigured = await refreshGeminiCredentialStatus().catch(() => false);
+    const alreadyConfigured = await refreshCredential().catch(() => aiConfigured);
     const entered = window.prompt(alreadyConfigured
       ? 'أدخل مفتاح Gemini جديدًا لاستبدال المفتاح المحفوظ، أو اترك الحقل فارغًا للاحتفاظ بالحالي.'
       : 'أدخل مفتاح Gemini. سيُشفّر ويُحفظ لخزينة حسابك ولا يظهر كاملًا مرة أخرى.');
@@ -255,7 +232,7 @@ export const HierarchicalApp: React.FC = () => {
       return alreadyConfigured;
     }
     try {
-      await saveGeminiCredential(entered);
+      await saveCredential(entered);
       setToasts((previous) => [...previous, { id: createId(), type: 'success', title: 'تم حفظ Gemini بأمان', description: 'المفتاح مشفّر ومربوط بحسابك فقط.' }]);
       return true;
     } catch (error) {
@@ -267,7 +244,7 @@ export const HierarchicalApp: React.FC = () => {
   const handleDeleteAiKey = async () => {
     if (!confirm('حذف مفتاح Gemini من هذا الحساب؟')) return;
     try {
-      await deleteGeminiCredential();
+      await deleteCredential();
       setToasts((previous) => [...previous, { id: createId(), type: 'success', title: 'تم حذف مفتاح Gemini', description: 'لن تعمل ميزات الذكاء حتى تضيف مفتاحًا جديدًا.' }]);
     } catch (error) {
       setToasts((previous) => [...previous, { id: createId(), type: 'error', title: 'تعذر حذف مفتاح Gemini', description: error instanceof Error ? error.message : 'حاول مرة أخرى.' }]);
@@ -275,59 +252,11 @@ export const HierarchicalApp: React.FC = () => {
   };
 
   const handleOpenVoiceAi = async () => {
-    const configured = hasStoredGeminiCredential() || await refreshGeminiCredentialStatus().catch(() => false);
+    const configured = aiConfigured || await refreshCredential().catch(() => false);
     if ((configured || await handleConfigureAiKey()) && authStatus === 'authenticated') {
       setIsVoiceAiModalOpen(true);
     }
   };
-
-  // Select exactly one repository per session. Signed-in data never falls back to local storage.
-  useEffect(() => {
-    if (!currentUser || authStatus === 'loading' || authStatus === 'signedOut') return;
-    const repository = createRepositoryForUser(currentUser, supabase);
-    if (!repository) {
-      return;
-    }
-    repositoryRef.current = repository;
-    setDataReady(false);
-    let active = true;
-    repository.load().then(async (loadedSnapshot) => {
-      if (!active) return;
-      let snapshot = loadedSnapshot;
-      // Cloud accounts are intentionally isolated from legacy local storage.
-      // Legacy import/export, if reintroduced, must be an explicit account action.
-      applySnapshot(snapshot);
-      lastSavedSnapshotRef.current = snapshot;
-      setDataReady(true);
-    }).catch((error: unknown) => {
-      if (!active) return;
-      setToasts((previous) => [...previous, { id: createId(), type: 'warning', title: 'تعذر تحميل البيانات', description: error instanceof Error ? error.message : 'خطأ غير معروف' }]);
-    });
-    return () => { active = false; };
-  }, [currentUser?.id, currentUser?.isGuest, authStatus]);
-
-  useEffect(() => {
-    if (!dataReady || !repositoryRef.current) return;
-    const snapshot: AppDataSnapshot = {
-      schemaVersion: 4,
-      pillars, visions, goals, projects, tasks, reviews,
-      inboxItems, habits, vaults, focusSessions, timeBlocks,
-      customFieldDefinitions,
-      worshipDefinitions, worshipLogs, progressionPaths, quranKhatmas, quranHifzTrackers, sleepSchedules,
-    };
-    const repository = repositoryRef.current;
-    const timer = window.setTimeout(() => {
-      queueSnapshotSave(repository, snapshot).catch((error: unknown) => {
-        setToasts((previous) => [...previous, {
-          id: createId(), type: 'error', title: 'فشل الحفظ',
-          description: error instanceof Error ? error.message : 'لم تُحفظ التعديلات سحابيًا. أعد المحاولة بعد التحقق من الاتصال.',
-          actionLabel: 'إعادة المحاولة',
-          onAction: () => queueSnapshotSave(repository, snapshot).catch(() => undefined),
-        }]);
-      });
-    }, 400);
-    return () => window.clearTimeout(timer);
-  }, [dataReady, pillars, visions, goals, projects, tasks, reviews, inboxItems, habits, vaults, focusSessions, timeBlocks, customFieldDefinitions, worshipDefinitions, worshipLogs, progressionPaths, quranKhatmas, quranHifzTrackers, sleepSchedules]);
 
   // Recalculate & Persist Helper
   const applyStateUpdate = (
@@ -351,11 +280,27 @@ export const HierarchicalApp: React.FC = () => {
     setTasks(recalculated.tasks);
   };
 
+  const { saveReview, deleteReview, convertActionToTask } = useReviews({
+    reviews, setReviews, editingReview, pillars, visions, goals, projects, tasks,
+    worshipDefinitions, worshipLogs, applyStateUpdate,
+    onCloseEditor: () => { setIsReviewModalOpen(false); setEditingReview(null); },
+  });
+
   // Active Entities for drill-down context
   const currentPillar = pillars.find((p) => p.id === selectedPillarId) || null;
   const currentVision = visions.find((v) => v.id === selectedVisionId) || null;
   const currentGoal = goals.find((g) => g.id === selectedGoalId) || null;
   const currentProject = projects.find((p) => p.id === selectedProjectId) || null;
+  const hierarchyCrud = useHierarchyCrud({
+    pillars, visions, goals, projects, tasks, habits, vaults, timeBlocks, focusSessions,
+    selectedPillarId, selectedVisionId, selectedGoalId, selectedProjectId,
+    currentPillar, currentVision, currentGoal, currentProject,
+    editingPillar, editingVision, editingGoal, editingProject, editingTask,
+    setPillars, setVisions, setGoals, setProjects, setTasks, setHabits, setVaults, setTimeBlocks, setFocusSessions,
+    setEditingPillar, setEditingVision, setEditingGoal, setEditingProject, setEditingTask,
+    setSelectedPillarId, setSelectedVisionId, setSelectedGoalId, setSelectedProjectId,
+    setActiveFocusTask, setCurrentTab, applyStateUpdate,
+  });
 
   // Breadcrumbs Generator
   const breadcrumbItems: BreadcrumbItem[] = [
@@ -418,314 +363,6 @@ export const HierarchicalApp: React.FC = () => {
     }
   };
 
-  // -------------------------------------------------------------
-  // CRUD HANDLERS
-  // -------------------------------------------------------------
-
-  // Focus and Time Blocking Handlers
-  const handleStartFocus = (task: Task) => {
-    setActiveFocusTask(task);
-    setCurrentTab('focus');
-  };
-
-  const handleSaveFocusSession = (session: FocusSessionRecord) => {
-    setFocusSessions((previous) => [session, ...previous.filter((item) => item.id !== session.id)]);
-  };
-
-  const handleSaveTimeBlock = (block: TimeBlock) => {
-    const exists = timeBlocks.some((b) => b.id === block.id);
-    const updated = exists
-      ? timeBlocks.map((b) => (b.id === block.id ? block : b))
-      : [block, ...timeBlocks];
-    setTimeBlocks(updated);
-  };
-
-  const handleSaveTimeBlocks = (blocks: TimeBlock[]) => {
-    setTimeBlocks((previous) => {
-      const incomingIds = new Set(blocks.map((block) => block.id));
-      return [...blocks, ...previous.filter((block) => !incomingIds.has(block.id))];
-    });
-  };
-
-  const handleDeleteTimeBlock = (blockId: string) => {
-    const updated = timeBlocks.filter((b) => b.id !== blockId);
-    setTimeBlocks(updated);
-  };
-
-  const handleToggleTimeBlockStatus = (blockId: string) => {
-    const updated = timeBlocks.map((b) =>
-      b.id === blockId ? { ...b, is_completed: !b.is_completed } : b
-    );
-    setTimeBlocks(updated);
-  };
-
-  // 1. Pillars
-  const handleSavePillar = (pillarData: Partial<Pillar>) => {
-    if (editingPillar) {
-      const updated = pillars.map((p) =>
-        p.id === editingPillar.id ? { ...p, ...pillarData, updated_at: new Date().toISOString() } : p
-      );
-      applyStateUpdate(updated, visions, goals, projects, tasks);
-    } else {
-      const newP: Pillar = {
-        id: createId(),
-        title: pillarData.title || 'ركيزة جديدة',
-        description: pillarData.description || '',
-        pillar_group: pillarData.pillar_group || 'Growth',
-        purpose: pillarData.purpose || '',
-        priority: pillarData.priority || pillars.length + 1,
-        show_on_home: pillarData.show_on_home ?? true,
-        status: pillarData.status || 'active',
-        progress: 0,
-        created_at: new Date().toISOString(),
-      };
-      applyStateUpdate([...pillars, newP], visions, goals, projects, tasks);
-    }
-    setEditingPillar(null);
-  };
-
-  const handleDeletePillar = (pillarId: string) => {
-    if (!confirm('هل أنت متأكد من حذف هذه الركيزة؟ سيتم حذف جميع الرؤى والأهداف والمشاريع والمهام التابعة لها.')) return;
-    const targetVisions = visions.filter((v) => v.pillar_id === pillarId);
-    const targetVisionIds = targetVisions.map((v) => v.id);
-    const targetGoals = goals.filter((g) => g.pillar_id === pillarId || (g.vision_id && targetVisionIds.includes(g.vision_id)));
-    const targetGoalIds = targetGoals.map((g) => g.id);
-    const targetProjects = projects.filter((p) => targetGoalIds.includes(p.goal_id));
-    const targetProjectIds = targetProjects.map((p) => p.id);
-
-    const remainingTasks = tasks.filter((t) => !targetProjectIds.includes(t.project_id));
-    const remainingProjects = projects.filter((p) => !targetProjectIds.includes(p.id));
-    const remainingGoals = goals.filter((g) => !targetGoalIds.includes(g.id));
-    const remainingVisions = visions.filter((v) => v.pillar_id !== pillarId);
-    const remainingPillars = pillars.filter((p) => p.id !== pillarId);
-
-    applyStateUpdate(remainingPillars, remainingVisions, remainingGoals, remainingProjects, remainingTasks);
-    setHabits((items) => items.filter((item) => item.pillar_id !== pillarId));
-    setVaults((items) => items.filter((item) => item.pillar_id !== pillarId));
-    setTimeBlocks((items) => items.filter((item) => item.pillar_id !== pillarId && (!item.project_id || !targetProjectIds.includes(item.project_id))));
-    setFocusSessions((items) => items.map((item) => item.task_id && !remainingTasks.some((task) => task.id === item.task_id) ? { ...item, task_id: null } : item));
-    setReviews((items) => items.map((item) => item.focus_pillar_id === pillarId ? { ...item, focus_pillar_id: null } : item));
-    if (selectedPillarId === pillarId) {
-      setSelectedPillarId(null);
-      setSelectedVisionId(null);
-      setSelectedGoalId(null);
-      setSelectedProjectId(null);
-    }
-  };
-
-  // 2. Visions
-  const handleSaveVision = (visionData: Partial<Vision>) => {
-    if (editingVision) {
-      const updated = visions.map((v) =>
-        v.id === editingVision.id ? { ...v, ...visionData, updated_at: new Date().toISOString() } : v
-      );
-      applyStateUpdate(pillars, updated, goals, projects, tasks);
-    } else {
-      const targetPillarId = visionData.pillar_id || selectedPillarId;
-      if (!targetPillarId || !pillars.some((pillar) => pillar.id === targetPillarId)) {
-        alert('أنشئ ركيزة أو اختر ركيزة صحيحة أولًا.');
-        return;
-      }
-      const newV: Vision = {
-        id: createId(),
-        pillar_id: targetPillarId,
-        title: visionData.title || 'رؤية جديدة',
-        description: visionData.description || '',
-        timeframe: visionData.timeframe || '3-5 سنوات',
-        status: visionData.status || 'active',
-        progress: 0,
-        created_at: new Date().toISOString(),
-      };
-      applyStateUpdate(pillars, [...visions, newV], goals, projects, tasks);
-    }
-    setEditingVision(null);
-  };
-
-  const handleDeleteVision = (visionId: string) => {
-    if (!confirm('هل أنت متأكد من حذف هذه الرؤية وجميع الأهداف والمشاريع والمهام المرتبطة بها؟')) return;
-    const targetGoals = goals.filter((g) => g.vision_id === visionId);
-    const targetGoalIds = targetGoals.map((g) => g.id);
-    const targetProjects = projects.filter((p) => targetGoalIds.includes(p.goal_id));
-    const targetProjectIds = targetProjects.map((p) => p.id);
-
-    const remainingTasks = tasks.filter((t) => !targetProjectIds.includes(t.project_id));
-    const remainingProjects = projects.filter((p) => !targetProjectIds.includes(p.id));
-    const remainingGoals = goals.filter((g) => g.vision_id !== visionId);
-    const remainingVisions = visions.filter((v) => v.id !== visionId);
-
-    applyStateUpdate(pillars, remainingVisions, remainingGoals, remainingProjects, remainingTasks);
-    setTimeBlocks((items) => items.filter((item) => !item.project_id || !targetProjectIds.includes(item.project_id)));
-    setFocusSessions((items) => items.map((item) => item.task_id && !remainingTasks.some((task) => task.id === item.task_id) ? { ...item, task_id: null } : item));
-    if (selectedVisionId === visionId) {
-      setSelectedVisionId(null);
-      setSelectedGoalId(null);
-      setSelectedProjectId(null);
-    }
-  };
-
-  // 3. Goals
-  const handleSaveGoal = (goalData: Partial<ValueGoal>) => {
-    if (editingGoal) {
-      const updated = goals.map((g) =>
-        g.id === editingGoal.id ? { ...g, ...goalData, updated_at: new Date().toISOString() } : g
-      );
-      applyStateUpdate(pillars, visions, updated, projects, tasks);
-    } else {
-      const targetPillarId = goalData.pillar_id || currentVision?.pillar_id || currentPillar?.id;
-      if (!targetPillarId || !pillars.some((pillar) => pillar.id === targetPillarId)) {
-        alert('أنشئ ركيزة أو اختر ركيزة صحيحة أولًا.');
-        return;
-      }
-      const targetVisionId = currentVision?.id || goalData.vision_id || undefined;
-      if (targetVisionId && !visions.some((vision) => vision.id === targetVisionId && vision.pillar_id === targetPillarId)) {
-        alert('الرؤية المختارة لا تتبع الركيزة المحددة.');
-        return;
-      }
-      const newG: ValueGoal = {
-        id: createId(),
-        pillar_id: targetPillarId,
-        vision_id: targetVisionId,
-        title: goalData.title || 'هدف قيمة جديد',
-        description: goalData.description || '',
-        status: goalData.status || 'not_started',
-        target_date: goalData.target_date || null,
-        progress: 0,
-        created_at: new Date().toISOString(),
-      };
-      applyStateUpdate(pillars, visions, [...goals, newG], projects, tasks);
-    }
-    setEditingGoal(null);
-  };
-
-  const handleDeleteGoal = (goalId: string) => {
-    if (!confirm('هل أنت متأكد من حذف هذا الهدف وجميع المشاريع والمهام التابعة له؟')) return;
-    const targetProjects = projects.filter((p) => p.goal_id === goalId);
-    const targetProjectIds = targetProjects.map((p) => p.id);
-
-    const remainingTasks = tasks.filter((t) => !targetProjectIds.includes(t.project_id));
-    const remainingProjects = projects.filter((p) => p.goal_id !== goalId);
-    const remainingGoals = goals.filter((g) => g.id !== goalId);
-
-    applyStateUpdate(pillars, visions, remainingGoals, remainingProjects, remainingTasks);
-    setTimeBlocks((items) => items.filter((item) => !item.project_id || !targetProjectIds.includes(item.project_id)));
-    setFocusSessions((items) => items.map((item) => item.task_id && !remainingTasks.some((task) => task.id === item.task_id) ? { ...item, task_id: null } : item));
-    if (selectedGoalId === goalId) {
-      setSelectedGoalId(null);
-      setSelectedProjectId(null);
-    }
-  };
-
-  // 4. Projects
-  const handleSaveProject = (projectData: Partial<Project>) => {
-    if (editingProject) {
-      const updated = projects.map((p) =>
-        p.id === editingProject.id ? { ...p, ...projectData, updated_at: new Date().toISOString() } : p
-      );
-      applyStateUpdate(pillars, visions, goals, updated, tasks);
-    } else {
-      const targetGoalId = projectData.goal_id || currentGoal?.id;
-      if (!targetGoalId || !goals.some((goal) => goal.id === targetGoalId)) {
-        alert('أنشئ هدف قيمة أو اختر هدفًا صحيحًا أولًا.');
-        return;
-      }
-      const today = toLocalDateKey();
-      const newP: Project = {
-        id: createId(),
-        goal_id: targetGoalId,
-        title: projectData.title || 'مشروع جديد',
-        description: projectData.description || '',
-        status: projectData.status || 'in_progress',
-        progress: 0,
-        start_date: projectData.start_date || today,
-        due_date: projectData.due_date || today,
-        created_at: new Date().toISOString(),
-      };
-      applyStateUpdate(pillars, visions, goals, [...projects, newP], tasks);
-    }
-    setEditingProject(null);
-  };
-
-  const handleDeleteProject = (projectId: string) => {
-    if (!confirm('هل أنت متأكد من حذف هذا المشروع وجميع مهامه؟')) return;
-    const remainingTasks = tasks.filter((t) => t.project_id !== projectId);
-    const remainingProjects = projects.filter((p) => p.id !== projectId);
-
-    applyStateUpdate(pillars, visions, goals, remainingProjects, remainingTasks);
-    setVaults((items) => items.map((item) => item.project_id === projectId ? { ...item, project_id: null } : item));
-    setTimeBlocks((items) => items.filter((item) => item.project_id !== projectId));
-    setFocusSessions((items) => items.map((item) => item.task_id && !remainingTasks.some((task) => task.id === item.task_id) ? { ...item, task_id: null } : item));
-    if (selectedProjectId === projectId) {
-      setSelectedProjectId(null);
-    }
-  };
-
-  // 5. Tasks
-  const handleSaveTask = (taskData: Partial<Task>) => {
-    const updated = upsertTask(tasks, projects, { ...taskData, project_id: taskData.project_id || currentProject?.id }, taskData.id || editingTask?.id);
-    if (!updated) { alert('أنشئ مشروعًا أو اختر مشروعًا صحيحًا أولًا.'); return; }
-    applyStateUpdate(pillars, visions, goals, projects, updated);
-    setEditingTask(null);
-  };
-
-  const handleToggleTaskStatus = (taskId: string) => {
-    const updated = toggleTaskStatus(tasks, taskId);
-    applyStateUpdate(pillars, visions, goals, projects, updated);
-  };
-
-  const handleUpdateTaskStatus = (taskId: string, targetStatus: Task['status']) => {
-    const updated = setTaskStatus(tasks, taskId, targetStatus);
-    applyStateUpdate(pillars, visions, goals, projects, updated);
-  };
-
-  const handleUpdateTaskCustomFields = (taskId: string, customFields: Record<string, any>) => {
-    const updated = tasks.map((t) => {
-      if (t.id === taskId) {
-        return {
-          ...t,
-          custom_fields: customFields,
-          updated_at: new Date().toISOString(),
-        };
-      }
-      return t;
-    });
-    applyStateUpdate(pillars, visions, goals, projects, updated);
-  };
-
-  const handleUpdateProjectStatus = (projectId: string, targetStatus: Project['status']) => {
-    const updated = projects.map((p) => {
-      if (p.id === projectId) {
-        return {
-          ...p,
-          status: targetStatus,
-          updated_at: new Date().toISOString(),
-        };
-      }
-      return p;
-    });
-    applyStateUpdate(pillars, visions, goals, updated, tasks);
-  };
-
-  const handleUpdateProjectCustomFields = (projectId: string, customFields: Record<string, any>) => {
-    const updated = projects.map((p) => {
-      if (p.id === projectId) {
-        return {
-          ...p,
-          custom_fields: customFields,
-          updated_at: new Date().toISOString(),
-        };
-      }
-      return p;
-    });
-    applyStateUpdate(pillars, visions, goals, updated, tasks);
-  };
-
-  const handleDeleteTask = (taskId: string) => {
-    const remainingTasks = tasks.filter((t) => t.id !== taskId);
-    applyStateUpdate(pillars, visions, goals, projects, remainingTasks);
-    setTimeBlocks((items) => items.map((item) => item.task_id === taskId ? { ...item, task_id: null } : item));
-    setFocusSessions((items) => items.map((item) => item.task_id === taskId ? { ...item, task_id: null } : item));
-  };
-
   // Direct jumps
   const handleJumpToVision = (visionId: string, pillarId: string) => {
     setSelectedPillarId(pillarId);
@@ -754,99 +391,6 @@ export const HierarchicalApp: React.FC = () => {
     }
     setSelectedProjectId(projectId);
     setCurrentTab('hierarchy');
-  };
-
-  // 5. System Reviews Handlers
-  const handleSaveReview = (reviewData: Partial<SystemReview>) => {
-    let updated: SystemReview[];
-    if (editingReview) {
-      updated = reviews.map((r) =>
-        r.id === editingReview.id
-          ? ({ ...r, ...reviewData, updated_at: new Date().toISOString() } as SystemReview)
-          : r
-      );
-    } else {
-      const newRev: SystemReview = {
-        id: createId(),
-        frequency: reviewData.frequency || 'daily',
-        date: reviewData.date || toLocalDateKey(),
-        title: reviewData.title || 'مراجعة دورية',
-        rating: reviewData.rating || 8,
-        focus_pillar_id: reviewData.focus_pillar_id || null,
-        wins: reviewData.wins || '',
-        challenges: reviewData.challenges || '',
-        lessons: reviewData.lessons || '',
-        next_commitments: reviewData.next_commitments || '',
-        notes: reviewData.notes || '',
-        snapshot:
-          reviewData.snapshot ||
-          generateSystemSnapshot(
-            pillars,
-            visions,
-            goals,
-            projects,
-            tasks,
-            reviewData.focus_pillar_id,
-            worshipDefinitions,
-            worshipLogs
-          ),
-        system_health_score: reviewData.system_health_score || 80,
-        smart_summary: reviewData.smart_summary || '',
-        strengths: reviewData.strengths || [],
-        bottlenecks: reviewData.bottlenecks || [],
-        recommendations: reviewData.recommendations || [],
-        action_items: reviewData.action_items || [],
-        created_at: new Date().toISOString(),
-      };
-      updated = [newRev, ...reviews];
-    }
-    setReviews(updated);
-    setIsReviewModalOpen(false);
-    setEditingReview(null);
-  };
-
-  const handleDeleteReview = (reviewId: string) => {
-    if (!confirm('هل أنت متأكد من حذف هذه المراجعة؟')) return;
-    const updated = reviews.filter((r) => r.id !== reviewId);
-    setReviews(updated);
-  };
-
-  const handleConvertActionToTask = (actionItem: ReviewActionItem, reviewId: string) => {
-    const targetProjectId = actionItem.project_id || projects[0]?.id;
-    if (!targetProjectId) {
-      alert('يرجى إنشاء مشروع أولاً لإسناد المهمة إليه.');
-      return;
-    }
-
-    // 1. Create a real task in the target project
-    const newTask: Task = {
-      id: createId(),
-      project_id: targetProjectId,
-      title: actionItem.title,
-      description: 'مهمة مستخلصة تلقائياً من جلسة المراجعة الدورية والتدقيق التحليلي',
-      status: 'todo',
-      priority: actionItem.priority || 'medium',
-      due_date: toLocalDateKey(),
-      completed_at: null,
-      created_at: new Date().toISOString(),
-    };
-
-    const updatedTasks = [newTask, ...tasks];
-    applyStateUpdate(pillars, visions, goals, projects, updatedTasks);
-
-    // 2. Mark action item as converted in reviews
-    const updatedReviews = reviews.map((r) => {
-      if (r.id === reviewId) {
-        return {
-          ...r,
-          action_items: r.action_items.map((ai) =>
-            ai.id === actionItem.id ? { ...ai, is_converted: true } : ai
-          ),
-        };
-      }
-      return r;
-    });
-    setReviews(updatedReviews);
   };
 
   const handleVoiceAiCommit = async (data: {
@@ -923,8 +467,7 @@ export const HierarchicalApp: React.FC = () => {
       reviews, inboxItems, habits, vaults, focusSessions, timeBlocks, customFieldDefinitions,
       worshipDefinitions, worshipLogs, progressionPaths, quranKhatmas, quranHifzTrackers, sleepSchedules,
     };
-    if (!repositoryRef.current) throw new Error('المستودع غير جاهز للحفظ.');
-    await queueSnapshotSave(repositoryRef.current, nextSnapshot);
+    await saveSnapshot(nextSnapshot);
 
     applyStateUpdate(pillars, visions, updatedGoals, updatedProjects, updatedTasks);
 
@@ -1271,7 +814,7 @@ export const HierarchicalApp: React.FC = () => {
 
   const handleEnableWorshipNotifications = async (preferences: PushNotificationPreferences) => {
     try {
-      await subscribeToPush({}, preferences);
+      await subscribeNotifications(preferences);
       setToasts((previous) => [...previous, { id: createId(), type: 'success', title: 'تم تفعيل التذكيرات', description: 'ستصل تنبيهات الصلاة والمهام والعبادات الموقّتة وفق إعدادات حسابك؛ لا يُرسل تنبيه للشروق.' }]);
     } catch (error) {
       setToasts((previous) => [...previous, { id: createId(), type: 'error', title: 'تعذر تفعيل التذكيرات', description: error instanceof Error ? error.message : 'حاول مرة أخرى.' }]);
@@ -1293,10 +836,8 @@ export const HierarchicalApp: React.FC = () => {
 
   const handleResetData = async () => {
     if (confirm('هل تريد حذف بيانات هذا الحساب فقط؟ لا يمكن التراجع عن ذلك.')) {
-      await repositoryRef.current?.clear();
-      const cleared = emptySnapshot();
-      applySnapshot(cleared);
-      lastSavedSnapshotRef.current = cleared;
+      await clearData();
+      applySnapshot(emptyAppSnapshot());
       setSelectedPillarId(null);
       setSelectedVisionId(null);
       setSelectedGoalId(null);
@@ -1315,8 +856,7 @@ export const HierarchicalApp: React.FC = () => {
     try {
       const parsed = normalizeSnapshot(JSON.parse(await file.text()));
       const imported = remapSnapshotIds(parsed);
-      if (!repositoryRef.current) throw new Error('المستودع غير جاهز للحفظ.');
-      await queueSnapshotSave(repositoryRef.current, imported);
+      await saveSnapshot(imported);
       applySnapshot(imported);
       setToasts((previous) => [...previous, { id: createId(), type: 'success', title: 'تم استيراد النسخة الاحتياطية', description: 'أُضيفت البيانات بمعرفات جديدة دون دمج تلقائي.' }]);
     } catch (error) {
@@ -1446,7 +986,7 @@ export const HierarchicalApp: React.FC = () => {
                   <KeyRound className="w-4 h-4" />
                 </button>
               )}
-              {!currentUser.isGuest && hasStoredGeminiCredential() && (
+              {!currentUser.isGuest && aiConfigured && (
                 <button
                   onClick={handleDeleteAiKey}
                   aria-label="حذف مفتاح Gemini من الحساب"
@@ -1512,7 +1052,7 @@ export const HierarchicalApp: React.FC = () => {
                     goal={currentGoal || goals[0]}
                     project={currentProject}
                     tasks={tasks.filter((t) => t.project_id === currentProject.id)}
-                    onToggleTaskStatus={handleToggleTaskStatus}
+                    onToggleTaskStatus={hierarchyCrud.toggleStatus}
                     onNewTask={() => {
                       setEditingTask(null);
                       setNewTaskDueDate(null);
@@ -1523,7 +1063,7 @@ export const HierarchicalApp: React.FC = () => {
                       setEditingTask(task);
                       setIsTaskModalOpen(true);
                     }}
-                    onDeleteTask={handleDeleteTask}
+                    onDeleteTask={hierarchyCrud.deleteTask}
                     onEditProject={(proj) => {
                       setNewProjectDefaults(null);
                       setEditingProject(proj);
@@ -1549,7 +1089,7 @@ export const HierarchicalApp: React.FC = () => {
                       setEditingProject(proj);
                       setIsProjectModalOpen(true);
                     }}
-                    onDeleteProject={handleDeleteProject}
+                    onDeleteProject={hierarchyCrud.deleteProject}
                     onEditGoal={(g) => {
                       setEditingGoal(g);
                       setIsGoalModalOpen(true);
@@ -1570,7 +1110,7 @@ export const HierarchicalApp: React.FC = () => {
                       setEditingGoal(g);
                       setIsGoalModalOpen(true);
                     }}
-                    onDeleteGoal={handleDeleteGoal}
+                    onDeleteGoal={hierarchyCrud.deleteGoal}
                     onEditVision={(v) => {
                       setEditingVision(v);
                       setIsVisionModalOpen(true);
@@ -1590,7 +1130,7 @@ export const HierarchicalApp: React.FC = () => {
                       setEditingVision(v);
                       setIsVisionModalOpen(true);
                     }}
-                    onDeleteVision={handleDeleteVision}
+                    onDeleteVision={hierarchyCrud.deleteVision}
                     onEditPillar={(p) => {
                       setEditingPillar(p);
                       setIsPillarModalOpen(true);
@@ -1614,9 +1154,9 @@ export const HierarchicalApp: React.FC = () => {
                       setEditingPillar(pillar);
                       setIsPillarModalOpen(true);
                     }}
-                    onDeletePillar={handleDeletePillar}
-                    onStartFocus={handleStartFocus}
-                    onCompleteTask={handleToggleTaskStatus}
+                    onDeletePillar={hierarchyCrud.deletePillar}
+                    onStartFocus={hierarchyCrud.startFocus}
+                    onCompleteTask={hierarchyCrud.toggleStatus}
                     onOpenTimeBlocking={() => setCurrentTab('timeblocking')}
                     onSelectProject={handleJumpToProject}
                     onAdhanNotify={handleAdhanNotify}
@@ -1647,7 +1187,7 @@ export const HierarchicalApp: React.FC = () => {
                   setEditingPillar(pillar);
                   setIsPillarModalOpen(true);
                 }}
-                onDeletePillar={handleDeletePillar}
+                onDeletePillar={hierarchyCrud.deletePillar}
               />
             )}
 
@@ -1665,7 +1205,7 @@ export const HierarchicalApp: React.FC = () => {
                   setEditingVision(vision);
                   setIsVisionModalOpen(true);
                 }}
-                onDeleteVision={handleDeleteVision}
+                onDeleteVision={hierarchyCrud.deleteVision}
               />
             )}
 
@@ -1684,7 +1224,7 @@ export const HierarchicalApp: React.FC = () => {
                   setEditingGoal(goal);
                   setIsGoalModalOpen(true);
                 }}
-                onDeleteGoal={handleDeleteGoal}
+                onDeleteGoal={hierarchyCrud.deleteGoal}
               />
             )}
 
@@ -1705,9 +1245,9 @@ export const HierarchicalApp: React.FC = () => {
                   setEditingProject(proj);
                   setIsProjectModalOpen(true);
                 }}
-                onDeleteProject={handleDeleteProject}
-                onUpdateStatus={handleUpdateProjectStatus}
-                onUpdateCustomFields={handleUpdateProjectCustomFields}
+                onDeleteProject={hierarchyCrud.deleteProject}
+                onUpdateStatus={hierarchyCrud.updateProjectStatus}
+                onUpdateCustomFields={hierarchyCrud.updateProjectCustomFields}
                 customFields={customFieldDefinitions.filter((field) => field.entityType === 'project')}
                 onCustomFieldsChange={(fields) => setCustomFieldDefinitions((current) => [...current.filter((field) => field.entityType !== 'project'), ...fields])}
               />
@@ -1718,9 +1258,9 @@ export const HierarchicalApp: React.FC = () => {
               <TasksTabView
                 tasks={tasks}
                 projects={projects}
-                onToggleStatus={handleToggleTaskStatus}
-                onUpdateStatus={handleUpdateTaskStatus}
-                onUpdateCustomFields={handleUpdateTaskCustomFields}
+                onToggleStatus={hierarchyCrud.toggleStatus}
+                onUpdateStatus={hierarchyCrud.updateStatus}
+                onUpdateCustomFields={hierarchyCrud.updateTaskCustomFields}
                 onNewTask={(defaultDate) => {
                   setEditingTask(null);
                   setNewTaskDueDate(defaultDate || null);
@@ -1731,9 +1271,9 @@ export const HierarchicalApp: React.FC = () => {
                   setEditingTask(task);
                   setIsTaskModalOpen(true);
                 }}
-                onDeleteTask={handleDeleteTask}
+                onDeleteTask={hierarchyCrud.deleteTask}
                 onSelectProject={(pId) => handleJumpToProject(pId, projects.find(p => p.id === pId)?.goal_id || '')}
-                onStartFocus={handleStartFocus}
+                onStartFocus={hierarchyCrud.startFocus}
                 customFields={customFieldDefinitions.filter((field) => field.entityType === 'task')}
                 onCustomFieldsChange={(fields) => setCustomFieldDefinitions((current) => [...current.filter((field) => field.entityType !== 'task'), ...fields])}
               />
@@ -1758,8 +1298,8 @@ export const HierarchicalApp: React.FC = () => {
                   setEditingReview(review);
                   setIsReviewModalOpen(true);
                 }}
-                onDeleteReview={handleDeleteReview}
-                onConvertActionToTask={handleConvertActionToTask}
+                onDeleteReview={deleteReview}
+                onConvertActionToTask={convertActionToTask}
               />
             )}
 
@@ -1832,8 +1372,8 @@ export const HierarchicalApp: React.FC = () => {
                 goals={goals}
                 pillars={pillars}
                 initialTask={activeFocusTask}
-                onToggleTaskStatus={handleToggleTaskStatus}
-                onSaveSession={handleSaveFocusSession}
+                onToggleTaskStatus={hierarchyCrud.toggleStatus}
+                onSaveSession={hierarchyCrud.saveFocusSession}
                 sessionsHistory={focusSessions}
                 onOpenTimeBlocking={() => setCurrentTab('timeblocking')}
                 onBackToHierarchy={() => setCurrentTab('hierarchy')}
@@ -1848,11 +1388,11 @@ export const HierarchicalApp: React.FC = () => {
                 goals={goals}
                 pillars={pillars}
                 timeBlocks={timeBlocks}
-                onSaveTimeBlock={handleSaveTimeBlock}
-                onSaveTimeBlocks={handleSaveTimeBlocks}
-                onDeleteTimeBlock={handleDeleteTimeBlock}
-                onToggleTimeBlockStatus={handleToggleTimeBlockStatus}
-                onStartFocusOnTask={handleStartFocus}
+                onSaveTimeBlock={hierarchyCrud.saveTimeBlock}
+                onSaveTimeBlocks={hierarchyCrud.saveTimeBlocks}
+                onDeleteTimeBlock={hierarchyCrud.deleteTimeBlock}
+                onToggleTimeBlockStatus={hierarchyCrud.toggleTimeBlockStatus}
+                onStartFocusOnTask={hierarchyCrud.startFocus}
               />
             )}
 
@@ -1871,7 +1411,7 @@ export const HierarchicalApp: React.FC = () => {
           setIsReviewModalOpen(false);
           setEditingReview(null);
         }}
-        onSaveReview={handleSaveReview}
+        onSaveReview={saveReview}
         initialReview={editingReview}
         defaultFrequency={defaultReviewFrequency}
         defaultFocusPillarId={defaultReviewPillarId}
@@ -1890,11 +1430,11 @@ export const HierarchicalApp: React.FC = () => {
         visions={visions}
         goals={goals}
         projects={projects}
-        onAddTask={handleSaveTask}
-        onAddProject={handleSaveProject}
-        onAddGoal={handleSaveGoal}
-        onAddVision={handleSaveVision}
-        onAddPillar={handleSavePillar}
+        onAddTask={hierarchyCrud.saveTask}
+        onAddProject={hierarchyCrud.saveProject}
+        onAddGoal={hierarchyCrud.saveGoal}
+        onAddVision={hierarchyCrud.saveVision}
+        onAddPillar={hierarchyCrud.savePillar}
         onAddInboxItem={handleAddInboxItem}
         onOpenVoiceAi={handleOpenVoiceAi}
       />
@@ -1906,7 +1446,7 @@ export const HierarchicalApp: React.FC = () => {
           setIsPillarModalOpen(false);
           setEditingPillar(null);
         }}
-        onSave={handleSavePillar}
+        onSave={hierarchyCrud.savePillar}
         initialPillar={editingPillar}
       />
 
@@ -1917,7 +1457,7 @@ export const HierarchicalApp: React.FC = () => {
           setIsVisionModalOpen(false);
           setEditingVision(null);
         }}
-        onSave={handleSaveVision}
+        onSave={hierarchyCrud.saveVision}
         initialVision={editingVision}
         pillarTitle={currentPillar?.title}
         pillars={pillars}
@@ -1930,7 +1470,7 @@ export const HierarchicalApp: React.FC = () => {
           setIsGoalModalOpen(false);
           setEditingGoal(null);
         }}
-        onSave={handleSaveGoal}
+        onSave={hierarchyCrud.saveGoal}
         initialGoal={editingGoal}
         parentTitle={currentVision?.title || currentPillar?.title}
         visions={visions}
@@ -1945,7 +1485,7 @@ export const HierarchicalApp: React.FC = () => {
           setEditingProject(null);
           setNewProjectDefaults(null);
         }}
-        onSave={handleSaveProject}
+        onSave={hierarchyCrud.saveProject}
         initialProject={editingProject}
         defaultProject={newProjectDefaults}
         goalTitle={currentGoal?.title}
@@ -1960,7 +1500,7 @@ export const HierarchicalApp: React.FC = () => {
           setEditingTask(null);
           setNewTaskDueDate(null);
         }}
-        onSave={handleSaveTask}
+        onSave={hierarchyCrud.saveTask}
         initialTask={editingTask}
         projectTitle={currentProject?.title}
         projects={projects}
@@ -1975,7 +1515,7 @@ export const HierarchicalApp: React.FC = () => {
         projects={projects}
         goals={goals}
         onCommitHierarchy={handleVoiceAiCommit}
-        onCommitSingleTask={handleSaveTask}
+        onCommitSingleTask={hierarchyCrud.saveTask}
       />
       </React.Suspense>
 

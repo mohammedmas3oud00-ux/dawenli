@@ -15,5 +15,14 @@ export function createTasksService(repository: DataRepository) {
       await this.saveSnapshot(next);
       return task;
     },
+    async update(snapshot: AppDataSnapshot, task: Task) {
+      const next = { ...snapshot, tasks: snapshot.tasks.map((item) => item.id === task.id ? task : item) };
+      await this.saveSnapshot(next);
+      return task;
+    },
+    async delete(snapshot: AppDataSnapshot, taskId: string) {
+      const next = { ...snapshot, tasks: snapshot.tasks.filter((item) => item.id !== taskId) };
+      await this.saveSnapshot(next);
+    },
   };
 }
