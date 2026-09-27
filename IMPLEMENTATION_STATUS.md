@@ -15,7 +15,7 @@ This checklist is not a completion claim. Production must be verified after migr
 - [ ] Courses and books: real learning/reading progress tracking, not just saved links.
   - VaultLearning includes plans, daily target, sessions/notes/undo, named lessons, course filter/discovery, and three component tests; migration 202609270014 is applied.
 - [x] Home: daily shortcuts, task/worship/learning progress cards, and navigation to daily surfaces are published.
-- [x] Regression/unit tests (36 passing), strict typecheck, and production build pass.
+- [x] Regression/unit tests (41 passing), strict typecheck, and production build pass; `npm audit --omit=dev --audit-level=high` reports 0 vulnerabilities.
 - [x] Apply additive Supabase migrations 202609270013, 202609270014, and 202609270015; SQL Editor verification returned all four columns. Account save/isolation still needs an authenticated manual CRUD check.
 - [x] Push commit 59ab111 and verify the public domain returns the current app shell and latest worship markers; the deployment dashboard may briefly show Building while Vercel finishes.
 - [ ] Verify the changed worship/vault/home journeys at desktop and mobile widths. Existing Playwright 3/3 only verifies the public login screen widths, API JSON separation, and empty guest worship setup. It does not prove the populated dashboards, tracking controls, authenticated CRUD, or Push delivery work end-to-end.
