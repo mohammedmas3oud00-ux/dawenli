@@ -10,7 +10,7 @@ This checklist is not a completion claim. Production must be verified after migr
 - [ ] Qiyam predefined user target, score against it, progression synchronized to settings.
   - Target setting, scoring, and opt-in progression are published; historical scoring regression tests pass.
 - [ ] Correct streak, quantitative progression, editable counters and functional notification delivery/preferences.
-  - Streak/quantitative scoring and editable counters are covered by tests. Push API, category preferences, symbolic time resolution, idempotent dispatch, and cleanup are implemented; actual browser permission/device delivery remains an environment-dependent manual check.
+  - Streak/quantitative scoring and editable counters are covered by tests. Push API, category preferences, symbolic time resolution, idempotent dispatch, and cleanup are implemented. The hosted project was missing the six preference columns; migration 202609270016 was added and the columns were applied in Supabase. Authenticated settings now load without an error in the deployed app; actual browser permission/device delivery remains environment-dependent.
 - [x] Vault filter toolbar: high-contrast responsive toolbar with wrapping filters and dark-mode styles is published.
 - [ ] Courses and books: real learning/reading progress tracking, not just saved links.
   - VaultLearning includes plans, daily target, sessions/notes/undo, named lessons, course filter/discovery, and three component tests; migration 202609270014 is applied.
