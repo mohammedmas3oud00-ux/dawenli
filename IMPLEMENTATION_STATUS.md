@@ -7,6 +7,7 @@ This checklist is not a completion claim. Production must be verified after migr
   - Schedule/score helpers and preference UI are published; SQL columns were applied. An authenticated manual save is the remaining runtime check.
 - [ ] Quran tracked in quarter-juz units; user-configurable target and promotion duration (default one month), explicit approval.
   - Quarter input, duration preference, configured progression and approval target update are published. Settings changes reset stage start and preserve historical targets/schedules using settings_history; regression tests pass.
+  - Hosted legacy target normalized to 5 pages (one quarter) and migration 202609270017 committed.
 - [ ] Qiyam predefined user target, score against it, progression synchronized to settings.
   - Target setting, scoring, and opt-in progression are published; historical scoring regression tests pass.
 - [ ] Correct streak, quantitative progression, editable counters and functional notification delivery/preferences.
