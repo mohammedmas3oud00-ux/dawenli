@@ -188,7 +188,7 @@ export function normalizeSnapshot(value: Partial<AppDataSnapshot>): AppDataSnaps
     inboxItems: Array.isArray(value.inboxItems) ? value.inboxItems.map(normalizeInboxItem) : [],
     habits: Array.isArray(value.habits) ? value.habits.map((habit) => {
       const legacy = habit as unknown as typeof habit & { best_streak?: number };
-      const normalized = { ...habit, longest_streak: habit.longest_streak ?? Number(legacy.best_streak ?? 0), custom_days: habit.custom_days ?? [] };
+      const normalized = { ...habit, longest_streak: habit.longest_streak ?? Number(legacy.best_streak ?? 0), custom_days: habit.custom_days ?? [], completed_dates: habit.completed_dates ?? [] };
       delete (normalized as unknown as { best_streak?: number }).best_streak;
       return normalized;
     }) : [],
@@ -196,12 +196,12 @@ export function normalizeSnapshot(value: Partial<AppDataSnapshot>): AppDataSnaps
     focusSessions: Array.isArray(value.focusSessions) ? value.focusSessions : [],
     timeBlocks: Array.isArray(value.timeBlocks) ? value.timeBlocks : [],
     customFieldDefinitions: Array.isArray(value.customFieldDefinitions) ? value.customFieldDefinitions : [],
-    worshipDefinitions: Array.isArray(value.worshipDefinitions) ? value.worshipDefinitions : [],
-    worshipLogs: Array.isArray(value.worshipLogs) ? value.worshipLogs.map((log) => ({ ...log, congregation: (log.congregation as unknown) === '' ? null : log.congregation })) : [],
-    progressionPaths: Array.isArray(value.progressionPaths) ? value.progressionPaths : [],
-    quranKhatmas: Array.isArray(value.quranKhatmas) ? value.quranKhatmas : [],
-    quranHifzTrackers: Array.isArray(value.quranHifzTrackers) ? value.quranHifzTrackers : [],
-    sleepSchedules: Array.isArray(value.sleepSchedules) ? value.sleepSchedules : [],
+    worshipDefinitions: Array.isArray(value.worshipDefinitions) ? value.worshipDefinitions.map((definition) => ({ ...definition, frequency: definition.frequency ?? 'daily', scheduled_days: definition.scheduled_days ?? [], scheduled_hijri_days: definition.scheduled_hijri_days ?? [], settings_history: definition.settings_history ?? [], is_active: definition.is_active ?? true, sort_order: definition.sort_order ?? 0 })) : [],
+    worshipLogs: Array.isArray(value.worshipLogs) ? value.worshipLogs.map((log) => ({ ...log, is_completed: log.is_completed ?? false, congregation: (log.congregation as unknown) === '' ? null : log.congregation })) : [],
+    progressionPaths: Array.isArray(value.progressionPaths) ? value.progressionPaths.map((path) => ({ ...path, stages: path.stages ?? [], current_stage_index: path.current_stage_index ?? 0, consecutive_days: path.consecutive_days ?? 0, auto_promote: path.auto_promote ?? false })) : [],
+    quranKhatmas: Array.isArray(value.quranKhatmas) ? value.quranKhatmas.map((khatma) => ({ ...khatma, is_completed: khatma.is_completed ?? false })) : [],
+    quranHifzTrackers: Array.isArray(value.quranHifzTrackers) ? value.quranHifzTrackers.map((tracker) => ({ ...tracker, surahs: tracker.surahs ?? [], total_memorized_pages: tracker.total_memorized_pages ?? 0, daily_review_pages: tracker.daily_review_pages ?? 0 })) : [],
+    sleepSchedules: Array.isArray(value.sleepSchedules) ? value.sleepSchedules.map((schedule) => ({ ...schedule, adjustment_minutes: schedule.adjustment_minutes ?? 15, adjustment_frequency_days: schedule.adjustment_frequency_days ?? 7, is_active: schedule.is_active ?? true })) : [],
   };
 }
 
