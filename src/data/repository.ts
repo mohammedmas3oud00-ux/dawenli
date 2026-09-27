@@ -115,7 +115,7 @@ export class SupabaseRepository implements DataRepository {
     try {
       const payload = {
         ...snapshot,
-        ...Object.fromEntries(TABLES.map(([table, key]) => [table, (snapshot[key] as unknown as Array<Record<string, unknown>>).map((row) => toDatabaseRow(row, this.userId))])),
+        ...Object.fromEntries(TABLES.map(([table, key]) => [table, (snapshot[key] as unknown as Array<Record<string, unknown>>).map((row) => toDatabaseRow(row, this.userId, table))])),
         custom_field_definitions: snapshot.customFieldDefinitions.map((definition) => {
           const { entityType, ...rest } = definition;
           return toDatabaseRow({ ...rest, entity_type: entityType }, this.userId);
@@ -139,7 +139,7 @@ export class SupabaseRepository implements DataRepository {
 
 }
 
-function toDatabaseRow(row: Record<string, unknown>, userId: string): Record<string, unknown> {
+function toDatabaseRow(row: Record<string, unknown>, userId: string, table?: string): Record<string, unknown> {
   const normalized: Record<string, unknown> = {
     ...row,
     user_id: userId,
@@ -147,6 +147,8 @@ function toDatabaseRow(row: Record<string, unknown>, userId: string): Record<str
     // Supplying it here keeps the atomic RPC compatible with those records.
     updated_at: row.updated_at || new Date().toISOString(),
   };
+  if (table === 'vault_items') normalized.status = row.status || 'active';
+  if (table === 'worship_logs' && normalized.congregation === '') normalized.congregation = null;
   delete normalized.schemaVersion;
   return normalized;
 }
@@ -188,12 +190,12 @@ export function normalizeSnapshot(value: Partial<AppDataSnapshot>): AppDataSnaps
       delete (normalized as unknown as { best_streak?: number }).best_streak;
       return normalized;
     }) : [],
-    vaults: Array.isArray(value.vaults) ? value.vaults : [],
+    vaults: Array.isArray(value.vaults) ? value.vaults.map((item) => ({ ...item, status: item.status || 'active' })) : [],
     focusSessions: Array.isArray(value.focusSessions) ? value.focusSessions : [],
     timeBlocks: Array.isArray(value.timeBlocks) ? value.timeBlocks : [],
     customFieldDefinitions: Array.isArray(value.customFieldDefinitions) ? value.customFieldDefinitions : [],
     worshipDefinitions: Array.isArray(value.worshipDefinitions) ? value.worshipDefinitions : [],
-    worshipLogs: Array.isArray(value.worshipLogs) ? value.worshipLogs : [],
+    worshipLogs: Array.isArray(value.worshipLogs) ? value.worshipLogs.map((log) => ({ ...log, congregation: (log.congregation as unknown) === '' ? null : log.congregation })) : [],
     progressionPaths: Array.isArray(value.progressionPaths) ? value.progressionPaths : [],
     quranKhatmas: Array.isArray(value.quranKhatmas) ? value.quranKhatmas : [],
     quranHifzTrackers: Array.isArray(value.quranHifzTrackers) ? value.quranHifzTrackers : [],

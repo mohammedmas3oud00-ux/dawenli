@@ -20,8 +20,13 @@ export const isEditableWorshipDate = (date: string, today = toLocalDateKey()) =>
 
 export function updateWorshipLog(definition: WorshipDefinition, date: string, prior: WorshipLog | undefined, patch: Partial<WorshipLog>, now = new Date().toISOString()): WorshipLog {
   const completed = patch.is_completed ?? prior?.is_completed ?? false;
+  // The empty UI option means "not specified". PostgreSQL's nullable check
+  // constraint accepts null, but not the empty string.
+  const normalizedPatch = patch.congregation === ('' as unknown as WorshipLog['congregation'])
+    ? { ...patch, congregation: null }
+    : patch;
   return {
-    ...prior, ...patch,
+    ...prior, ...normalizedPatch,
     id: prior?.id || crypto.randomUUID(), worship_id: definition.id, date,
     created_at: prior?.created_at || now, is_completed: completed,
     completed_at: completed ? (prior?.is_completed && prior.completed_at ? prior.completed_at : now) : null,

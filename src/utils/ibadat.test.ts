@@ -74,6 +74,11 @@ describe('ibadat calculations', () => {
     expect(updateWorshipLog(definition('fajr'), prior.date, changed, { is_completed: false }).completed_at).toBeNull();
   });
 
+  it('turns an unselected congregation into nullable data for Supabase', () => {
+    const changed = updateWorshipLog(definition('fajr'), '2026-09-25', undefined, { congregation: '' as never });
+    expect(changed.congregation).toBeNull();
+  });
+
   it('keeps private amounts independent of completion', () => {
     const prior = log('charity', '2026-09-25');
     const changed = updateWorshipLog(definition('charity'), prior.date, prior, { amount: null });

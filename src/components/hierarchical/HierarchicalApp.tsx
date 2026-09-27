@@ -1236,7 +1236,7 @@ export const HierarchicalApp: React.FC = () => {
   const handleSaveVaultItem = (data: Partial<VaultItem>) => {
     let updated: VaultItem[];
     if (data.id) {
-      updated = vaults.map(v => v.id === data.id ? { ...v, ...data } as VaultItem : v);
+      updated = vaults.map(v => v.id === data.id ? { ...v, ...data, status: data.status || v.status || 'active' } as VaultItem : v);
     } else {
       const newItem: VaultItem = {
         id: createId(),
@@ -1251,6 +1251,7 @@ export const HierarchicalApp: React.FC = () => {
         content: data.content || '',
         tags: data.tags || [],
         rating: data.rating || 5,
+        status: data.status || 'active',
         created_at: new Date().toISOString(),
       };
       updated = [newItem, ...vaults];

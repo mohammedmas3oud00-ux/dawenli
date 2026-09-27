@@ -123,6 +123,9 @@ export const VaultsTabView: React.FC<VaultsTabViewProps> = ({
       content: formContent.trim(),
       tags,
       rating: formRating,
+      // Supabase enforces a non-null status. Preserve an existing status and
+      // give newly created vault items a safe default.
+      status: editingItem?.status || 'active',
       ...(formCourse && formType === 'resources' ? { learning: editingItem?.learning || { kind: 'course' as const, total: 1, completed: 0, daily_target: 1, sessions: [], lessons: [] } } : {}),
     });
 
