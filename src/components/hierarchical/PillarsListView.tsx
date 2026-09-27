@@ -7,6 +7,7 @@ import { NextBestTaskSpotlight } from './NextBestTaskSpotlight';
 import { PrayerTimesCard } from './PrayerTimesCard';
 
 interface PillarsListViewProps {
+  dailyOverview?: React.ReactNode;
   pillars: Pillar[];
   tasks?: Task[];
   projects?: Project[];
@@ -26,6 +27,7 @@ interface PillarsListViewProps {
 }
 
 export const PillarsListView: React.FC<PillarsListViewProps> = ({
+  dailyOverview,
   pillars,
   tasks,
   projects,
@@ -54,6 +56,7 @@ export const PillarsListView: React.FC<PillarsListViewProps> = ({
 
   return (
     <div className="space-y-6">
+      {dailyOverview}
       
       {/* 0. HERO SPOTLIGHT: أفضل مهمة للقيام بها الآن */}
       {tasks && projects && goals && onStartFocus && onCompleteTask && (

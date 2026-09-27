@@ -28,9 +28,49 @@ export function updateWorshipLog(definition: WorshipDefinition, date: string, pr
   };
 }
 
+export function worshipDefinitionAt(item: WorshipDefinition, date: string): WorshipDefinition {
+  const settings = [...(item.settings_history ?? [])].sort((a, b) => b.effective_date.localeCompare(a.effective_date)).find((entry) => entry.effective_date <= date);
+  return settings ? { ...item, ...settings } : item;
+}
+
+/** Keep historical targets/schedules intact; changes apply from the selected local day. */
+export function changeWorshipSettings(item: WorshipDefinition, patch: Partial<WorshipDefinition>, today = toLocalDateKey()): WorshipDefinition {
+  const snapshot = (value: WorshipDefinition, effective_date: string) => ({
+    effective_date, frequency: value.frequency,
+    scheduled_days: value.scheduled_days ?? (value.category === 'fasting' ? [1, 4] : []),
+    scheduled_hijri_days: value.scheduled_hijri_days ?? [],
+    target_count: value.target_count ?? null, target_pages: value.target_pages ?? null, is_active: value.is_active,
+  });
+  const history = item.settings_history?.length ? item.settings_history : [snapshot(item, toLocalDateKey(new Date(item.created_at)))];
+  const changed = { ...item, ...patch, updated_at: new Date().toISOString() };
+  return { ...changed, settings_history: [...history.filter((entry) => entry.effective_date < today), snapshot(changed, today)] };
+}
+
+export function isWorshipScheduled(definition: WorshipDefinition, date = toLocalDateKey()): boolean {
+  const item = worshipDefinitionAt(definition, date);
+  if (!item.is_active || date < toLocalDateKey(new Date(item.created_at))) return false;
+  const local = parseLocalDateKey(date);
+  if (item.category === 'fasting') {
+    // Existing fasting records default to the requested Monday/Thursday plan.
+    const weekdays = item.scheduled_days ?? [1, 4];
+    return weekdays.includes(local.getDay()) || (item.scheduled_hijri_days ?? []).includes(hijriDate(local).day);
+  }
+  if (item.frequency === 'daily') return true;
+  return (item.scheduled_days ?? []).includes(local.getDay());
+}
+
+export function isWorshipComplete(definition: WorshipDefinition, log: WorshipLog | undefined): boolean {
+  if (!log?.is_completed) return false;
+  const item = worshipDefinitionAt(definition, log.date);
+  if (item.tracking_type === 'pages') return (log.pages_read ?? 0) >= (item.target_pages || 1);
+  if (item.category === 'qiyam') return (log.rakaat_count ?? 0) >= (item.target_count || 2);
+  if (item.tracking_type === 'counter') return (log.count ?? 0) >= (item.target_count || 1);
+  return true;
+}
+
 export function worshipSummary(definitions: WorshipDefinition[], logs: WorshipLog[], date = toLocalDateKey()) {
-  const active = definitions.filter((item) => item.is_active && item.frequency === 'daily');
-  const completed = active.filter((item) => logs.some((log) => log.worship_id === item.id && log.date === date && log.is_completed)).length;
+  const active = definitions.filter((item) => isWorshipScheduled(item, date));
+  const completed = active.filter((item) => isWorshipComplete(item, logs.find((log) => log.worship_id === item.id && log.date === date))).length;
   return { total: active.length, completed, rate: active.length ? Math.round((completed / active.length) * 100) : 0 };
 }
 
@@ -39,7 +79,10 @@ export function worshipStreak(definitions: WorshipDefinition[], logs: WorshipLog
   for (let offset = 0; offset < 366; offset += 1) {
     const key = shiftLocalDateKey(today, -offset);
     const summary = worshipSummary(definitions, logs, key);
-    if (!summary.total || summary.completed !== summary.total) break;
+    if (!summary.total) continue;
+    // Today is still in progress; it must not erase yesterday's streak.
+    if (offset === 0 && summary.completed !== summary.total) continue;
+    if (summary.completed !== summary.total) break;
     days += 1;
   }
   return days;
@@ -58,6 +101,34 @@ export function progressionSuggestion(path: ProgressionPath, logs: WorshipLog[])
   const next = path.stages[path.current_stage_index + 1];
   if (!stage || !next || progressionCompleted(path, logs) < stage.days_required) return null;
   return `أكملت مرحلة «${stage.title}». هل تريد الانتقال إلى «${next.title}»؟`;
+}
+
+/** Consecutive scheduled days at the currently configured target; today may be unfinished. */
+export function targetStreak(definition: WorshipDefinition, logs: WorshipLog[], start: string, today = toLocalDateKey()): number {
+  let days = 0;
+  for (let offset = 0; offset < 366; offset += 1) {
+    const date = shiftLocalDateKey(today, -offset);
+    if (date < start) break;
+    if (!isWorshipScheduled(definition, date)) continue;
+    const complete = isWorshipComplete(definition, logs.find((log) => log.worship_id === definition.id && log.date === date));
+    if (!complete && offset === 0) continue;
+    if (!complete) break;
+    days += 1;
+  }
+  return days;
+}
+
+export function configuredProgression(path: ProgressionPath, definition: WorshipDefinition): ProgressionPath {
+  if (!['quran_wird', 'qiyam'].includes(definition.category)) return path;
+  const quran = definition.category === 'quran_wird';
+  const target = quran ? definition.target_pages || 5 : definition.target_count || 2;
+  const duration = definition.progression_days || 30;
+  const label = (value: number) => quran ? `${value / 5} أرباع جزء يوميًا` : `${value} ركعات`;
+  const increment = quran ? 5 : 2;
+  const stages = [...path.stages];
+  stages[path.current_stage_index] = { index: path.current_stage_index, title: label(target), description: `استمرار ${duration} يومًا مقررًا قبل اقتراح الزيادة`, target_value: target, days_required: duration };
+  stages[path.current_stage_index + 1] = { index: path.current_stage_index + 1, title: label(target + increment), description: 'زيادة اختيارية فقط', target_value: target + increment, days_required: duration };
+  return { ...path, stages };
 }
 
 /** Safe, deterministic insights. Gemini may summarize these facts but never supplies religious rulings. */

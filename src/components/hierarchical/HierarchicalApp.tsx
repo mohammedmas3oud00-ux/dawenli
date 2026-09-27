@@ -1,4 +1,6 @@
 import React, { lazy, useState, useEffect, useRef } from 'react';
+import { DailyOverview } from './DailyOverview';
+import { changeWorshipSettings, configuredProgression, targetStreak } from '../../utils/ibadat';
 import { 
   Pillar, 
   Vision,
@@ -1240,6 +1242,7 @@ export const HierarchicalApp: React.FC = () => {
         id: createId(),
         title: data.title || '',
         vault_type: data.vault_type || 'notes',
+        learning: data.learning,
         pillar_id: data.pillar_id || pillars[0]?.id || '',
         project_id: data.project_id || null,
         author_or_source: data.author_or_source,
@@ -1332,17 +1335,27 @@ export const HierarchicalApp: React.FC = () => {
     setToasts((previous) => [...previous, { id: createId(), type: 'success', title: 'أُضيفت كتل عبادة مقترحة', description: 'يمكنك تعديلها من حجب الوقت.' }]);
   };
 
+  const handleUpdateWorshipDefinition = (id: string, patch: Partial<WorshipDefinition>) => {
+    setWorshipDefinitions((previous) => previous.map((definition) => definition.id === id ? changeWorshipSettings(definition, patch) : definition));
+    setProgressionPaths((previous) => previous.map((path) => path.worship_id === id ? { ...path, stage_start_date: toLocalDateKey(), consecutive_days: 0 } : path));
+    if (patch.target_pages != null) setQuranKhatmas((previous) => previous.map((khatma) => khatma.worship_id === id ? { ...khatma, daily_target_pages: patch.target_pages! } : khatma));
+  };
+
   const handleApproveProgression = (pathId: string) => {
-    const selectedPath = progressionPaths.find((path) => path.id === pathId);
+    const storedPath = progressionPaths.find((path) => path.id === pathId);
+    const definition = worshipDefinitions.find((d) => d.id === storedPath?.worship_id);
+    if (!storedPath || !definition) return;
+    const selectedPath = configuredProgression(storedPath, definition);
     const nextStage = selectedPath?.stages[selectedPath.current_stage_index + 1];
     if (!selectedPath || !nextStage) return;
-    setWorshipDefinitions((previous) => previous.map((definition) => definition.id === selectedPath.worship_id && definition.category === 'quran_wird' ? { ...definition, target_pages: nextStage.target_value, updated_at: new Date().toISOString() } : definition));
-    setQuranKhatmas((previous) => previous.map((khatma) => khatma.worship_id === selectedPath.worship_id ? { ...khatma, daily_target_pages: nextStage.target_value } : khatma));
+    if (targetStreak(definition, worshipLogs, selectedPath.stage_start_date) < selectedPath.stages[selectedPath.current_stage_index].days_required) return;
+    if (definition.category === 'qiyam') handleUpdateWorshipDefinition(definition.id, { target_count: nextStage.target_value });
+    if (definition.category === 'quran_wird') handleUpdateWorshipDefinition(definition.id, { target_pages: nextStage.target_value });
+    if (definition.category === 'fasting') handleUpdateWorshipDefinition(definition.id, { frequency: 'custom', scheduled_hijri_days: [13, 14, 15] });
     setProgressionPaths((previous) => previous.map((path) => {
-      if (path.id !== pathId || path.current_stage_index >= path.stages.length - 1) return path;
-      return { ...path, current_stage_index: path.current_stage_index + 1, consecutive_days: 0, stage_start_date: toLocalDateKey(), last_promotion_date: toLocalDateKey(), updated_at: new Date().toISOString() };
+      if (path.id !== pathId) return path;
+      return { ...selectedPath, current_stage_index: path.current_stage_index + 1, consecutive_days: 0, stage_start_date: toLocalDateKey(), last_promotion_date: toLocalDateKey(), updated_at: new Date().toISOString() };
     }));
-    setToasts((previous) => [...previous, { id: createId(), type: 'success', title: 'تم اعتماد المرحلة التالية', description: 'يمكنك دائمًا متابعة التدرج بالوتيرة المناسبة لك.' }]);
   };
 
   const handleUpdateKhatma = (id: string, currentPage: number) => {
@@ -1688,6 +1701,7 @@ export const HierarchicalApp: React.FC = () => {
                 ) : (
                   /* 5. Level 1: Root Pillars List */
                   <PillarsListView
+                    dailyOverview={<DailyOverview tasks={tasks} vaults={vaults} definitions={worshipDefinitions} logs={worshipLogs} onNavigate={(destination) => setCurrentTab(destination)} />}
                     pillars={pillars}
                     tasks={tasks}
                     projects={projects}
@@ -1884,6 +1898,7 @@ export const HierarchicalApp: React.FC = () => {
                 definitions={worshipDefinitions}
                 logs={worshipLogs}
                 onSetup={handleSetupIbadat}
+                onUpdateDefinition={handleUpdateWorshipDefinition}
                 onSaveLog={handleSaveWorshipLog}
                 onOpenTimeBlocking={() => setCurrentTab('timeblocking')}
                 onSuggestTimeBlocks={handleSuggestWorshipBlocks}

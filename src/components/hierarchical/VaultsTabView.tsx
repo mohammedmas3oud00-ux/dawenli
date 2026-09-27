@@ -16,6 +16,7 @@ import {
   Check 
 } from 'lucide-react';
 import { CustomSelect } from './CustomSelect';
+import { VaultLearning } from './VaultLearning';
 
 interface VaultsTabViewProps {
   vaults: VaultItem[];
@@ -53,9 +54,10 @@ export const VaultsTabView: React.FC<VaultsTabViewProps> = ({
   const [formContent, setFormContent] = useState('');
   const [formTagsStr, setFormTagsStr] = useState('');
   const [formRating, setFormRating] = useState<number>(5);
+  const [formCourse, setFormCourse] = useState(false);
 
   const filteredVaults = vaults.filter((v) => {
-    if (selectedTypeFilter !== 'all' && v.vault_type !== selectedTypeFilter) return false;
+    if (selectedTypeFilter === 'courses' ? v.learning?.kind !== 'course' : selectedTypeFilter !== 'all' && v.vault_type !== selectedTypeFilter) return false;
     if (selectedPillarFilter !== 'all' && v.pillar_id !== selectedPillarFilter) return false;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -69,6 +71,7 @@ export const VaultsTabView: React.FC<VaultsTabViewProps> = ({
   });
 
   const handleOpenNew = () => {
+    setFormCourse(false);
     setEditingItem(null);
     setFormTitle('');
     setFormType('notes');
@@ -84,6 +87,7 @@ export const VaultsTabView: React.FC<VaultsTabViewProps> = ({
   };
 
   const handleOpenEdit = (item: VaultItem) => {
+    setFormCourse(item.learning?.kind === 'course');
     setEditingItem(item);
     setFormTitle(item.title);
     setFormType(item.vault_type);
@@ -119,6 +123,7 @@ export const VaultsTabView: React.FC<VaultsTabViewProps> = ({
       content: formContent.trim(),
       tags,
       rating: formRating,
+      ...(formCourse && formType === 'resources' ? { learning: editingItem?.learning || { kind: 'course' as const, total: 1, completed: 0, daily_target: 1, sessions: [], lessons: [] } } : {}),
     });
 
     setIsFormOpen(false);
@@ -169,12 +174,14 @@ export const VaultsTabView: React.FC<VaultsTabViewProps> = ({
             <Plus className="w-3.5 h-3.5" />
             <span>إضافة للخزينة</span>
           </button>
+          <button type="button" onClick={() => { handleOpenNew(); setFormType('resources'); setFormCourse(true); }} className="rounded-xl border border-emerald-600 px-4 py-2 text-sm font-bold text-emerald-800 dark:text-emerald-300">إضافة كورس</button>
         </div>
 
         {/* Categories Tab & Search Toolbar */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-2 border-t border-[#f0ede6] dark:border-slate-800">
+        <div aria-label="تصفية الخزائن" className="flex flex-col items-stretch gap-4 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 dark:border-slate-600 dark:bg-slate-800/70">
           {/* Segmented Category Filter */}
-          <div className="flex items-center bg-[#f4f2ec] dark:bg-slate-800 p-0.5 rounded-xl text-xs overflow-x-auto no-scrollbar">
+          <div className="flex flex-wrap items-center gap-2 rounded-xl text-sm">
+            <button type="button" aria-pressed={selectedTypeFilter === 'courses'} onClick={() => setSelectedTypeFilter('courses')} className={`rounded-xl border px-4 py-2 font-bold ${selectedTypeFilter === 'courses' ? 'border-emerald-700 bg-emerald-700 text-white' : 'border-slate-300 bg-white text-slate-800 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100'}`}>الكورسات</button>
             <button
               onClick={() => setSelectedTypeFilter('all')}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
@@ -404,6 +411,7 @@ export const VaultsTabView: React.FC<VaultsTabViewProps> = ({
             </div>
 
             <div className="p-6 overflow-y-auto flex-1 space-y-4 text-sm text-[#2d3731] dark:text-slate-200 leading-relaxed font-sans">
+              <VaultLearning item={vaults.find((v) => v.id === readingItem.id) || readingItem} onSave={onSaveVaultItem} />
               {readingItem.summary && (
                 <div className="bg-[#faf8f4] dark:bg-slate-800 p-4 rounded-xl border border-[#ece8df] dark:border-slate-700 italic text-[#4a554f] dark:text-slate-300">
                   <span className="font-semibold not-italic block text-xs text-[#78857e] dark:text-slate-400 mb-1">الملخص التنفيذي:</span>

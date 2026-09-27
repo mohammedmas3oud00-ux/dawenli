@@ -6,6 +6,7 @@ import { GoogleGenAI, Type } from '@google/genai';
 import { createClient } from '@supabase/supabase-js';
 import { createCipheriv, createDecipheriv, createHash, randomBytes, randomUUID } from 'crypto';
 import webpush from 'web-push';
+import { worshipReminderTime } from './src/utils/worshipReminderTime.js';
 
 dotenv.config();
 
@@ -254,6 +255,15 @@ app.get('/api/push/public-key', (_req, res) => {
   return res.json({ ok: true, data: { publicKey: vapidPublicKey } });
 });
 
+app.get('/api/push/subscription', requireUserAuth, async (req, res) => {
+  const endpoint = typeof req.query.endpoint === 'string' ? req.query.endpoint : '';
+  if (!endpoint) return apiError(res, 400, 'BAD_REQUEST', 'رابط الاشتراك مطلوب.');
+  const client = userScopedClient(res.locals.accessToken as string);
+  const { data, error } = await client!.from('push_subscriptions').select('prayer_enabled,task_enabled,worship_enabled,adhkar_enabled,quran_enabled,qiyam_enabled,sleep_enabled,streak_enabled').eq('endpoint', endpoint).eq('user_id', res.locals.userId).maybeSingle();
+  if (error) return apiError(res, 503, 'UPSTREAM_ERROR', 'تعذر تحميل إعدادات الإشعارات.');
+  return res.json({ ok: true, data });
+});
+
 app.post('/api/push/subscription', requireUserAuth, async (req, res) => {
   if (!vapidPublicKey || !vapidPrivateKey) return apiError(res, 503, 'NOT_CONFIGURED', 'إشعارات الخلفية غير مهيأة.');
   const subscription = req.body?.subscription;
@@ -261,20 +271,22 @@ app.post('/api/push/subscription', requireUserAuth, async (req, res) => {
     return apiError(res, 400, 'BAD_REQUEST', 'اشتراك الإشعارات غير صالح.');
   }
   const client = userScopedClient(res.locals.accessToken as string);
-  const { data: existingSubscription } = await client!.from('push_subscriptions').select('prayer_times').eq('endpoint', subscription.endpoint).eq('user_id', res.locals.userId).maybeSingle();
+  const { data: existingSubscription, error: readError } = await client!.from('push_subscriptions').select('*').eq('endpoint', subscription.endpoint).eq('user_id', res.locals.userId).maybeSingle();
+  if (readError) return apiError(res, 503, 'UPSTREAM_ERROR', 'تعذر قراءة إعدادات الإشعارات الحالية.');
+  const preference = (key: string, column: string) => typeof req.body?.[key] === 'boolean' ? req.body[key] : existingSubscription?.[column] !== false;
   const { error } = await client!.from('push_subscriptions').upsert({
     user_id: res.locals.userId,
     endpoint: subscription.endpoint,
     p256dh: subscription.keys.p256dh,
     auth: subscription.keys.auth,
-    prayer_enabled: req.body?.prayerEnabled !== false,
-    task_enabled: req.body?.taskEnabled !== false,
-    worship_enabled: req.body?.worshipEnabled !== false,
-    adhkar_enabled: req.body?.adhkarEnabled !== false,
-    quran_enabled: req.body?.quranEnabled !== false,
-    qiyam_enabled: req.body?.qiyamEnabled !== false,
-    sleep_enabled: req.body?.sleepEnabled !== false,
-    streak_enabled: req.body?.streakEnabled !== false,
+    prayer_enabled: preference('prayerEnabled', 'prayer_enabled'),
+    task_enabled: preference('taskEnabled', 'task_enabled'),
+    worship_enabled: preference('worshipEnabled', 'worship_enabled'),
+    adhkar_enabled: preference('adhkarEnabled', 'adhkar_enabled'),
+    quran_enabled: preference('quranEnabled', 'quran_enabled'),
+    qiyam_enabled: preference('qiyamEnabled', 'qiyam_enabled'),
+    sleep_enabled: preference('sleepEnabled', 'sleep_enabled'),
+    streak_enabled: preference('streakEnabled', 'streak_enabled'),
     timezone: typeof req.body?.timezone === 'string' ? req.body.timezone.slice(0, 80) : 'Africa/Cairo',
     prayer_times: req.body?.prayerTimes && typeof req.body.prayerTimes === 'object' ? req.body.prayerTimes : existingSubscription?.prayer_times || {},
     updated_at: new Date().toISOString(),
@@ -326,9 +338,7 @@ app.all('/api/push/dispatch', async (req, res) => {
         .select('id,title,category,time_of_day,frequency,is_active')
         .eq('user_id', subscription.user_id)
         .eq('is_active', true)
-        .eq('frequency', 'daily')
-        .eq('time_of_day', hhmm)
-        .limit(3);
+        .eq('frequency', 'daily');
       const enabledForCategory = (category: string) => {
         if (category === 'adhkar') return subscription.adhkar_enabled !== false;
         if (category === 'quran_wird' || category === 'quran_hifz') return subscription.quran_enabled !== false;
@@ -336,7 +346,7 @@ app.all('/api/push/dispatch', async (req, res) => {
         if (category === 'sadaqah') return false;
         return true;
       };
-      const scheduled = (worshipDefinitions ?? []).filter((item) => enabledForCategory(item.category));
+      const scheduled = (worshipDefinitions ?? []).filter((item) => enabledForCategory(item.category) && worshipReminderTime(item.time_of_day, subscription.prayer_times || {}) === hhmm);
       if (scheduled.length) {
         const ids = scheduled.map((item) => item.id);
         const { data: completedLogs } = await adminClient
@@ -354,6 +364,13 @@ app.all('/api/push/dispatch', async (req, res) => {
           deliveryKey: `worship:${today}:${hhmm}:${pending.map((item) => item.id).join(',')}`,
         });
       }
+    }
+    if (subscription.sleep_enabled) {
+      const { data: schedules } = await adminClient.from('sleep_schedules').select('id,current_bedtime').eq('user_id', subscription.user_id).eq('current_bedtime', hhmm);
+      if (schedules?.length) messages.push({ title: 'موعد النوم الذي اخترته', body: 'حان وقت الاستعداد للنوم وفق جدولك الحالي.', deliveryKey: `sleep:${today}:${hhmm}` });
+    }
+    if (subscription.streak_enabled && hhmm === '21:00') {
+      messages.push({ title: 'راجع إنجاز عباداتك اليوم', body: 'راجع تسجيل اليوم واستمرارك وفق أهدافك، دون احتساب الأيام غير المقررة.', deliveryKey: `streak:${today}` });
     }
     for (const message of messages) {
       const { data: reservation, error: reservationError } = await adminClient

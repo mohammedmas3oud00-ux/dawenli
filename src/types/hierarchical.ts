@@ -218,6 +218,14 @@ export interface VaultItem {
   tags: string[];
   rating?: number; // 1 to 5
   status?: VaultStatus;
+  learning?: {
+    kind: 'book' | 'course';
+    total: number;
+    completed: number;
+    daily_target: number;
+    sessions: Array<{ id: string; date: string; units: number; note: string }>;
+    lessons: Array<{ id: string; title: string; completed: boolean }>;
+  };
   created_at: string;
   updated_at?: string;
 }
@@ -312,6 +320,17 @@ export interface WorshipDefinition {
   tracking_type: WorshipTrackingType;
   frequency: 'daily' | 'weekly' | 'monthly' | 'custom';
   scheduled_days?: number[];
+  scheduled_hijri_days?: number[];
+  progression_days?: number;
+  settings_history?: Array<{
+    effective_date: string;
+    frequency: WorshipDefinition['frequency'];
+    scheduled_days: number[];
+    scheduled_hijri_days: number[];
+    target_count: number | null;
+    target_pages: number | null;
+    is_active: boolean;
+  }>;
   time_of_day?: 'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha' | 'morning' | 'evening' | 'night' | 'anytime';
   target_count?: number | null;
   target_pages?: number | null;
