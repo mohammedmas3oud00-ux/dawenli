@@ -64,6 +64,7 @@ import { ToastContainer, ToastMessage } from './ToastNotification';
 import { Plus, Menu, Mic, Sparkles, Sun, Moon, User, LogIn, LogOut, KeyRound, Trash2 } from 'lucide-react';
 import { supabase } from '../../utils/supabaseClient';
 import { createRepositoryForUser } from '../../shared/services/repositoryFactory';
+import { setTaskStatus, toggleTaskStatus, upsertTask } from '../../features/tasks/utils/taskActions';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import { useAppStore } from '../../app/store/appStore';
 import { createSnapshotSaveQueue, enqueueSnapshotSave } from '../../shared/services/snapshotPersistence';
@@ -660,62 +661,19 @@ export const HierarchicalApp: React.FC = () => {
 
   // 5. Tasks
   const handleSaveTask = (taskData: Partial<Task>) => {
-    if (editingTask) {
-      const updated = tasks.map((t) =>
-        t.id === editingTask.id ? { ...t, ...taskData, custom_fields: taskData.custom_fields || t.custom_fields, updated_at: new Date().toISOString() } : t
-      );
-      applyStateUpdate(pillars, visions, goals, projects, updated);
-    } else {
-      const targetProjectId = taskData.project_id || currentProject?.id;
-      if (!targetProjectId || !projects.some((project) => project.id === targetProjectId)) {
-        alert('أنشئ مشروعًا أو اختر مشروعًا صحيحًا أولًا.');
-        return;
-      }
-      const newTask: Task = {
-        id: createId(),
-        project_id: targetProjectId,
-        title: taskData.title || 'مهمة جديدة',
-        description: taskData.description || '',
-        status: taskData.status || 'todo',
-        priority: taskData.priority || 'medium',
-        due_date: taskData.due_date || null,
-        completed_at: taskData.status === 'done' ? new Date().toISOString() : null,
-        custom_fields: taskData.custom_fields || {},
-        created_at: new Date().toISOString(),
-      };
-      applyStateUpdate(pillars, visions, goals, projects, [...tasks, newTask]);
-    }
+    const updated = upsertTask(tasks, projects, { ...taskData, project_id: taskData.project_id || currentProject?.id }, taskData.id || editingTask?.id);
+    if (!updated) { alert('أنشئ مشروعًا أو اختر مشروعًا صحيحًا أولًا.'); return; }
+    applyStateUpdate(pillars, visions, goals, projects, updated);
     setEditingTask(null);
   };
 
   const handleToggleTaskStatus = (taskId: string) => {
-    const updated = tasks.map((t) => {
-      if (t.id === taskId) {
-        const nextStatus: Task['status'] = t.status === 'done' ? 'todo' : 'done';
-        return {
-          ...t,
-          status: nextStatus,
-          completed_at: nextStatus === 'done' ? new Date().toISOString() : null,
-          updated_at: new Date().toISOString(),
-        };
-      }
-      return t;
-    });
+    const updated = toggleTaskStatus(tasks, taskId);
     applyStateUpdate(pillars, visions, goals, projects, updated);
   };
 
   const handleUpdateTaskStatus = (taskId: string, targetStatus: Task['status']) => {
-    const updated = tasks.map((t) => {
-      if (t.id === taskId) {
-        return {
-          ...t,
-          status: targetStatus,
-          completed_at: targetStatus === 'done' ? new Date().toISOString() : null,
-          updated_at: new Date().toISOString(),
-        };
-      }
-      return t;
-    });
+    const updated = setTaskStatus(tasks, taskId, targetStatus);
     applyStateUpdate(pillars, visions, goals, projects, updated);
   };
 
