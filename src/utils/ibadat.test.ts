@@ -42,7 +42,9 @@ describe('ibadat calculations', () => {
 
   it('suggests, rather than auto-promotes, a completed progression stage', () => {
     const path = { id: 'path', worship_id: 'qiyam', title: 'قيام', stages: [{ index: 0, title: 'البداية', description: '', target_value: 2, days_required: 7 }, { index: 1, title: 'التالي', description: '', target_value: 4, days_required: 7 }], current_stage_index: 0, stage_start_date: '2026-09-01', consecutive_days: 7, auto_promote: false, created_at: '2026-09-01' };
-    expect(progressionSuggestion(path, [])).toContain('هل تريد');
+    expect(progressionSuggestion(path, [])).toBeNull();
+    const logs = Array.from({ length: 7 }, (_, i) => ({ ...log('qiyam', `2026-09-0${i + 1}`), rakaat_count: 2 }));
+    expect(progressionSuggestion(path, logs)).toContain('هل تريد');
   });
 
   it('returns a usable Hijri date without relying on UTC string conversion', () => {

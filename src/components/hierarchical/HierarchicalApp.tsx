@@ -1262,34 +1262,52 @@ export const HierarchicalApp: React.FC = () => {
 
   const handleSetupIbadat = (categories: WorshipDefinition['category'][]) => {
     const now = new Date().toISOString();
-    const pillar: Pillar = {
+    const existingWorshipPillar = pillars.find((p) => p.id === worshipDefinitions[0]?.pillar_id) || pillars.find((p) => p.title === 'العلاقة مع الله');
+    const pillar: Pillar = existingWorshipPillar || {
       id: createId(), title: 'العلاقة مع الله', description: 'ركيزة للعبادات والأوراد والنمو الروحي.',
       pillar_group: 'Spirituality', purpose: 'تقوية العلاقة مع الله بعبادة متدرجة وثابتة.',
       priority: pillars.length + 1, show_on_home: true, status: 'active', progress: 0, created_at: now,
     };
-    const templates: Array<Pick<WorshipDefinition, 'category' | 'title' | 'tracking_type' | 'frequency' | 'time_of_day' | 'target_count' | 'target_pages'>> = [
+    const templates: Array<Pick<WorshipDefinition, 'category' | 'title' | 'tracking_type' | 'frequency' | 'time_of_day' | 'target_count' | 'target_pages' | 'scheduled_days'>> = [
       ...(['الفجر', 'الظهر', 'العصر', 'المغرب', 'العشاء'] as const).map((title, index) => ({ category: 'salah' as const, title, tracking_type: 'multi_option' as const, frequency: 'daily' as const, time_of_day: ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'][index] as WorshipDefinition['time_of_day'] })),
       { category: 'adhkar', title: 'أذكار الصباح', tracking_type: 'checkbox', frequency: 'daily', time_of_day: 'morning' },
       { category: 'adhkar', title: 'أذكار المساء', tracking_type: 'checkbox', frequency: 'daily', time_of_day: 'evening' },
-      { category: 'quran_wird', title: 'ورد القرآن', tracking_type: 'pages', frequency: 'daily', target_pages: 1 },
+      // ربع الجزء ≈ 5 صفحات في مصحف المدينة؛ الزيادة تتم عبر مسار اقتراحي.
+      { category: 'quran_wird', title: 'ورد القرآن (ربع يوميًا)', tracking_type: 'pages', frequency: 'daily', target_pages: 5 },
       { category: 'qiyam', title: 'قيام الليل', tracking_type: 'multi_option', frequency: 'daily', time_of_day: 'night' },
-      { category: 'fasting', title: 'صيام التطوع', tracking_type: 'multi_option', frequency: 'custom' },
+      { category: 'fasting', title: 'صيام التطوع (الاثنين والخميس)', tracking_type: 'multi_option', frequency: 'custom', scheduled_days: [1, 4] },
+      { category: 'sunnah_rawatib', title: 'سنة الفجر — قبل الصلاة', time_of_day: 'fajr', tracking_type: 'counter', frequency: 'daily', target_count: 2 },
+      { category: 'sunnah_rawatib', title: 'سنة الظهر — قبل الصلاة', time_of_day: 'dhuhr', tracking_type: 'counter', frequency: 'daily', target_count: 4 },
+      { category: 'sunnah_rawatib', title: 'سنة الظهر — بعد الصلاة', time_of_day: 'dhuhr', tracking_type: 'counter', frequency: 'daily', target_count: 2 },
+      { category: 'sunnah_rawatib', title: 'سنة المغرب — بعد الصلاة', time_of_day: 'maghrib', tracking_type: 'counter', frequency: 'daily', target_count: 2 },
+      { category: 'sunnah_rawatib', title: 'سنة العشاء — بعد الصلاة', time_of_day: 'isha', tracking_type: 'counter', frequency: 'daily', target_count: 2 },
       { category: 'sadaqah', title: 'الصدقة', tracking_type: 'amount', frequency: 'daily' },
       { category: 'custom_dua', title: 'ورد مخصص', tracking_type: 'checkbox', frequency: 'daily' },
       { category: 'quran_hifz', title: 'حفظ القرآن ومراجعته', tracking_type: 'pages', frequency: 'daily', target_pages: 1 },
     ];
-    const definitions = templates.filter((template) => categories.includes(template.category)).map((template, sort_order) => ({
+    const additions = templates.filter((template) => categories.includes(template.category) && !worshipDefinitions.some((d) => d.category === template.category)).map((template, sort_order) => ({
       id: createId(), pillar_id: pillar.id, is_active: true, sort_order, created_at: now, ...template,
     } as WorshipDefinition));
+    const definitions = [...worshipDefinitions, ...additions].map((definition) => {
+      if (!categories.includes(definition.category) || progressionPaths.some((p) => p.worship_id === definition.id)) return definition;
+      if (definition.category === 'quran_wird') return { ...definition, target_pages: 5 };
+      if (definition.category === 'fasting') return { ...definition, scheduled_days: [1, 4] };
+      return definition;
+    });
     const qiyam = definitions.find((definition) => definition.category === 'qiyam');
     const quran = definitions.find((definition) => definition.category === 'quran_wird');
     const hifz = definitions.find((definition) => definition.category === 'quran_hifz');
-    setPillars((previous) => [...previous, pillar]);
+    if (!existingWorshipPillar) setPillars((previous) => [...previous, pillar]);
     setWorshipDefinitions(definitions);
-    if (qiyam) setProgressionPaths([{ id: createId(), worship_id: qiyam.id, title: 'مسار قيام الليل', stages: [{ index: 0, title: 'البداية', description: 'ركعتان بعد العشاء', target_value: 2, days_required: 7 }, { index: 1, title: 'التثبيت', description: 'أربع ركعات بعد العشاء', target_value: 4, days_required: 10 }, { index: 2, title: 'الثلث الأخير', description: 'أربع إلى ثمان ركعات قبل الفجر', target_value: 4, days_required: 14 }], current_stage_index: 0, stage_start_date: toLocalDateKey(), consecutive_days: 0, auto_promote: false, created_at: now }]);
-    if (qiyam) setSleepSchedules([{ id: createId(), pillar_id: pillar.id, ultimate_bedtime: '21:30', ultimate_waketime: '04:00', current_bedtime: '23:00', current_waketime: '05:30', adjustment_minutes: 15, adjustment_frequency_days: 7, is_active: true, created_at: now }]);
-    if (quran) setQuranKhatmas([{ id: createId(), worship_id: quran.id, khatma_number: 1, start_date: toLocalDateKey(), current_page: 1, current_juz: 1, daily_target_pages: quran.target_pages || 1, is_completed: false, created_at: now }]);
-    if (hifz) setQuranHifzTrackers([{ id: createId(), worship_id: hifz.id, pillar_id: pillar.id, surahs: [], total_memorized_pages: 0, daily_review_pages: 1, created_at: now }]);
+    const progression: ProgressionPath[] = [];
+    if (qiyam) progression.push({ id: createId(), worship_id: qiyam.id, title: 'مسار قيام الليل', stages: [{ index: 0, title: 'البداية', description: 'ركعتان بعد العشاء', target_value: 2, days_required: 7 }, { index: 1, title: 'التثبيت', description: 'أربع ركعات بعد العشاء', target_value: 4, days_required: 10 }, { index: 2, title: 'الثلث الأخير', description: 'أربع إلى ثمان ركعات قبل الفجر', target_value: 4, days_required: 14 }], current_stage_index: 0, stage_start_date: toLocalDateKey(), consecutive_days: 0, auto_promote: false, created_at: now });
+    if (quran) progression.push({ id: createId(), worship_id: quran.id, title: 'مسار ورد القرآن', stages: [{ index: 0, title: 'ربع يوميًا', description: '5 صفحات يوميًا', target_value: 5, days_required: 7 }, { index: 1, title: 'نصف جزء', description: '10 صفحات يوميًا', target_value: 10, days_required: 14 }, { index: 2, title: 'جزء يوميًا', description: '20 صفحة يوميًا', target_value: 20, days_required: 21 }], current_stage_index: 0, stage_start_date: toLocalDateKey(), consecutive_days: 0, auto_promote: false, created_at: now });
+    const fasting = definitions.find((definition) => definition.category === 'fasting');
+    if (fasting) progression.push({ id: createId(), worship_id: fasting.id, title: 'مسار صيام التطوع', stages: [{ index: 0, title: 'الاثنين والخميس', description: 'ابدأ بيومي الاثنين والخميس', target_value: 2, days_required: 14 }, { index: 1, title: 'الأيام البيض', description: 'أضف 13 و14 و15 من الشهر الهجري', target_value: 5, days_required: 21 }, { index: 2, title: 'توسع اختياري', description: 'اختر صيامًا إضافيًا يناسبك', target_value: 6, days_required: 30 }], current_stage_index: 0, stage_start_date: toLocalDateKey(), consecutive_days: 0, auto_promote: false, created_at: now });
+    setProgressionPaths((previous) => [...previous, ...progression.filter((path) => !previous.some((p) => p.worship_id === path.worship_id))]);
+    if (qiyam && !sleepSchedules.length) setSleepSchedules([{ id: createId(), pillar_id: pillar.id, ultimate_bedtime: '21:30', ultimate_waketime: '04:00', current_bedtime: '23:00', current_waketime: '05:30', adjustment_minutes: 15, adjustment_frequency_days: 7, is_active: true, created_at: now }]);
+    if (quran && !quranKhatmas.length) setQuranKhatmas([{ id: createId(), worship_id: quran.id, khatma_number: 1, start_date: toLocalDateKey(), current_page: 1, current_juz: 1, daily_target_pages: quran.target_pages || 5, is_completed: false, created_at: now }]);
+    if (hifz && !quranHifzTrackers.length) setQuranHifzTrackers([{ id: createId(), worship_id: hifz.id, pillar_id: pillar.id, surahs: [], total_memorized_pages: 0, daily_review_pages: 1, created_at: now }]);
     setToasts((previous) => [...previous, { id: createId(), type: 'success', title: 'تم تفعيل منظومة العبادات', description: 'أُنشئت ركيزة «العلاقة مع الله» وربطت بالعبادات المختارة.' }]);
   };
 
@@ -1315,6 +1333,11 @@ export const HierarchicalApp: React.FC = () => {
   };
 
   const handleApproveProgression = (pathId: string) => {
+    const selectedPath = progressionPaths.find((path) => path.id === pathId);
+    const nextStage = selectedPath?.stages[selectedPath.current_stage_index + 1];
+    if (!selectedPath || !nextStage) return;
+    setWorshipDefinitions((previous) => previous.map((definition) => definition.id === selectedPath.worship_id && definition.category === 'quran_wird' ? { ...definition, target_pages: nextStage.target_value, updated_at: new Date().toISOString() } : definition));
+    setQuranKhatmas((previous) => previous.map((khatma) => khatma.worship_id === selectedPath.worship_id ? { ...khatma, daily_target_pages: nextStage.target_value } : khatma));
     setProgressionPaths((previous) => previous.map((path) => {
       if (path.id !== pathId || path.current_stage_index >= path.stages.length - 1) return path;
       return { ...path, current_stage_index: path.current_stage_index + 1, consecutive_days: 0, stage_start_date: toLocalDateKey(), last_promotion_date: toLocalDateKey(), updated_at: new Date().toISOString() };

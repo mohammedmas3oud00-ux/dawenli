@@ -45,10 +45,18 @@ export function worshipStreak(definitions: WorshipDefinition[], logs: WorshipLog
   return days;
 }
 
+export function progressionCompleted(path: ProgressionPath, logs: WorshipLog[], today = toLocalDateKey()): number {
+  const stage = path.stages[path.current_stage_index];
+  if (!stage) return 0;
+  return new Set(logs.filter((log) => log.worship_id === path.worship_id && log.is_completed && log.date >= path.stage_start_date && log.date <= today &&
+    (log.pages_read == null || log.pages_read >= stage.target_value) &&
+    (log.rakaat_count == null || log.rakaat_count >= stage.target_value)).map((log) => log.date)).size;
+}
+
 export function progressionSuggestion(path: ProgressionPath, logs: WorshipLog[]): string | null {
   const stage = path.stages[path.current_stage_index];
   const next = path.stages[path.current_stage_index + 1];
-  if (!stage || !next || path.consecutive_days < stage.days_required) return null;
+  if (!stage || !next || progressionCompleted(path, logs) < stage.days_required) return null;
   return `أكملت مرحلة «${stage.title}». هل تريد الانتقال إلى «${next.title}»؟`;
 }
 
