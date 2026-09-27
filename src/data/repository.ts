@@ -113,10 +113,11 @@ export class SupabaseRepository implements DataRepository {
 
   async save(snapshot: AppDataSnapshot): Promise<void> {
     try {
+      const normalizedSnapshot = normalizeSnapshot(snapshot);
       const payload = {
-        ...snapshot,
-        ...Object.fromEntries(TABLES.map(([table, key]) => [table, (snapshot[key] as unknown as Array<Record<string, unknown>>).map((row) => toDatabaseRow(row, this.userId, table))])),
-        custom_field_definitions: snapshot.customFieldDefinitions.map((definition) => {
+        ...normalizedSnapshot,
+        ...Object.fromEntries(TABLES.map(([table, key]) => [table, (normalizedSnapshot[key] as unknown as Array<Record<string, unknown>>).map((row) => toDatabaseRow(row, this.userId, table))])),
+        custom_field_definitions: normalizedSnapshot.customFieldDefinitions.map((definition) => {
           const { entityType, ...rest } = definition;
           return toDatabaseRow({ ...rest, entity_type: entityType }, this.userId);
         }),
@@ -148,6 +149,7 @@ function toDatabaseRow(row: Record<string, unknown>, userId: string, table?: str
     updated_at: row.updated_at || new Date().toISOString(),
   };
   if (table === 'vault_items') normalized.status = row.status || 'active';
+  if (table === 'projects' || table === 'tasks') normalized.custom_fields = row.custom_fields ?? {};
   if (table === 'worship_logs' && normalized.congregation === '') normalized.congregation = null;
   delete normalized.schemaVersion;
   return normalized;
@@ -180,13 +182,13 @@ export function normalizeSnapshot(value: Partial<AppDataSnapshot>): AppDataSnaps
     pillars: Array.isArray(value.pillars) ? value.pillars : [],
     visions: Array.isArray(value.visions) ? value.visions : [],
     goals: Array.isArray(value.goals) ? value.goals : [],
-    projects: Array.isArray(value.projects) ? value.projects : [],
-    tasks: Array.isArray(value.tasks) ? value.tasks : [],
-    reviews: Array.isArray(value.reviews) ? value.reviews : [],
+    projects: Array.isArray(value.projects) ? value.projects.map((project) => ({ ...project, custom_fields: project.custom_fields ?? {} })) : [],
+    tasks: Array.isArray(value.tasks) ? value.tasks.map((task) => ({ ...task, custom_fields: task.custom_fields ?? {} })) : [],
+    reviews: Array.isArray(value.reviews) ? value.reviews.map((review) => ({ ...review, focus_goal_ids: review.focus_goal_ids ?? [], focus_project_ids: review.focus_project_ids ?? [] })) : [],
     inboxItems: Array.isArray(value.inboxItems) ? value.inboxItems.map(normalizeInboxItem) : [],
     habits: Array.isArray(value.habits) ? value.habits.map((habit) => {
       const legacy = habit as unknown as typeof habit & { best_streak?: number };
-      const normalized = { ...habit, longest_streak: habit.longest_streak ?? Number(legacy.best_streak ?? 0) };
+      const normalized = { ...habit, longest_streak: habit.longest_streak ?? Number(legacy.best_streak ?? 0), custom_days: habit.custom_days ?? [] };
       delete (normalized as unknown as { best_streak?: number }).best_streak;
       return normalized;
     }) : [],
