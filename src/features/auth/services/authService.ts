@@ -14,6 +14,16 @@ export function mapAuthUser(user: User) {
 
 export function createAuthService(client: SupabaseClient | null) {
   return {
+    async getSessionUser() {
+      if (!client) return null;
+      try {
+        const { data, error } = await client.auth.getSession();
+        if (error || !data.session?.user?.email) return null;
+        return mapAuthUser(data.session.user);
+      } catch (error) {
+        throw toServiceError(error, 'تعذر تحميل جلسة الحساب.');
+      }
+    },
     async getCurrentUser() {
       if (!client) return null;
       try {

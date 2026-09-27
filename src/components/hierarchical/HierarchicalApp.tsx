@@ -62,7 +62,8 @@ import { AuthModal } from './AuthModal';
 import { InstallAppButton } from './InstallAppButton';
 import { ToastContainer, ToastMessage } from './ToastNotification';
 import { Plus, Menu, Mic, Sparkles, Sun, Moon, User, LogIn, LogOut, KeyRound, Trash2 } from 'lucide-react';
-import { supabase, isSupabaseConfigured } from '../../utils/supabaseClient';
+import { supabase } from '../../utils/supabaseClient';
+import { useAuth } from '../../features/auth/hooks/useAuth';
 import { createSnapshotBackup, DataRepository, emptySnapshot, GuestLocalRepository, normalizeSnapshot, SupabaseRepository } from '../../data/repository';
 import { remapSnapshotIds } from '../../data/legacyMigration';
 import { createId } from '../../utils/id';
@@ -72,6 +73,7 @@ import { deleteGeminiCredential, hasStoredGeminiCredential, refreshGeminiCredent
 import { subscribeToPush, PushNotificationPreferences } from '../../utils/pushNotifications';
 
 export const HierarchicalApp: React.FC = () => {
+  const { status: authStatus, user: currentUser, adoptUser, signOut: authSignOut } = useAuth();
   // Core Entities State
   const [pillars, setPillars] = useState<Pillar[]>([]);
   const [visions, setVisions] = useState<Vision[]>([]);
@@ -114,8 +116,6 @@ export const HierarchicalApp: React.FC = () => {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   // User Authentication State
-  const [currentUser, setCurrentUser] = useState<{ id?: string; email: string; isGuest?: boolean } | null>(null);
-  const [authStatus, setAuthStatus] = useState<'loading' | 'signedOut' | 'guest' | 'authenticated'>('loading');
   const [dataReady, setDataReady] = useState(false);
   const repositoryRef = useRef<DataRepository | null>(null);
   const lastSavedSnapshotRef = useRef<AppDataSnapshot>(emptySnapshot());
@@ -127,37 +127,6 @@ export const HierarchicalApp: React.FC = () => {
     });
     return saveQueueRef.current;
   };
-
-  // Supabase Auth Session Synchronization
-  useEffect(() => {
-    if (!isSupabaseConfigured || !supabase) {
-      setAuthStatus('signedOut');
-      return;
-    }
-    let active = true;
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (!active) return;
-      if (error || !session?.user?.email) {
-        setCurrentUser(null);
-        setAuthStatus('signedOut');
-        return;
-      }
-      setCurrentUser({ id: session.user.id, email: session.user.email });
-      setAuthStatus('authenticated');
-    });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!active) return;
-      if (session?.user?.email) {
-        setCurrentUser({ id: session.user.id, email: session.user.email });
-        setAuthStatus('authenticated');
-      } else {
-        setCurrentUser(null);
-        setAuthStatus('signedOut');
-        setDataReady(false);
-      }
-    });
-    return () => { active = false; subscription.unsubscribe(); };
-  }, []);
 
   // Dark Mode Theme State
   const [isDark, setIsDark] = useState<boolean>(() => {
@@ -184,8 +153,7 @@ export const HierarchicalApp: React.FC = () => {
   };
 
   const handleAuthSuccess = (user: { id?: string; email: string; isGuest?: boolean }) => {
-    setCurrentUser(user);
-    setAuthStatus(user.isGuest ? 'guest' : 'authenticated');
+    adoptUser(user);
     setIsAuthModalOpen(false);
     setToasts((prev) => [
       ...prev,
@@ -199,15 +167,7 @@ export const HierarchicalApp: React.FC = () => {
   };
 
   const handleSignOut = async () => {
-    if (isSupabaseConfigured && supabase) {
-      try {
-        await supabase.auth.signOut();
-      } catch (e) {
-        console.warn('Supabase sign out error:', e);
-      }
-    }
-    setCurrentUser(null);
-    setAuthStatus('signedOut');
+    try { await authSignOut(); } catch (e) { console.warn('Supabase sign out error:', e); }
     setDataReady(false);
     setIsAuthModalOpen(true);
     setToasts((prev) => [
@@ -343,8 +303,6 @@ export const HierarchicalApp: React.FC = () => {
         ? new SupabaseRepository(supabase, currentUser.id)
         : null;
     if (!repository) {
-      setAuthStatus('signedOut');
-      setCurrentUser(null);
       return;
     }
     repositoryRef.current = repository;
