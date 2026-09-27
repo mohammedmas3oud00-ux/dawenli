@@ -18,6 +18,6 @@ This checklist is not a completion claim. Production must be verified after migr
 - [x] Regression/unit tests (36 passing), strict typecheck, and production build pass.
 - [x] Apply additive Supabase migrations 202609270013, 202609270014, and 202609270015; SQL Editor verification returned all four columns. Account save/isolation still needs an authenticated manual CRUD check.
 - [x] Push commit 59ab111 and verify the public domain returns the current app shell and latest worship markers; the deployment dashboard may briefly show Building while Vercel finishes.
-- [x] Verify published user journeys at desktop and mobile widths: Playwright 3/3 passed, including API JSON separation, no horizontal overflow, and empty guest worship setup without seed data. Authenticated CRUD and physical Push delivery remain manual checks.
+- [ ] Verify the changed worship/vault/home journeys at desktop and mobile widths. Existing Playwright 3/3 only verifies the public login screen widths, API JSON separation, and empty guest worship setup. It does not prove the populated dashboards, tracking controls, authenticated CRUD, or Push delivery work end-to-end.
 
 Preserve existing records and the user's untracked design document. No destructive seed/reset operations.
