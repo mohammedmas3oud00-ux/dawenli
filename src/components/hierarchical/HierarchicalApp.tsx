@@ -63,10 +63,11 @@ import { InstallAppButton } from './InstallAppButton';
 import { ToastContainer, ToastMessage } from './ToastNotification';
 import { Plus, Menu, Mic, Sparkles, Sun, Moon, User, LogIn, LogOut, KeyRound, Trash2 } from 'lucide-react';
 import { supabase } from '../../utils/supabaseClient';
+import { createRepositoryForUser } from '../../shared/services/repositoryFactory';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import { useAppStore } from '../../app/store/appStore';
 import { createSnapshotSaveQueue, enqueueSnapshotSave } from '../../shared/services/snapshotPersistence';
-import { createSnapshotBackup, DataRepository, emptySnapshot, GuestLocalRepository, normalizeSnapshot, SupabaseRepository } from '../../data/repository';
+import { createSnapshotBackup, DataRepository, emptySnapshot, normalizeSnapshot } from '../../data/repository';
 import { remapSnapshotIds } from '../../data/legacyMigration';
 import { createId } from '../../utils/id';
 import { toLocalDateKey } from '../../utils/date';
@@ -282,11 +283,7 @@ export const HierarchicalApp: React.FC = () => {
   // Select exactly one repository per session. Signed-in data never falls back to local storage.
   useEffect(() => {
     if (!currentUser || authStatus === 'loading' || authStatus === 'signedOut') return;
-    const repository = currentUser.isGuest
-      ? new GuestLocalRepository()
-      : currentUser.id && supabase
-        ? new SupabaseRepository(supabase, currentUser.id)
-        : null;
+    const repository = createRepositoryForUser(currentUser, supabase);
     if (!repository) {
       return;
     }

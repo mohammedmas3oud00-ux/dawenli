@@ -50,3 +50,4 @@ The adapters are not wired into the coordinator until their contract tests pass.
 - Legacy components remain as implementation modules so the public props and visual behavior stay unchanged.
 - Added repository adapters and hooks for vaults and inbox, completing the feature boundary set for the primary CRUD entities.
 - Extracted the serialized snapshot save queue into a tested shared service; retry and atomic repository behavior remain unchanged.
+- Extracted repository selection into `createRepositoryForUser`; the coordinator no longer constructs guest/cloud repository classes directly.
