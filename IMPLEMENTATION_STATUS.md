@@ -16,10 +16,8 @@ This checklist is not a completion claim. Production must be verified after migr
   - Local VaultLearning component: plan, daily target, sessions/notes/undo, named lesson completion. Three component tests pass. Integrated into reading modal; courses currently started from resource items. Needs explicit course discovery/filter and published verification. Migration 202609270014 adds learning JSON.
 - [ ] Home: daily shortcuts, clear progress and evaluations.
 - [ ] Regression/unit/UI tests for the requested behaviors, typecheck and build.
-- [ ] Apply additive Supabase migration 202609270013; verify cloud save and account isolation.
-  - Also apply 202609270014_vault_learning.sql before publishing frontend writes.
-  - Also apply 202609270015_worship_history.sql. Current typecheck and 34 unit/component tests pass; this is not deployment evidence.
-- [ ] Push and verify Vercel deployment plus the public domain's actual worship chunk.
+- [x] Apply additive Supabase migrations 202609270013, 202609270014, and 202609270015; SQL Editor verification returned all four columns. Account save/isolation still needs an authenticated manual CRUD check.
+- [x] Push commit 59ab111 and verify the public domain returns the current app shell and latest worship markers; the deployment dashboard may briefly show Building while Vercel finishes.
 - [ ] Verify published user journeys at phone and desktop widths; do not infer success from build alone.
 
 Preserve existing records and the user's untracked design document. No destructive seed/reset operations.
