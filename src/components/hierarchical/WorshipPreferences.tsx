@@ -4,7 +4,7 @@ import type { WorshipDefinition } from '../../types/hierarchical';
 export function WorshipPreferences({ definition, onSave }: { definition: WorshipDefinition; onSave: (id: string, patch: Partial<WorshipDefinition>) => void }) {
   const [weekdays, setWeekdays] = useState(definition.scheduled_days ?? [1, 4]);
   const [whiteDays, setWhiteDays] = useState((definition.scheduled_hijri_days ?? []).length > 0);
-  const [target, setTarget] = useState(definition.category === 'quran_wird' ? (definition.target_pages || 5) / 5 : definition.target_count || 2);
+  const [target, setTarget] = useState(definition.category === 'quran_wird' ? Math.max(1, Math.ceil((definition.target_pages || 5) / 5)) : definition.target_count || 2);
   const [saved, setSaved] = useState(false);
   const [duration, setDuration] = useState(definition.progression_days || 30);
   if (!['fasting', 'quran_wird', 'qiyam'].includes(definition.category)) return null;

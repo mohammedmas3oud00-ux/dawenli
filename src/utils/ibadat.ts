@@ -62,7 +62,10 @@ export function isWorshipScheduled(definition: WorshipDefinition, date = toLocal
 export function isWorshipComplete(definition: WorshipDefinition, log: WorshipLog | undefined): boolean {
   if (!log?.is_completed) return false;
   const item = worshipDefinitionAt(definition, log.date);
-  if (item.tracking_type === 'pages') return (log.pages_read ?? 0) >= (item.target_pages || 1);
+  if (item.tracking_type === 'pages') {
+    const minimumPages = item.category === 'quran_wird' ? 5 : 1;
+    return (log.pages_read ?? 0) >= Math.max(minimumPages, item.target_pages || minimumPages);
+  }
   if (item.category === 'qiyam') return (log.rakaat_count ?? 0) >= (item.target_count || 2);
   if (item.tracking_type === 'counter') return (log.count ?? 0) >= (item.target_count || 1);
   return true;
@@ -121,7 +124,7 @@ export function targetStreak(definition: WorshipDefinition, logs: WorshipLog[], 
 export function configuredProgression(path: ProgressionPath, definition: WorshipDefinition): ProgressionPath {
   if (!['quran_wird', 'qiyam'].includes(definition.category)) return path;
   const quran = definition.category === 'quran_wird';
-  const target = quran ? definition.target_pages || 5 : definition.target_count || 2;
+  const target = quran ? Math.max(5, definition.target_pages || 5) : definition.target_count || 2;
   const duration = definition.progression_days || 30;
   const label = (value: number) => quran ? `${value / 5} أرباع جزء يوميًا` : `${value} ركعات`;
   const increment = quran ? 5 : 2;

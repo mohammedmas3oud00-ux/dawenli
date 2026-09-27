@@ -51,6 +51,12 @@ describe('ibadat calculations', () => {
     const qiyam: WorshipDefinition = { ...definition('qiyam'), category: 'qiyam', target_count: 4 };
     expect(isWorshipComplete(qiyam, { ...log('qiyam', '2026-09-27'), rakaat_count: 2 })).toBe(false);
   });
+  it('normalizes legacy Quran targets below one quarter', () => {
+    const quran: WorshipDefinition = { ...definition('quran'), category: 'quran_wird', tracking_type: 'pages', target_pages: 1 };
+    expect(isWorshipComplete(quran, { ...log('quran', '2026-09-27'), pages_read: 1 })).toBe(false);
+    expect(isWorshipComplete(quran, { ...log('quran', '2026-09-27'), pages_read: 5 })).toBe(true);
+    expect(configuredProgression({ id: 'p', worship_id: 'quran', title: '', stages: [], current_stage_index: 0, stage_start_date: '2026-09-27', consecutive_days: 0, auto_promote: false, created_at: '2026-09-27' }, quran).stages[0].target_value).toBe(5);
+  });
   it('preserves yesterday streak while today is unfinished', () => {
     expect(worshipStreak([definition('fajr')], [log('fajr', '2026-09-26')], '2026-09-27')).toBe(1);
   });
