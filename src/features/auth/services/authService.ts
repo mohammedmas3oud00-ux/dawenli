@@ -1,11 +1,15 @@
 import type { SupabaseClient, User } from '@supabase/supabase-js';
 import { ServiceError, toServiceError } from '../../../shared/services/repositoryErrors';
+import { isSupabaseConfigured, supabase } from '../../../shared/services/supabaseClient';
 
 export type AuthState =
   | { status: 'loading'; user: null }
   | { status: 'signedOut'; user: null }
   | { status: 'guest'; user: { email: string; isGuest: true; id?: string } }
   | { status: 'authenticated'; user: { email: string; isGuest?: false; id: string } };
+
+export { isSupabaseConfigured };
+export const authService = createAuthService(isSupabaseConfigured ? supabase : null);
 
 export function mapAuthUser(user: User) {
   if (!user.email) throw new ServiceError('unauthorized', 'حساب المصادقة لا يحتوي على بريد إلكتروني.');
@@ -14,6 +18,30 @@ export function mapAuthUser(user: User) {
 
 export function createAuthService(client: SupabaseClient | null) {
   return {
+    async signInWithPassword(email: string, password: string) {
+      if (!client) throw new ServiceError('unknown', 'المصادقة السحابية غير مهيأة.');
+      try {
+        const { data, error } = await client.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        if (!data.user?.email || !data.session) throw new ServiceError('unauthorized', 'لم تُنشأ جلسة دخول صالحة.');
+        return mapAuthUser(data.user);
+      } catch (error) { throw toServiceError(error, 'تعذر تسجيل الدخول.'); }
+    },
+    async signUp(email: string, password: string, fullName: string) {
+      if (!client) throw new ServiceError('unknown', 'المصادقة السحابية غير مهيأة.');
+      try {
+        const { data, error } = await client.auth.signUp({ email, password, options: { data: { full_name: fullName } } });
+        if (error) throw error;
+        return { user: data.user?.email ? mapAuthUser(data.user) : null, hasSession: Boolean(data.session) };
+      } catch (error) { throw toServiceError(error, 'تعذر إنشاء الحساب.'); }
+    },
+    async signInWithGoogle(redirectTo: string) {
+      if (!client) throw new ServiceError('unknown', 'المصادقة السحابية غير مهيأة.');
+      try {
+        const { error } = await client.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } });
+        if (error) throw error;
+      } catch (error) { throw toServiceError(error, 'تعذر بدء تسجيل Google.'); }
+    },
     async getSessionUser() {
       if (!client) return null;
       try {

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AlertCircle, ArrowRight, CheckCircle2, Key, Lock, LogIn, Mail, ShieldCheck, User, UserPlus, X } from 'lucide-react';
-import { isSupabaseConfigured, supabase } from '../../utils/supabaseClient';
+import { authService, isSupabaseConfigured } from '../../features/auth/services/authService';
 
 const googleAuthEnabled = import.meta.env.VITE_ENABLE_GOOGLE_AUTH === 'true';
 
@@ -75,7 +75,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setErrorMsg('كلمة المرور يجب ألا تقل عن 6 أحرف.');
       return;
     }
-    if (!isSupabaseConfigured || !supabase) {
+    if (!isSupabaseConfigured) {
       setErrorMsg('المصادقة السحابية غير مهيأة. يمكنك المتابعة كضيف محلي فقط.');
       return;
     }
@@ -83,27 +83,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setLoading(true);
     try {
       if (tab === 'signup') {
-        const { data, error } = await supabase.auth.signUp({
-          email: cleanEmail,
-          password,
-          options: { data: { full_name: fullName.trim() } },
-        });
-        if (error) throw error;
-        if (!data.session) {
+        const result = await authService.signUp(cleanEmail, password, fullName.trim());
+        if (!result.hasSession) {
           setSuccessMsg('تم إنشاء الحساب. افتح رسالة التأكيد في بريدك ثم سجّل الدخول.');
           setTab('signin');
           setPassword('');
           return;
         }
-        if (data.user?.email) {
-          onAuthSuccess({ id: data.user.id, email: data.user.email });
+        if (result.user) {
+          onAuthSuccess(result.user);
           onClose();
         }
       } else {
-        const { data, error } = await supabase.auth.signInWithPassword({ email: cleanEmail, password });
-        if (error) throw error;
-        if (!data.session || !data.user?.email) throw new Error('لم تُنشأ جلسة دخول صالحة.');
-        onAuthSuccess({ id: data.user.id, email: data.user.email });
+        const user = await authService.signInWithPassword(cleanEmail, password);
+        onAuthSuccess(user);
         onClose();
       }
     } catch (error) {
@@ -115,17 +108,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   const handleGoogleSignIn = async () => {
     setErrorMsg(null);
-    if (!isSupabaseConfigured || !supabase) {
+    if (!isSupabaseConfigured) {
       setErrorMsg('تسجيل Google غير متاح لأن Supabase غير مهيأ.');
       return;
     }
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: { redirectTo: window.location.origin },
-      });
-      if (error) throw error;
+      await authService.signInWithGoogle(window.location.origin);
     } catch (error) {
       setErrorMsg(getAuthErrorMessage(error));
       setLoading(false);
