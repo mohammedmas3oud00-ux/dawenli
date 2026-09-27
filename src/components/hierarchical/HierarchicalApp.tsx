@@ -49,7 +49,7 @@ const HabitsTabView = lazy(() => import('./HabitsTabView').then((module) => ({ d
 const VaultsTabView = lazy(() => import('./VaultsTabView').then((module) => ({ default: module.VaultsTabView })));
 const FocusSessionView = lazy(() => import('./FocusSessionView').then((module) => ({ default: module.FocusSessionView })));
 const TimeBlockingView = lazy(() => import('./TimeBlockingView').then((module) => ({ default: module.TimeBlockingView })));
-const IbadatDashboard = lazy(() => import('./IbadatDashboard').then((module) => ({ default: module.IbadatDashboard })));
+const IbadatDashboard = lazy(() => import('../../features/ibadat/components/IbadatDashboard').then((module) => ({ default: module.IbadatDashboard })));
 const entityModals = () => import('./EntityFormModals');
 const PillarModal = lazy(() => entityModals().then((module) => ({ default: module.PillarModal })));
 const VisionModal = lazy(() => entityModals().then((module) => ({ default: module.VisionModal })));

@@ -31,3 +31,8 @@ The adapters are not wired into the coordinator until their contract tests pass.
 - Shared entity state now lives in `useAppStore` (Zustand); existing handlers keep their setter-compatible API during migration.
 - `snapshotFromState` provides one typed projection for future persistence extraction.
 - The old atomic snapshot queue remains active; no data migration or schema change was made.
+
+## Phase 4 started
+
+- Added the `features/ibadat` component and calculation boundaries.
+- The lazy-loaded production route now enters through the feature boundary while the legacy implementation remains available for rollback.
