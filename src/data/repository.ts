@@ -114,14 +114,7 @@ export class SupabaseRepository implements DataRepository {
   async save(snapshot: AppDataSnapshot): Promise<void> {
     try {
       const normalizedSnapshot = normalizeSnapshot(snapshot);
-      const payload = {
-        ...normalizedSnapshot,
-        ...Object.fromEntries(TABLES.map(([table, key]) => [table, (normalizedSnapshot[key] as unknown as Array<Record<string, unknown>>).map((row) => toDatabaseRow(row, this.userId, table))])),
-        custom_field_definitions: normalizedSnapshot.customFieldDefinitions.map((definition) => {
-          const { entityType, ...rest } = definition;
-          return toDatabaseRow({ ...rest, entity_type: entityType }, this.userId);
-        }),
-      };
+      const payload = normalizeSnapshotForDatabase(normalizedSnapshot, this.userId);
       const { error } = await this.client.rpc('dawenli_save_snapshot', { p_snapshot: payload });
       if (error) throw error;
     } catch (error) {
@@ -140,17 +133,106 @@ export class SupabaseRepository implements DataRepository {
 
 }
 
+export function normalizeSnapshotForDatabase(snapshot: AppDataSnapshot, userId: string): Record<string, unknown> {
+  return {
+    ...snapshot,
+    ...Object.fromEntries(TABLES.map(([table, key]) => [table, (snapshot[key] as unknown as Array<Record<string, unknown>>).map((row) => toDatabaseRow(row, userId, table))])),
+    custom_field_definitions: snapshot.customFieldDefinitions.map((definition) => {
+      const { entityType, ...rest } = definition;
+      return toDatabaseRow({ ...rest, entity_type: entityType }, userId);
+    }),
+  };
+}
+
 function toDatabaseRow(row: Record<string, unknown>, userId: string, table?: string): Record<string, unknown> {
+  const now = new Date().toISOString();
   const normalized: Record<string, unknown> = {
     ...row,
     user_id: userId,
     // Older local records were created before updated_at became mandatory.
-    // Supplying it here keeps the atomic RPC compatible with those records.
-    updated_at: row.updated_at || new Date().toISOString(),
+    updated_at: row.updated_at || now,
   };
-  if (table === 'vault_items') normalized.status = row.status || 'active';
-  if (table === 'projects' || table === 'tasks') normalized.custom_fields = row.custom_fields ?? {};
-  if (table === 'worship_logs' && normalized.congregation === '') normalized.congregation = null;
+
+  switch (table) {
+    case 'projects':
+      normalized.status = row.status || 'in_progress';
+      normalized.progress = row.progress ?? 0;
+      normalized.custom_fields = row.custom_fields ?? {};
+      break;
+    case 'tasks':
+      normalized.status = row.status || 'todo';
+      normalized.priority = row.priority || 'medium';
+      normalized.custom_fields = row.custom_fields ?? {};
+      break;
+    case 'habits':
+      normalized.frequency = row.frequency || 'daily';
+      normalized.target_days_per_week = row.target_days_per_week ?? 7;
+      normalized.completed_dates = row.completed_dates ?? [];
+      normalized.current_streak = row.current_streak ?? 0;
+      normalized.best_streak = row.best_streak ?? row.longest_streak ?? 0;
+      normalized.is_active = row.is_active ?? true;
+      normalized.time_of_day = row.time_of_day || 'morning';
+      normalized.custom_days = row.custom_days ?? [];
+      delete normalized.longest_streak;
+      break;
+    case 'inbox_items':
+      normalized.source_type = row.source_type || 'idea';
+      normalized.status = row.status || 'inbox';
+      normalized.converted_to = row.converted_to ?? null;
+      normalized.converted_entity_id = row.converted_entity_id ?? null;
+      break;
+    case 'vault_items':
+      normalized.vault_type = row.vault_type || 'notes';
+      normalized.status = row.status || 'active';
+      break;
+    case 'system_reviews':
+      normalized.frequency = row.frequency || 'daily';
+      normalized.rating = row.rating ?? 8;
+      normalized.focus_goal_ids = row.focus_goal_ids ?? [];
+      normalized.focus_project_ids = row.focus_project_ids ?? [];
+      break;
+    case 'worship_definitions':
+      normalized.category = row.category || 'custom_dua';
+      normalized.tracking_type = row.tracking_type || 'checkbox';
+      normalized.frequency = row.frequency || 'daily';
+      normalized.is_active = row.is_active ?? true;
+      normalized.sort_order = row.sort_order ?? 0;
+      break;
+    case 'worship_logs':
+      normalized.is_completed = row.is_completed ?? false;
+      if (normalized.congregation === '') normalized.congregation = null;
+      break;
+    case 'progression_paths':
+      normalized.stages = row.stages ?? [];
+      normalized.current_stage_index = row.current_stage_index ?? 0;
+      normalized.stage_start_date = row.stage_start_date || String(row.created_at || now).slice(0, 10);
+      normalized.consecutive_days = row.consecutive_days ?? 0;
+      normalized.auto_promote = row.auto_promote ?? false;
+      break;
+    case 'quran_khatmas':
+      normalized.khatma_number = row.khatma_number ?? 1;
+      normalized.start_date = row.start_date || String(row.created_at || now).slice(0, 10);
+      normalized.current_page = row.current_page ?? 1;
+      normalized.current_juz = row.current_juz ?? 1;
+      normalized.daily_target_pages = row.daily_target_pages ?? 1;
+      normalized.is_completed = row.is_completed ?? false;
+      break;
+    case 'quran_hifz_trackers':
+      normalized.surahs = row.surahs ?? [];
+      normalized.total_memorized_pages = row.total_memorized_pages ?? 0;
+      normalized.daily_review_pages = row.daily_review_pages ?? 0;
+      break;
+    case 'sleep_schedules':
+      normalized.ultimate_bedtime = row.ultimate_bedtime || '22:00';
+      normalized.ultimate_waketime = row.ultimate_waketime || '06:00';
+      normalized.current_bedtime = row.current_bedtime || normalized.ultimate_bedtime;
+      normalized.current_waketime = row.current_waketime || normalized.ultimate_waketime;
+      normalized.adjustment_minutes = row.adjustment_minutes ?? 15;
+      normalized.adjustment_frequency_days = row.adjustment_frequency_days ?? 7;
+      normalized.is_active = row.is_active ?? true;
+      break;
+  }
+
   delete normalized.schemaVersion;
   return normalized;
 }
