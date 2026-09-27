@@ -37,3 +37,9 @@ The adapters are not wired into the coordinator until their contract tests pass.
 - Added the `features/ibadat` component and calculation boundaries.
 - The lazy-loaded production route now enters through the feature boundary while the legacy implementation remains available for rollback.
 - Added repository-backed hooks for tasks, habits, ibadat, AI, and notifications with consistent loading/error/retry behavior.
+
+## Phase 7 started
+
+- Extracted `AppShell` and `AppRouter` from the root entry point.
+- `App.tsx` now only composes the shell, providers, and route boundary.
+- `HierarchicalApp` remains the compatibility route until individual feature screens are moved.

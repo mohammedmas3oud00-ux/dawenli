@@ -4,15 +4,16 @@
  */
 
 import React from 'react';
-import { HierarchicalApp } from './components/hierarchical/HierarchicalApp';
 import { AuthProvider } from './features/auth/providers/AuthProvider';
+import { AppShell } from './app/components/AppShell';
+import { AppRouter } from './app/router/AppRouter';
 
 export default function App() {
   return (
-    <div className="h-dvh w-full overflow-hidden flex flex-col bg-[#f8f7f4] dark:bg-slate-950 text-[#1a2420] dark:text-slate-100 font-sans antialiased" dir="rtl">
+    <AppShell>
       <AuthProvider>
-        <HierarchicalApp />
+        <AppRouter />
       </AuthProvider>
-    </div>
+    </AppShell>
   );
 }
