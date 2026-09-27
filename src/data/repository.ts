@@ -169,11 +169,11 @@ function toDatabaseRow(row: Record<string, unknown>, userId: string, table?: str
       normalized.target_days_per_week = row.target_days_per_week ?? 7;
       normalized.completed_dates = row.completed_dates ?? [];
       normalized.current_streak = row.current_streak ?? 0;
-      normalized.best_streak = row.best_streak ?? row.longest_streak ?? 0;
+      normalized.longest_streak = row.longest_streak ?? row.best_streak ?? 0;
+      normalized.best_streak = row.best_streak ?? normalized.longest_streak;
       normalized.is_active = row.is_active ?? true;
       normalized.time_of_day = row.time_of_day || 'morning';
       normalized.custom_days = row.custom_days ?? [];
-      delete normalized.longest_streak;
       break;
     case 'inbox_items':
       normalized.source_type = row.source_type || 'idea';
@@ -270,7 +270,7 @@ export function normalizeSnapshot(value: Partial<AppDataSnapshot>): AppDataSnaps
     inboxItems: Array.isArray(value.inboxItems) ? value.inboxItems.map(normalizeInboxItem) : [],
     habits: Array.isArray(value.habits) ? value.habits.map((habit) => {
       const legacy = habit as unknown as typeof habit & { best_streak?: number };
-      const normalized = { ...habit, longest_streak: habit.longest_streak ?? Number(legacy.best_streak ?? 0), custom_days: habit.custom_days ?? [], completed_dates: habit.completed_dates ?? [] };
+      const normalized = { ...habit, longest_streak: Math.max(Number(habit.longest_streak ?? 0), Number(legacy.best_streak ?? 0)), custom_days: habit.custom_days ?? [], completed_dates: habit.completed_dates ?? [] };
       delete (normalized as unknown as { best_streak?: number }).best_streak;
       return normalized;
     }) : [],

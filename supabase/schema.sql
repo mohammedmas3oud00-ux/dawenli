@@ -1,7 +1,8 @@
 -- Dawenli database schema entry point
 --
--- The canonical schema is maintained as an idempotent migration. Apply it
--- with `supabase db push` or execute this file from the migration directory:
+-- The canonical schema is maintained as idempotent migrations. Apply them
+-- with `supabase db push` in filename order. The base schema is created first:
+--   supabase/migrations/202609230000_initial_schema.sql
 --   supabase/migrations/202609240001_harden_dawenli.sql
 --
 -- Keeping this pointer avoids two divergent schemas and preserves the path

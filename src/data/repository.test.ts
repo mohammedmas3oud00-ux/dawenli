@@ -43,7 +43,7 @@ describe('repository snapshot normalization', () => {
     const path = (payload.progression_paths as Array<Record<string, unknown>>)[0];
     const sleep = (payload.sleep_schedules as Array<Record<string, unknown>>)[0];
     expect(habit.best_streak).toBe(4);
-    expect(habit).not.toHaveProperty('longest_streak');
+    expect(habit.longest_streak).toBe(4);
     expect(inbox.source_type).toBe('idea');
     expect(inbox.status).toBe('inbox');
     expect(worship.tracking_type).toBe('checkbox');
