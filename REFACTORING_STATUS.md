@@ -43,3 +43,8 @@ The adapters are not wired into the coordinator until their contract tests pass.
 - Extracted `AppShell` and `AppRouter` from the root entry point.
 - `App.tsx` now only composes the shell, providers, and route boundary.
 - `HierarchicalApp` remains the compatibility route until individual feature screens are moved.
+
+## Feature route boundaries
+
+- Tasks, habits, vaults, inbox, and ibadat now load through `src/features/*/components` boundaries.
+- Legacy components remain as implementation modules so the public props and visual behavior stay unchanged.

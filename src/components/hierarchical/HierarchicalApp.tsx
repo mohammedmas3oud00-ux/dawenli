@@ -41,12 +41,12 @@ const ProjectDetailView = lazy(() => import('./ProjectDetailView').then((module)
 const VisionsTabView = lazy(() => import('./VisionsTabView').then((module) => ({ default: module.VisionsTabView })));
 const GoalsTabView = lazy(() => import('./GoalsTabView').then((module) => ({ default: module.GoalsTabView })));
 const ProjectsTabView = lazy(() => import('./ProjectsTabView').then((module) => ({ default: module.ProjectsTabView })));
-const TasksTabView = lazy(() => import('./TasksTabView').then((module) => ({ default: module.TasksTabView })));
+const TasksTabView = lazy(() => import('../../features/tasks/components/TasksTabView').then((module) => ({ default: module.TasksTabView })));
 const ReviewsTabView = lazy(() => import('./ReviewsTabView').then((module) => ({ default: module.ReviewsTabView })));
 const ReviewModal = lazy(() => import('./ReviewModal').then((module) => ({ default: module.ReviewModal })));
-const InboxTabView = lazy(() => import('./InboxTabView').then((module) => ({ default: module.InboxTabView })));
-const HabitsTabView = lazy(() => import('./HabitsTabView').then((module) => ({ default: module.HabitsTabView })));
-const VaultsTabView = lazy(() => import('./VaultsTabView').then((module) => ({ default: module.VaultsTabView })));
+const InboxTabView = lazy(() => import('../../features/inbox/components/InboxTabView').then((module) => ({ default: module.InboxTabView })));
+const HabitsTabView = lazy(() => import('../../features/habits/components/HabitsTabView').then((module) => ({ default: module.HabitsTabView })));
+const VaultsTabView = lazy(() => import('../../features/vaults/components/VaultsTabView').then((module) => ({ default: module.VaultsTabView })));
 const FocusSessionView = lazy(() => import('./FocusSessionView').then((module) => ({ default: module.FocusSessionView })));
 const TimeBlockingView = lazy(() => import('./TimeBlockingView').then((module) => ({ default: module.TimeBlockingView })));
 const IbadatDashboard = lazy(() => import('../../features/ibadat/components/IbadatDashboard').then((module) => ({ default: module.IbadatDashboard })));
