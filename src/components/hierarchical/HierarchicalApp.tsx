@@ -115,6 +115,7 @@ export const HierarchicalApp: React.FC = () => {
   const [isVoiceAiModalOpen, setIsVoiceAiModalOpen] = useState(false);
   const [isGeminiModalOpen, setIsGeminiModalOpen] = useState(false);
   const [geminiKeyDraft, setGeminiKeyDraft] = useState('');
+  const [googleCalendarConnected, setGoogleCalendarConnected] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
@@ -146,6 +147,32 @@ export const HierarchicalApp: React.FC = () => {
       localStorage.setItem('dawenli_theme', 'light');
     }
   }, [isDark]);
+
+  useEffect(() => {
+    if (authStatus !== 'authenticated' || !supabase) return;
+    let active = true;
+    void (async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session?.access_token) return;
+      const response = await fetch('/api/integrations/google/status', { headers: { Authorization: `Bearer ${data.session.access_token}`, Accept: 'application/json' } });
+      const body = await response.json().catch(() => null) as { data?: { connected?: boolean } } | null;
+      if (active) setGoogleCalendarConnected(Boolean(body?.data?.connected));
+    })();
+    return () => { active = false; };
+  }, [authStatus, currentUser?.id]);
+
+  useEffect(() => {
+    const result = new URLSearchParams(window.location.search).get('google');
+    if (!result) return;
+    const messages: Record<string, { title: string; description: string; type: ToastMessage['type'] }> = {
+      connected: { title: 'تم ربط Google Calendar', description: 'يمكنك الآن متابعة إعداد المزامنة من صفحة التقويم.', type: 'success' },
+      cancelled: { title: 'تم إلغاء ربط Google Calendar', description: 'لم يتم تغيير أي إعداد.', type: 'info' },
+      error: { title: 'تعذر ربط Google Calendar', description: 'تحقق من إعدادات OAuth وحاول مرة أخرى.', type: 'error' },
+    };
+    const message = messages[result];
+    if (message) setToasts((previous) => [...previous, { id: createId(), ...message }]);
+    window.history.replaceState({}, document.title, `${window.location.pathname}${window.location.hash}`);
+  }, []);
 
   const handleToggleDark = () => {
     setIsDark((prev) => !prev);
@@ -1309,6 +1336,7 @@ export const HierarchicalApp: React.FC = () => {
                 onDelete={handleDeleteCalendarEvent}
                 onEnableNotifications={() => void subscribeNotifications({ calendarEnabled: true }).then(() => setToasts((previous) => [...previous, { id: createId(), type: 'success', title: 'تم تفعيل تذكيرات التقويم', description: 'ستصلك التذكيرات وفق المواعيد التي تختارها.' }])).catch((error) => setToasts((previous) => [...previous, { id: createId(), type: 'error', title: 'تعذر تفعيل التذكيرات', description: error instanceof Error ? error.message : 'حاول مرة أخرى.' }]))}
                 onConnectGoogle={() => void handleConnectGoogleCalendar()}
+                googleConnected={googleCalendarConnected}
               />
             )}
 
