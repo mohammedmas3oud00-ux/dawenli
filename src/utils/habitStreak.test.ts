@@ -36,4 +36,34 @@ describe('habit streaks', () => {
     );
     expect(result.current).toBe(2);
   });
+
+  it('resets the current streak after a missed day while keeping the longest', () => {
+    const result = calculateHabitStreak(
+      habit('daily'),
+      ['2026-09-10', '2026-09-11', '2026-09-12', '2026-09-20', '2026-09-21'],
+      new Date(2026, 8, 21, 12),
+    );
+    expect(result.current).toBe(2);
+    expect(result.longest).toBe(3);
+  });
+
+  it('starts from the previous scheduled day when today is incomplete', () => {
+    const result = calculateHabitStreak(habit('daily'), ['2026-09-20'], new Date(2026, 8, 21, 12));
+    expect(result.current).toBe(1);
+  });
+
+  it('resets the current streak when a scheduled day is missed', () => {
+    const result = calculateHabitStreak(
+      habit('custom_days', [1, 3]),
+      ['2026-09-21', '2026-09-23', '2026-09-30'],
+      new Date(2026, 8, 30, 12),
+    );
+    expect(result.current).toBe(1);
+    expect(result.longest).toBe(2);
+  });
+
+  it('returns zero for a habit with no completions', () => {
+    const result = calculateHabitStreak(habit('daily'), [], new Date(2026, 8, 21, 12));
+    expect(result).toEqual({ current: 0, longest: 0 });
+  });
 });
