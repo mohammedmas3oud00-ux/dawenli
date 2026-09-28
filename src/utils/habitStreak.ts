@@ -8,7 +8,11 @@ function isScheduled(habit: Habit, dateKey: string): boolean {
   return (habit.custom_days ?? []).includes(weekday);
 }
 
-export function calculateHabitStreak(habit: Habit, completedDates: string[], now: Date = new Date()): { current: number; longest: number } {
+export function calculateHabitStreak(
+  habit: Habit,
+  completedDates: string[],
+  now: Date = new Date(),
+): { current: number; longest: number } {
   const completed = new Set(completedDates);
   const sorted = [...completed].sort();
   let longest = 0;

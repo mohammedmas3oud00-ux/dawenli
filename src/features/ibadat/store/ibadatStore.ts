@@ -13,6 +13,8 @@ interface IbadatStoreState {
 export const useIbadatStore = create<IbadatStoreState>((set) => ({
   worshipDefinitions: [],
   worshipLogs: [],
-  setWorshipDefinitions: (value) => set((state) => ({ worshipDefinitions: typeof value === 'function' ? value(state.worshipDefinitions) : value })),
-  setWorshipLogs: (value) => set((state) => ({ worshipLogs: typeof value === 'function' ? value(state.worshipLogs) : value })),
+  setWorshipDefinitions: (value) =>
+    set((state) => ({ worshipDefinitions: typeof value === 'function' ? value(state.worshipDefinitions) : value })),
+  setWorshipLogs: (value) =>
+    set((state) => ({ worshipLogs: typeof value === 'function' ? value(state.worshipLogs) : value })),
 }));

@@ -1,15 +1,15 @@
-import { 
-  Pillar, 
-  Vision, 
-  ValueGoal, 
-  Project, 
-  Task, 
-  ReviewFrequency, 
-  SystemReview, 
+import {
+  Pillar,
+  Vision,
+  ValueGoal,
+  Project,
+  Task,
+  ReviewFrequency,
+  SystemReview,
   SystemReviewSnapshot,
   ReviewActionItem,
   WorshipDefinition,
-  WorshipLog
+  WorshipLog,
 } from '../types/hierarchical';
 import { toLocalDateKey } from './date';
 import { worshipStreak, worshipSummary } from './ibadat';
@@ -25,36 +25,33 @@ export function generateSystemSnapshot(
   tasks: Task[],
   focusPillarId?: string | null,
   worshipDefinitions: WorshipDefinition[] = [],
-  worshipLogs: WorshipLog[] = []
+  worshipLogs: WorshipLog[] = [],
 ): SystemReviewSnapshot {
-  const relevantProjects = focusPillarId 
-    ? projects.filter(p => {
-        const goal = goals.find(g => g.id === p.goal_id);
+  const relevantProjects = focusPillarId
+    ? projects.filter((p) => {
+        const goal = goals.find((g) => g.id === p.goal_id);
         return goal && goal.pillar_id === focusPillarId;
       })
     : projects;
 
-  const relevantProjectIds = new Set(relevantProjects.map(p => p.id));
-  const relevantTasks = focusPillarId
-    ? tasks.filter(t => relevantProjectIds.has(t.project_id))
-    : tasks;
+  const relevantProjectIds = new Set(relevantProjects.map((p) => p.id));
+  const relevantTasks = focusPillarId ? tasks.filter((t) => relevantProjectIds.has(t.project_id)) : tasks;
 
   const todayStr = toLocalDateKey();
 
-  const tasksCompleted = relevantTasks.filter(t => t.status === 'done').length;
+  const tasksCompleted = relevantTasks.filter((t) => t.status === 'done').length;
   const tasksPending = relevantTasks.length - tasksCompleted;
-  const tasksOverdue = relevantTasks.filter(t => 
-    t.status !== 'done' && t.due_date && t.due_date < todayStr
-  ).length;
+  const tasksOverdue = relevantTasks.filter((t) => t.status !== 'done' && t.due_date && t.due_date < todayStr).length;
 
-  const projectsActive = relevantProjects.filter(p => p.status === 'in_progress').length;
+  const projectsActive = relevantProjects.filter((p) => p.status === 'in_progress').length;
 
   const relevantPillars = focusPillarId ? pillars.filter((pillar) => pillar.id === focusPillarId) : pillars;
-  const totalProgress = relevantPillars.length > 0
-    ? Math.round(relevantPillars.reduce((acc, p) => acc + (p.progress || 0), 0) / relevantPillars.length)
-    : 0;
+  const totalProgress =
+    relevantPillars.length > 0
+      ? Math.round(relevantPillars.reduce((acc, p) => acc + (p.progress || 0), 0) / relevantPillars.length)
+      : 0;
 
-  const pillarDistribution = relevantPillars.map(p => ({
+  const pillarDistribution = relevantPillars.map((p) => ({
     pillar_id: p.id,
     pillar_title: p.title,
     progress: p.progress || 0,
@@ -76,7 +73,9 @@ export function generateSystemSnapshot(
     lagging_pillar: laggingPillar,
     worship_compliance_rate: worship.rate,
     worship_streak: worshipStreak(worshipDefinitions, worshipLogs),
-    worship_progression_summary: worship.total ? `${worship.completed}/${worship.total} من عبادات اليوم` : 'لم تُفعّل العبادات بعد',
+    worship_progression_summary: worship.total
+      ? `${worship.completed}/${worship.total} من عبادات اليوم`
+      : 'لم تُفعّل العبادات بعد',
   };
 }
 
@@ -115,7 +114,7 @@ export function generateAutomatedAudit(
   goals: ValueGoal[],
   projects: Project[],
   tasks: Task[],
-  focusPillarId?: string | null
+  focusPillarId?: string | null,
 ): {
   system_health_score: number;
   smart_summary: string;
@@ -132,8 +131,8 @@ export function generateAutomatedAudit(
   const recommendations: string[] = [];
   const suggested_actions: ReviewActionItem[] = [];
 
-  const topPillar = pillars.find(p => p.title === snapshot.top_active_pillar);
-  const lagPillar = pillars.find(p => p.title === snapshot.lagging_pillar);
+  const topPillar = pillars.find((p) => p.title === snapshot.top_active_pillar);
+  const lagPillar = pillars.find((p) => p.title === snapshot.lagging_pillar);
 
   // Strengths analysis
   if (snapshot.tasks_completed_count > 0) {
@@ -151,10 +150,14 @@ export function generateAutomatedAudit(
     bottlenecks.push(`رصد ${snapshot.tasks_overdue_count} مهمة متأخرة تتطلب إعادة جدولة أو حسماً فورياً.`);
   }
   if (lagPillar && lagPillar.progress < 25 && pillars.length > 1) {
-    bottlenecks.push(`ركيزة «${lagPillar.title}» تسجل نسبة تقدم منخفضة (${lagPillar.progress}%) مما قد يشير لفجوة تركيز.`);
+    bottlenecks.push(
+      `ركيزة «${lagPillar.title}» تسجل نسبة تقدم منخفضة (${lagPillar.progress}%) مما قد يشير لفجوة تركيز.`,
+    );
   }
   if (snapshot.projects_active_count > 5) {
-    bottlenecks.push(`تشتت محتمل: يوجد ${snapshot.projects_active_count} مشاريع نشطة بالتوازي، مما يقلل من سرعة الإنجاز.`);
+    bottlenecks.push(
+      `تشتت محتمل: يوجد ${snapshot.projects_active_count} مشاريع نشطة بالتوازي، مما يقلل من سرعة الإنجاز.`,
+    );
   }
 
   // Recommendations according to frequency
@@ -164,7 +167,7 @@ export function generateAutomatedAudit(
       recommendations.push('قم بتصفية المهام المتأخرة إما بتنفيذها أو تأجيلها بتاريخ صريح لمنع التراكم الذهني.');
     }
     recommendations.push('خصص جلسة تركيز عميق لمدة 45 دقيقة للمشروع الأكثر أهمية.');
-    
+
     // Suggested actions
     suggested_actions.push({
       id: `act-${Date.now()}-1`,
@@ -222,19 +225,22 @@ export function generateAutomatedAudit(
   }
 
   // Summary Text
-  const frequencyLabel = 
-    frequency === 'daily' ? 'اليومية' :
-    frequency === 'weekly' ? 'الأسبوعية' :
-    frequency === 'monthly' ? 'الشهرية' :
-    frequency === 'quarterly' ? 'الربع سنوية' : 'السنوية';
+  const frequencyLabel =
+    frequency === 'daily'
+      ? 'اليومية'
+      : frequency === 'weekly'
+        ? 'الأسبوعية'
+        : frequency === 'monthly'
+          ? 'الشهرية'
+          : frequency === 'quarterly'
+            ? 'الربع سنوية'
+            : 'السنوية';
 
   const smartSummary = `تشير المراجعة ${frequencyLabel} الآلية إلى حالة نظام عامة بمؤشر ${healthScore}/100. إجمالي تقدم الركائز يبلغ ${snapshot.overall_completion_rate}% مع إنجاز ${snapshot.tasks_completed_count} مهمة. ${
-    snapshot.tasks_overdue_count > 0 
-      ? `يُنصح بمعالجة ${snapshot.tasks_overdue_count} مهمة متأخرة بأسرع وقت.` 
+    snapshot.tasks_overdue_count > 0
+      ? `يُنصح بمعالجة ${snapshot.tasks_overdue_count} مهمة متأخرة بأسرع وقت.`
       : 'تسير وتيرة العمل بانضباط زمني سليم.'
-  } ${
-    lagPillar ? `يُستحسن توجيه بعض الانتباه لركيزة «${lagPillar.title}».` : ''
-  }`;
+  } ${lagPillar ? `يُستحسن توجيه بعض الانتباه لركيزة «${lagPillar.title}».` : ''}`;
 
   return {
     system_health_score: healthScore,
@@ -254,10 +260,10 @@ export function getInitialSeedReviews(
   visions: Vision[],
   goals: ValueGoal[],
   projects: Project[],
-  tasks: Task[]
+  tasks: Task[],
 ): SystemReview[] {
   const today = new Date();
-  
+
   const formatDate = (daysAgo: number) => {
     const d = new Date(today);
     d.setDate(d.getDate() - daysAgo);
@@ -284,7 +290,12 @@ export function getInitialSeedReviews(
       bottlenecks: ['فترة هبوط التركيز بعد الظهيرة تحتاج جدولة استراحة ذكية'],
       recommendations: ['حدد أهم 3 مهام لغدك قبل النوم', 'إغلاق الإشعارات أثناء جلسة التركيز'],
       action_items: [
-        { id: 'act-d-1', title: 'تجهيز مساحة العمل وتحديد المهمة الصباحية الأهم', priority: 'high', is_converted: false }
+        {
+          id: 'act-d-1',
+          title: 'تجهيز مساحة العمل وتحديد المهمة الصباحية الأهم',
+          priority: 'high',
+          is_converted: false,
+        },
       ],
       created_at: new Date(Date.now() - 3600000).toISOString(),
     },
@@ -307,7 +318,7 @@ export function getInitialSeedReviews(
       bottlenecks: ['ركيزة الصحة تسجل تقدماً أبطأ من باقي الركائز'],
       recommendations: ['جدولة أنشطة الصحة مسبقاً في بداية الأسبوع القادم', 'مراجعة أولويات المشاريع المتوازية'],
       action_items: [
-        { id: 'act-w-1', title: 'جدولة 3 جلسات رياضية للأسبوع القادم', priority: 'medium', is_converted: false }
+        { id: 'act-w-1', title: 'جدولة 3 جلسات رياضية للأسبوع القادم', priority: 'medium', is_converted: false },
       ],
       created_at: new Date(Date.now() - 86400000 * 3).toISOString(),
     },
@@ -330,7 +341,12 @@ export function getInitialSeedReviews(
       bottlenecks: ['حاجة لتشذيب قائمة المهام العالقة التي مر عليها أكثر من شهر'],
       recommendations: ['أرشفة المشاريع المنتهية لتصفية الذهن', 'إعادة ضبط أرقام الأهداف للشهر المقبل'],
       action_items: [
-        { id: 'act-m-1', title: 'أرشفة المهام القديمة وتحديث مؤشرات أهداف القيمة', priority: 'low', is_converted: false }
+        {
+          id: 'act-m-1',
+          title: 'أرشفة المهام القديمة وتحديث مؤشرات أهداف القيمة',
+          priority: 'low',
+          is_converted: false,
+        },
       ],
       created_at: new Date(Date.now() - 86400000 * 15).toISOString(),
     },
@@ -353,7 +369,7 @@ export function getInitialSeedReviews(
       bottlenecks: ['الحاجة لتفويض أو تبسيط بعض المهام الروتينية'],
       recommendations: ['تركيز الموارد في Q4 على المشاريع الأعلى أثراً', 'مراجعة صياغة الرؤى طويلة الأجل'],
       action_items: [
-        { id: 'act-q-1', title: 'تحديد المبادرات الثلاث التحولية للربع الرابع', priority: 'high', is_converted: false }
+        { id: 'act-q-1', title: 'تحديد المبادرات الثلاث التحولية للربع الرابع', priority: 'high', is_converted: false },
       ],
       created_at: new Date(Date.now() - 86400000 * 45).toISOString(),
     },
@@ -376,7 +392,12 @@ export function getInitialSeedReviews(
       bottlenecks: ['الحاجة لفترات استشفاء وإجازات منتظمة بين الفصول'],
       recommendations: ['إعادة صياغة الرؤى العشرية', 'تخصيص أسبوع خلوة للتخطيط والتجديد'],
       action_items: [
-        { id: 'act-y-1', title: 'كتابة بيان الرؤية للعام الجديد واعتماده في الركائز', priority: 'high', is_converted: false }
+        {
+          id: 'act-y-1',
+          title: 'كتابة بيان الرؤية للعام الجديد واعتماده في الركائز',
+          priority: 'high',
+          is_converted: false,
+        },
       ],
       created_at: new Date(Date.now() - 86400000 * 120).toISOString(),
     },

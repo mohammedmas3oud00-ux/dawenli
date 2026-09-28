@@ -32,20 +32,23 @@ describe('repository snapshot normalization', () => {
   });
 
   it('uses the current revision for compare-and-swap snapshot writes', async () => {
-    const rpc = vi.fn()
-      .mockResolvedValueOnce({ data: 7, error: null })
-      .mockResolvedValueOnce({ data: 8, error: null });
+    const rpc = vi.fn().mockResolvedValueOnce({ data: 7, error: null }).mockResolvedValueOnce({ data: 8, error: null });
     const repository = new SupabaseRepository({ rpc } as never, 'user-1');
 
     await repository.save(emptySnapshot());
 
     expect(rpc).toHaveBeenNthCalledWith(1, 'dawenli_get_snapshot_revision');
-    expect(rpc).toHaveBeenNthCalledWith(2, 'dawenli_save_snapshot', expect.objectContaining({ p_expected_revision: 7 }));
+    expect(rpc).toHaveBeenNthCalledWith(
+      2,
+      'dawenli_save_snapshot',
+      expect.objectContaining({ p_expected_revision: 7 }),
+    );
   });
 
   it('maps snapshot revision conflicts without keeping a stale retry payload', async () => {
     localStorage.clear();
-    const rpc = vi.fn()
+    const rpc = vi
+      .fn()
       .mockResolvedValueOnce({ data: 4, error: null })
       .mockResolvedValueOnce({ data: null, error: { code: '40001', message: 'Snapshot revision conflict' } });
     const repository = new SupabaseRepository({ rpc } as never, 'user-1');

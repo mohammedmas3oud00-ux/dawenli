@@ -23,7 +23,8 @@ export interface RecommendationParams {
  * Estimate task duration in minutes based on priority, status, and description length
  */
 export function estimateTaskDuration(task: Task): number {
-  if (typeof task.estimated_hours === 'number' && task.estimated_hours > 0) return Math.round(task.estimated_hours * 60);
+  if (typeof task.estimated_hours === 'number' && task.estimated_hours > 0)
+    return Math.round(task.estimated_hours * 60);
   if (task.priority === 'high') return 45;
   if (task.priority === 'medium') return 30;
   return 15;
@@ -47,18 +48,18 @@ export function getRecommendedTasks(
   projects: Project[],
   goals: ValueGoal[],
   pillars: Pillar[],
-  params: RecommendationParams
+  params: RecommendationParams,
 ): TaskRecommendation[] {
   const { availableMinutes, energyLevel, pillarId = 'all' } = params;
   const today = toLocalDateKey();
 
   // Map entities for fast lookup
-  const projectMap = new Map(projects.map(p => [p.id, p]));
-  const goalMap = new Map(goals.map(g => [g.id, g]));
-  const pillarMap = new Map(pillars.map(p => [p.id, p]));
+  const projectMap = new Map(projects.map((p) => [p.id, p]));
+  const goalMap = new Map(goals.map((g) => [g.id, g]));
+  const pillarMap = new Map(pillars.map((p) => [p.id, p]));
 
   // Active tasks only
-  const activeTasks = tasks.filter(t => t.status !== 'done');
+  const activeTasks = tasks.filter((t) => t.status !== 'done');
   if (activeTasks.length === 0) return [];
 
   const scoredList: TaskRecommendation[] = [];
@@ -110,7 +111,9 @@ export function getRecommendedTasks(
         urgencyLabel = '🚨 مستحقة اليوم';
         reasons.push('مستحقة اليوم ضمن خطتك التنفيذية');
       } else {
-        const diffDays = Math.ceil((parseLocalDateKey(dueDate).getTime() - parseLocalDateKey(today).getTime()) / (1000 * 60 * 60 * 24));
+        const diffDays = Math.ceil(
+          (parseLocalDateKey(dueDate).getTime() - parseLocalDateKey(today).getTime()) / (1000 * 60 * 60 * 24),
+        );
         if (diffDays <= 3) {
           score += 25;
           urgencyLabel = `⏳ مستحقة خلال ${diffDays} أيام`;

@@ -11,8 +11,19 @@ export function useDashboardNavigation() {
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
 
   return {
-    activeFocusTask, setActiveFocusTask, currentTab, setCurrentTab, isMobileSidebarOpen, setIsMobileSidebarOpen,
-    selectedPillarId, setSelectedPillarId, selectedVisionId, setSelectedVisionId, selectedGoalId, setSelectedGoalId,
-    selectedProjectId, setSelectedProjectId,
+    activeFocusTask,
+    setActiveFocusTask,
+    currentTab,
+    setCurrentTab,
+    isMobileSidebarOpen,
+    setIsMobileSidebarOpen,
+    selectedPillarId,
+    setSelectedPillarId,
+    selectedVisionId,
+    setSelectedVisionId,
+    selectedGoalId,
+    setSelectedGoalId,
+    selectedProjectId,
+    setSelectedProjectId,
   };
 }

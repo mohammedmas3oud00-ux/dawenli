@@ -1,7 +1,18 @@
 import { z } from 'zod';
 
-export const aiEntityTypes = ['pillar','vision','goal','project','task','habit','ibadat','inbox','journal','calendar_event'] as const;
-export const aiOperations = ['create','update','delete'] as const;
+export const aiEntityTypes = [
+  'pillar',
+  'vision',
+  'goal',
+  'project',
+  'task',
+  'habit',
+  'ibadat',
+  'inbox',
+  'journal',
+  'calendar_event',
+] as const;
+export const aiOperations = ['create', 'update', 'delete'] as const;
 
 export const aiCommandActionSchema = z.object({
   actionId: z.string().min(1),
@@ -16,20 +27,20 @@ export const aiCommandActionSchema = z.object({
   parentTitle: z.string().optional(),
   secondaryParentId: z.string().optional(),
   status: z.string().optional(),
-  priority: z.enum(['low','medium','high']).optional(),
-  energyLevel: z.enum(['low','medium','high']).optional(),
+  priority: z.enum(['low', 'medium', 'high']).optional(),
+  energyLevel: z.enum(['low', 'medium', 'high']).optional(),
   dueDate: z.string().nullable().optional(),
   startAt: z.string().optional(),
   endAt: z.string().nullable().optional(),
   allDay: z.boolean().optional(),
   frequency: z.string().optional(),
-  recurrenceFrequency: z.enum(['none','daily','weekly','monthly']).optional(),
+  recurrenceFrequency: z.enum(['none', 'daily', 'weekly', 'monthly']).optional(),
   recurrenceInterval: z.number().int().positive().optional(),
   recurrenceDays: z.array(z.number().int().min(0).max(6)).optional(),
   recurrenceUntil: z.string().nullable().optional(),
   reminderMinutes: z.number().int().min(0).max(10080).nullable().optional(),
   date: z.string().optional(),
-  mood: z.enum(['great','good','neutral','difficult']).nullable().optional(),
+  mood: z.enum(['great', 'good', 'neutral', 'difficult']).nullable().optional(),
   tags: z.array(z.string()).optional(),
   category: z.string().optional(),
   trackingType: z.string().optional(),
@@ -48,7 +59,7 @@ export const aiCommandPlanSchema = z.object({
   warnings: z.array(z.string()).default([]),
 });
 
-export type AiEntityType = typeof aiEntityTypes[number];
+export type AiEntityType = (typeof aiEntityTypes)[number];
 export type AiCommandAction = z.infer<typeof aiCommandActionSchema>;
 export type AiCommandPlan = z.infer<typeof aiCommandPlanSchema>;
 

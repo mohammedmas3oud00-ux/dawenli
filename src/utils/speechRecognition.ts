@@ -84,22 +84,28 @@ export interface AiVoiceAnalysisResult {
 
 async function getAiHeaders(): Promise<Record<string, string>> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  const { data } = await supabase?.auth.getSession() ?? { data: { session: null } };
+  const { data } = (await supabase?.auth.getSession()) ?? { data: { session: null } };
   if (!data.session?.access_token) throw new Error('سجّل الدخول لاستخدام ميزات Gemini.');
   headers.Authorization = `Bearer ${data.session.access_token}`;
   return headers;
 }
 
-export async function analyzeWorshipInsight(metrics: Record<string, unknown>): Promise<{ summary: string; suggestions: string[] }> {
-  const res = await fetch('/api/ai/worship-insight', { method: 'POST', headers: await getAiHeaders(), body: JSON.stringify({ metrics }) });
+export async function analyzeWorshipInsight(
+  metrics: Record<string, unknown>,
+): Promise<{ summary: string; suggestions: string[] }> {
+  const res = await fetch('/api/ai/worship-insight', {
+    method: 'POST',
+    headers: await getAiHeaders(),
+    body: JSON.stringify({ metrics }),
+  });
   if (!res.ok) throw await readApiError(res, 'فشل تحليل الالتزام.');
-  const body = await res.json() as { data?: { summary?: string; suggestions?: string[] } };
+  const body = (await res.json()) as { data?: { summary?: string; suggestions?: string[] } };
   if (!body.data?.summary) throw new Error('تعذر قراءة تحليل الالتزام.');
   return { summary: body.data.summary, suggestions: body.data.suggestions || [] };
 }
 
 async function readApiError(response: Response, fallback: string): Promise<Error> {
-  const body = await response.json().catch(() => null) as { error?: { message?: string } | string } | null;
+  const body = (await response.json().catch(() => null)) as { error?: { message?: string } | string } | null;
   const message = typeof body?.error === 'string' ? body.error : body?.error?.message;
   return new Error(message || fallback);
 }
@@ -109,7 +115,7 @@ async function readApiError(response: Response, fallback: string): Promise<Error
  */
 export async function analyzeVoiceInput(
   speechText: string,
-  context?: { existingPillars?: string[]; existingProjects?: string[] }
+  context?: { existingPillars?: string[]; existingProjects?: string[] },
 ): Promise<AiVoiceAnalysisResult> {
   const res = await fetch('/api/ai/analyze-voice', {
     method: 'POST',
@@ -170,8 +176,10 @@ export async function transcribeAudioBlob(blob: Blob): Promise<string> {
 export async function decomposeProjectWithAi(
   projectTitle: string,
   projectDescription?: string,
-  pillarTitle?: string
-): Promise<Array<{ title: string; description?: string; priority: string; energyLevel: string; estimatedHours: number }>> {
+  pillarTitle?: string,
+): Promise<
+  Array<{ title: string; description?: string; priority: string; energyLevel: string; estimatedHours: number }>
+> {
   const res = await fetch('/api/ai/decompose-project', {
     method: 'POST',
     headers: await getAiHeaders(),
@@ -192,7 +200,7 @@ export async function decomposeProjectWithAi(
 export async function performAiSmartReview(
   frequency: string,
   reflection: { wins?: string; challenges?: string; lessons?: string; next_commitments?: string },
-  systemMetrics: any
+  systemMetrics: any,
 ) {
   const res = await fetch('/api/ai/smart-review', {
     method: 'POST',
@@ -227,7 +235,10 @@ export interface AiInboxAnalysisResult {
  */
 export async function analyzeInboxItemWithAi(
   item: { title: string; content?: string; url?: string },
-  context: { pillars: Array<{ id: string; title: string }>; projects: Array<{ id: string; title: string; goal_id?: string }> }
+  context: {
+    pillars: Array<{ id: string; title: string }>;
+    projects: Array<{ id: string; title: string; goal_id?: string }>;
+  },
 ): Promise<AiInboxAnalysisResult> {
   const res = await fetch('/api/ai/analyze-inbox', {
     method: 'POST',

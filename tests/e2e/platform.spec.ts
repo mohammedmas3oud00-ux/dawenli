@@ -22,7 +22,9 @@ test.describe('Dawenli published platform', () => {
 
   test('registers the production service worker shell', async ({ page }) => {
     await page.goto('/');
-    await expect.poll(() => page.evaluate(async () => (await navigator.serviceWorker.ready).active?.scriptURL || '')).toContain('/sw.js');
+    await expect
+      .poll(() => page.evaluate(async () => (await navigator.serviceWorker.ready).active?.scriptURL || ''))
+      .toContain('/sw.js');
   });
 
   test('allows a new guest to reach the empty عبادات setup without seed data', async ({ page }) => {

@@ -4,18 +4,18 @@
 
 `src/components/hierarchical/HierarchicalApp.tsx` now primarily composes the presentation shell, persistence boundary, feature hooks, and remaining cross-feature flows:
 
-| Responsibility | Current location | Target boundary |
-|---|---|---|
-| Authentication session and sign-out | `features/auth/providers/AuthProvider.tsx` plus app callbacks | `features/auth` |
-| Repository selection, initial load, snapshot persistence | `app/store/useAppDataPersistence.ts` | `app/providers` or a data-sync service |
-| Hierarchy CRUD and progress recalculation | `HierarchicalApp.tsx`, `utils/hierarchicalStore.ts` | `features/dashboard` / `features/tasks` |
-| Task status and creation helpers | `features/tasks/utils/taskActions.ts` | `features/tasks` |
-| Habit mutations and streak calculation | `HierarchicalApp.tsx`, `utils/habitStreak.ts` | `features/habits` |
-| Ibadat setup, logs, progression, prayer scheduling | `HierarchicalApp.tsx`, `utils/ibadat.ts` | `features/ibadat` |
-| AI credential and voice capture flow | `HierarchicalApp.tsx`, `utils/aiCredentials.ts` | `features/ai` |
-| Browser/push notifications and toasts | `HierarchicalApp.tsx`, `utils/pushNotifications.ts` | `features/notifications` and shared UI |
-| Navigation and drill-down selection | `HierarchicalApp.tsx` | `app/router` or a dashboard navigation hook |
-| Rendering | `HierarchicalApp.tsx` and lazy feature views | `features/*/components` |
+| Responsibility                                           | Current location                                              | Target boundary                             |
+| -------------------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------- |
+| Authentication session and sign-out                      | `features/auth/providers/AuthProvider.tsx` plus app callbacks | `features/auth`                             |
+| Repository selection, initial load, snapshot persistence | `app/store/useAppDataPersistence.ts`                          | `app/providers` or a data-sync service      |
+| Hierarchy CRUD and progress recalculation                | `HierarchicalApp.tsx`, `utils/hierarchicalStore.ts`           | `features/dashboard` / `features/tasks`     |
+| Task status and creation helpers                         | `features/tasks/utils/taskActions.ts`                         | `features/tasks`                            |
+| Habit mutations and streak calculation                   | `HierarchicalApp.tsx`, `utils/habitStreak.ts`                 | `features/habits`                           |
+| Ibadat setup, logs, progression, prayer scheduling       | `HierarchicalApp.tsx`, `utils/ibadat.ts`                      | `features/ibadat`                           |
+| AI credential and voice capture flow                     | `HierarchicalApp.tsx`, `utils/aiCredentials.ts`               | `features/ai`                               |
+| Browser/push notifications and toasts                    | `HierarchicalApp.tsx`, `utils/pushNotifications.ts`           | `features/notifications` and shared UI      |
+| Navigation and drill-down selection                      | `HierarchicalApp.tsx`                                         | `app/router` or a dashboard navigation hook |
+| Rendering                                                | `HierarchicalApp.tsx` and lazy feature views                  | `features/*/components`                     |
 
 ## Dependency map
 

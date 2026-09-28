@@ -15,13 +15,18 @@ export function recalculateAllHierarchicalProgress(
   const updatedProjects = projects.map((project) => {
     const projectTasks = tasks.filter((task) => task.project_id === project.id);
     const progress = projectTasks.length
-      ? Math.round(projectTasks.reduce((sum, task) => sum + (task.status === 'done' ? 100 : 0), 0) / projectTasks.length)
+      ? Math.round(
+          projectTasks.reduce((sum, task) => sum + (task.status === 'done' ? 100 : 0), 0) / projectTasks.length,
+        )
       : 0;
-    const status: Project['status'] = progress >= 100
-      ? 'completed'
-      : project.status === 'completed'
-        ? (progress > 0 ? 'in_progress' : 'planned')
-        : project.status;
+    const status: Project['status'] =
+      progress >= 100
+        ? 'completed'
+        : project.status === 'completed'
+          ? progress > 0
+            ? 'in_progress'
+            : 'planned'
+          : project.status;
     return { ...project, progress, status };
   });
 
@@ -30,13 +35,14 @@ export function recalculateAllHierarchicalProgress(
     const progress = goalProjects.length
       ? Math.round(goalProjects.reduce((sum, project) => sum + project.progress, 0) / goalProjects.length)
       : 0;
-    const status: ValueGoal['status'] = progress >= 100
-      ? 'completed'
-      : progress > 0
-        ? 'in_progress'
-        : goal.status === 'completed'
-          ? 'not_started'
-          : goal.status;
+    const status: ValueGoal['status'] =
+      progress >= 100
+        ? 'completed'
+        : progress > 0
+          ? 'in_progress'
+          : goal.status === 'completed'
+            ? 'not_started'
+            : goal.status;
     return { ...goal, progress, status };
   });
 
@@ -53,7 +59,9 @@ export function recalculateAllHierarchicalProgress(
       ...updatedVisions.filter((vision) => vision.pillar_id === pillar.id).map((vision) => vision.progress),
       ...updatedGoals.filter((goal) => goal.pillar_id === pillar.id && !goal.vision_id).map((goal) => goal.progress),
     ];
-    const progress = children.length ? Math.round(children.reduce((sum, value) => sum + value, 0) / children.length) : 0;
+    const progress = children.length
+      ? Math.round(children.reduce((sum, value) => sum + value, 0) / children.length)
+      : 0;
     return { ...pillar, progress };
   });
 

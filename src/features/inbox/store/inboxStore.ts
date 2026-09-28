@@ -10,5 +10,6 @@ interface InboxStoreState {
 
 export const useInboxStore = create<InboxStoreState>((set) => ({
   inboxItems: [],
-  setInboxItems: (value) => set((state) => ({ inboxItems: typeof value === 'function' ? value(state.inboxItems) : value })),
+  setInboxItems: (value) =>
+    set((state) => ({ inboxItems: typeof value === 'function' ? value(state.inboxItems) : value })),
 }));

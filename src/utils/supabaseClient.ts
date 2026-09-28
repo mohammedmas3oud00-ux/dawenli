@@ -24,10 +24,7 @@ function isValidHttpUrl(urlString: string): boolean {
 let resolvedUrl = rawUrl;
 let resolvedKey = rawKey;
 
-if (
-  !isValidHttpUrl(resolvedUrl) &&
-  isValidHttpUrl(resolvedKey)
-) {
+if (!isValidHttpUrl(resolvedUrl) && isValidHttpUrl(resolvedKey)) {
   // rawKey is actually the URL, and rawUrl is the key
   resolvedUrl = rawKey;
   resolvedKey = rawUrl;

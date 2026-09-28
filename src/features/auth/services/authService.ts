@@ -25,22 +25,32 @@ export function createAuthService(client: SupabaseClient | null) {
         if (error) throw error;
         if (!data.user?.email || !data.session) throw new ServiceError('unauthorized', 'لم تُنشأ جلسة دخول صالحة.');
         return mapAuthUser(data.user);
-      } catch (error) { throw toServiceError(error, 'تعذر تسجيل الدخول.'); }
+      } catch (error) {
+        throw toServiceError(error, 'تعذر تسجيل الدخول.');
+      }
     },
     async signUp(email: string, password: string, fullName: string) {
       if (!client) throw new ServiceError('unknown', 'المصادقة السحابية غير مهيأة.');
       try {
-        const { data, error } = await client.auth.signUp({ email, password, options: { data: { full_name: fullName } } });
+        const { data, error } = await client.auth.signUp({
+          email,
+          password,
+          options: { data: { full_name: fullName } },
+        });
         if (error) throw error;
         return { user: data.user?.email ? mapAuthUser(data.user) : null, hasSession: Boolean(data.session) };
-      } catch (error) { throw toServiceError(error, 'تعذر إنشاء الحساب.'); }
+      } catch (error) {
+        throw toServiceError(error, 'تعذر إنشاء الحساب.');
+      }
     },
     async signInWithGoogle(redirectTo: string) {
       if (!client) throw new ServiceError('unknown', 'المصادقة السحابية غير مهيأة.');
       try {
         const { error } = await client.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } });
         if (error) throw error;
-      } catch (error) { throw toServiceError(error, 'تعذر بدء تسجيل Google.'); }
+      } catch (error) {
+        throw toServiceError(error, 'تعذر بدء تسجيل Google.');
+      }
     },
     async getSessionUser() {
       if (!client) return null;

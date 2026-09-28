@@ -27,7 +27,12 @@ export class ServiceError extends Error implements ServiceErrorShape {
 export function toServiceError(error: unknown, fallback = 'تعذر تنفيذ العملية.') {
   if (error instanceof ServiceError) return error;
   if (error instanceof RepositoryError) {
-    return new ServiceError(error.code === 'not_configured' ? 'unknown' : error.code, error.message, crypto.randomUUID(), error);
+    return new ServiceError(
+      error.code === 'not_configured' ? 'unknown' : error.code,
+      error.message,
+      crypto.randomUUID(),
+      error,
+    );
   }
   return new ServiceError('unknown', error instanceof Error ? error.message : fallback, crypto.randomUUID(), error);
 }

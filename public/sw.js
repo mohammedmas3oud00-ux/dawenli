@@ -3,7 +3,15 @@ const SHELL_CACHE = `dawenli-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `dawenli-runtime-${CACHE_VERSION}`;
 const CACHE_PREFIX = 'dawenli-';
 const MAX_RUNTIME_ENTRIES = 60;
-const SHELL = ['/', '/manifest.webmanifest', '/icons/icon.svg', '/icons/icon-192.svg', '/icons/icon-512.svg', '/icons/icon-192.png', '/icons/icon-512.png'];
+const SHELL = [
+  '/',
+  '/manifest.webmanifest',
+  '/icons/icon.svg',
+  '/icons/icon-192.svg',
+  '/icons/icon-512.svg',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
+];
 
 async function cacheSuccessfulResponse(cacheName, request, response) {
   if (!response?.ok || response.type === 'opaque') return;
@@ -38,9 +46,7 @@ function pushPayload(event) {
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(SHELL_CACHE).then((cache) =>
-      Promise.all(SHELL.map((url) => cache.add(url).catch(() => undefined))),
-    ),
+    caches.open(SHELL_CACHE).then((cache) => Promise.all(SHELL.map((url) => cache.add(url).catch(() => undefined)))),
   );
   self.skipWaiting();
 });
@@ -50,7 +56,13 @@ self.addEventListener('activate', (event) => {
     Promise.all([
       caches
         .keys()
-        .then((keys) => Promise.all(keys.filter((key) => key.startsWith(CACHE_PREFIX) && ![SHELL_CACHE, RUNTIME_CACHE].includes(key)).map((key) => caches.delete(key)))),
+        .then((keys) =>
+          Promise.all(
+            keys
+              .filter((key) => key.startsWith(CACHE_PREFIX) && ![SHELL_CACHE, RUNTIME_CACHE].includes(key))
+              .map((key) => caches.delete(key)),
+          ),
+        ),
       self.clients.claim(),
     ]),
   );

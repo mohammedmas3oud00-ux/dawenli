@@ -17,11 +17,11 @@ export interface Pillar {
   title: string;
   description: string;
   pillar_group: string; // e.g. "Growth", "Vitality", "Impact", "Wealth", "Community"
-  purpose: string;      // The pillar's "big why" guiding statement (prominently displayed)
-  priority: number;     // Integer priority (1 = highest)
+  purpose: string; // The pillar's "big why" guiding statement (prominently displayed)
+  priority: number; // Integer priority (1 = highest)
   show_on_home: boolean;
   status: PillarStatus;
-  progress: number;     // Numeric 0 - 100 (auto-calculated)
+  progress: number; // Numeric 0 - 100 (auto-calculated)
   created_at: string;
   updated_at?: string;
 }
@@ -29,12 +29,12 @@ export interface Pillar {
 export interface Vision {
   id: string;
   user_id?: string;
-  pillar_id: string;    // FK -> Pillar
+  pillar_id: string; // FK -> Pillar
   title: string;
   description: string;
-  timeframe?: string;   // e.g. "3-5 سنوات", "2026-2030"
+  timeframe?: string; // e.g. "3-5 سنوات", "2026-2030"
   status: VisionStatus;
-  progress: number;     // Numeric 0 - 100 (auto-calculated from Goals)
+  progress: number; // Numeric 0 - 100 (auto-calculated from Goals)
   created_at: string;
   updated_at?: string;
 }
@@ -42,13 +42,13 @@ export interface Vision {
 export interface ValueGoal {
   id: string;
   user_id?: string;
-  pillar_id: string;    // FK -> Pillar
+  pillar_id: string; // FK -> Pillar
   vision_id?: string | null; // FK -> Vision
   title: string;
   description: string;
   status: ValueGoalStatus;
   target_date: string | null;
-  progress: number;     // Numeric 0 - 100 (auto-calculated from Projects)
+  progress: number; // Numeric 0 - 100 (auto-calculated from Projects)
   created_at: string;
   updated_at?: string;
 }
@@ -69,11 +69,11 @@ export type CustomFieldValues = Record<string, string | number | boolean>;
 export interface Project {
   id: string;
   user_id?: string;
-  goal_id: string;      // FK -> ValueGoal
+  goal_id: string; // FK -> ValueGoal
   title: string;
   description: string;
   status: ProjectStatus;
-  progress: number;     // Numeric 0 - 100 (auto-calculated from Tasks)
+  progress: number; // Numeric 0 - 100 (auto-calculated from Tasks)
   start_date: string;
   due_date: string | null;
   custom_fields?: CustomFieldValues;
@@ -84,7 +84,7 @@ export interface Project {
 export interface Task {
   id: string;
   user_id?: string;
-  project_id: string;   // FK -> Project
+  project_id: string; // FK -> Project
   title: string;
   description: string;
   status: TaskStatus;
@@ -139,11 +139,11 @@ export interface SystemReview {
   focus_project_ids?: string[];
 
   // Manual Reflection Answers
-  wins: string;           // أبرز الانتصارات والإنجازات
-  challenges: string;     // التحديات والمعوقات
-  lessons: string;        // الدروس المستفادة والتحسينات
+  wins: string; // أبرز الانتصارات والإنجازات
+  challenges: string; // التحديات والمعوقات
+  lessons: string; // الدروس المستفادة والتحسينات
   next_commitments: string; // التزامات وأولويات الفترة القادمة
-  notes: string;          // ملاحظات وتأملات عامة
+  notes: string; // ملاحظات وتأملات عامة
 
   // Snapshot & System state at review time
   snapshot: SystemReviewSnapshot;
@@ -186,7 +186,7 @@ export type HabitFrequency = 'daily' | 'weekdays' | 'custom_days';
 export interface Habit {
   id: string;
   user_id?: string;
-  pillar_id: string;    // Direct relation to Pillar
+  pillar_id: string; // Direct relation to Pillar
   title: string;
   description: string;
   frequency: HabitFrequency;
@@ -207,7 +207,7 @@ export type VaultStatus = 'active' | 'reading' | 'completed' | 'someday' | 'arch
 export interface VaultItem {
   id: string;
   user_id?: string;
-  pillar_id: string;          // Related Pillar
+  pillar_id: string; // Related Pillar
   project_id?: string | null; // Optional relation to Project
   title: string;
   vault_type: VaultType;
@@ -236,13 +236,13 @@ export interface BreadcrumbItem {
   type: 'root' | 'pillar' | 'vision' | 'goal' | 'project';
 }
 
-export type SidebarTab = 
-  | 'hierarchy' 
-  | 'pillars' 
-  | 'visions' 
-  | 'goals' 
-  | 'projects' 
-  | 'tasks' 
+export type SidebarTab =
+  | 'hierarchy'
+  | 'pillars'
+  | 'visions'
+  | 'goals'
+  | 'projects'
+  | 'tasks'
   | 'focus'
   | 'timeblocking'
   | 'calendar'
@@ -276,15 +276,8 @@ export interface FocusSessionRecord {
   distractions_count?: number;
 }
 
-export type TimeBlockCategory = 
-  | 'deep_work' 
-  | 'shallow_work' 
-  | 'meeting' 
-  | 'health_habit' 
-  | 'learning' 
-  | 'rest' 
-  | 'personal'
-  | 'worship';
+export type TimeBlockCategory =
+  'deep_work' | 'shallow_work' | 'meeting' | 'health_habit' | 'learning' | 'rest' | 'personal' | 'worship';
 
 export interface TimeBlock {
   id: string;
@@ -306,7 +299,8 @@ export interface TimeBlock {
 // -------------------------------------------------------------
 // IBADAT: A separate, private domain from general habits.
 // -------------------------------------------------------------
-export type WorshipCategory = 'salah' | 'sunnah_rawatib' | 'adhkar' | 'quran_wird' | 'qiyam' | 'fasting' | 'sadaqah' | 'custom_dua' | 'quran_hifz';
+export type WorshipCategory =
+  'salah' | 'sunnah_rawatib' | 'adhkar' | 'quran_wird' | 'qiyam' | 'fasting' | 'sadaqah' | 'custom_dua' | 'quran_hifz';
 export type WorshipTrackingType = 'checkbox' | 'counter' | 'multi_option' | 'amount' | 'pages';
 export type SalahPerformance = 'ada' | 'qada' | 'missed';
 export type SalahCongregation = 'jamaah' | 'fard';
@@ -362,25 +356,78 @@ export interface WorshipLog {
   created_at: string;
 }
 
-export interface ProgressionStage { index: number; title: string; description: string; target_value: number; days_required: number; suggested_time?: string; }
+export interface ProgressionStage {
+  index: number;
+  title: string;
+  description: string;
+  target_value: number;
+  days_required: number;
+  suggested_time?: string;
+}
 export interface ProgressionPath {
-  id: string; user_id?: string; worship_id: string; title: string; stages: ProgressionStage[];
-  current_stage_index: number; stage_start_date: string; consecutive_days: number;
-  auto_promote: boolean; last_promotion_date?: string | null; created_at: string; updated_at?: string;
+  id: string;
+  user_id?: string;
+  worship_id: string;
+  title: string;
+  stages: ProgressionStage[];
+  current_stage_index: number;
+  stage_start_date: string;
+  consecutive_days: number;
+  auto_promote: boolean;
+  last_promotion_date?: string | null;
+  created_at: string;
+  updated_at?: string;
 }
 export interface QuranKhatma {
-  id: string; user_id?: string; worship_id: string; khatma_number: number; start_date: string; end_date?: string | null;
-  target_days?: number | null; current_page: number; current_juz: number; daily_target_pages: number; is_completed: boolean; created_at: string; updated_at?: string;
+  id: string;
+  user_id?: string;
+  worship_id: string;
+  khatma_number: number;
+  start_date: string;
+  end_date?: string | null;
+  target_days?: number | null;
+  current_page: number;
+  current_juz: number;
+  daily_target_pages: number;
+  is_completed: boolean;
+  created_at: string;
+  updated_at?: string;
 }
 export interface QuranHifzTracker {
-  id: string; user_id?: string; worship_id: string; pillar_id: string; vision_id?: string | null; goal_id?: string | null;
-  surahs: Array<{ surah_number: number; surah_name: string; total_ayat: number; memorized_ayat: number; last_review_date?: string; review_quality?: 'excellent' | 'good' | 'needs_review'; is_completed: boolean }>;
-  total_memorized_pages: number; daily_review_pages: number; created_at: string; updated_at?: string;
+  id: string;
+  user_id?: string;
+  worship_id: string;
+  pillar_id: string;
+  vision_id?: string | null;
+  goal_id?: string | null;
+  surahs: Array<{
+    surah_number: number;
+    surah_name: string;
+    total_ayat: number;
+    memorized_ayat: number;
+    last_review_date?: string;
+    review_quality?: 'excellent' | 'good' | 'needs_review';
+    is_completed: boolean;
+  }>;
+  total_memorized_pages: number;
+  daily_review_pages: number;
+  created_at: string;
+  updated_at?: string;
 }
 export interface SleepSchedule {
-  id: string; user_id?: string; pillar_id: string; ultimate_bedtime: string; ultimate_waketime: string;
-  current_bedtime: string; current_waketime: string; adjustment_minutes: number; adjustment_frequency_days: number;
-  linked_qiyam_path_id?: string | null; is_active: boolean; created_at: string; updated_at?: string;
+  id: string;
+  user_id?: string;
+  pillar_id: string;
+  ultimate_bedtime: string;
+  ultimate_waketime: string;
+  current_bedtime: string;
+  current_waketime: string;
+  adjustment_minutes: number;
+  adjustment_frequency_days: number;
+  linked_qiyam_path_id?: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at?: string;
 }
 
 export type JournalMood = 'great' | 'good' | 'neutral' | 'difficult';
@@ -451,4 +498,3 @@ export interface AppDataSnapshot {
   journals: JournalEntry[];
   calendarEvents: CalendarEvent[];
 }
-

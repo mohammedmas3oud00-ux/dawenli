@@ -3,7 +3,12 @@ import type { AppDataSnapshot } from '../../types/hierarchical';
 import type { RepositoryUser } from '../../shared/services/repositoryFactory';
 import { createRepositoryForUser } from '../../shared/services/repositoryFactory';
 import { supabase } from '../../shared/services/supabaseClient';
-import { createSnapshotSaveQueue, enqueueSnapshotClear, enqueueSnapshotSave, invalidateSnapshotSaveQueue } from '../../shared/services/snapshotPersistence';
+import {
+  createSnapshotSaveQueue,
+  enqueueSnapshotClear,
+  enqueueSnapshotSave,
+  invalidateSnapshotSaveQueue,
+} from '../../shared/services/snapshotPersistence';
 import { emptySnapshot, type DataRepository } from '../../data/repository';
 import { recalculateAllHierarchicalProgress } from '../../utils/hierarchicalStore';
 import { useAppStore } from './appStore';
@@ -41,13 +46,28 @@ export function useAppDataPersistence({ user, authStatus, onLoadError }: UseAppD
   const { journals } = useJournalStore();
   const { calendarEvents } = useCalendarStore();
   const {
-    pillars, visions, goals, projects, reviews, focusSessions, timeBlocks,
-    customFieldDefinitions, progressionPaths, quranKhatmas, quranHifzTrackers,
+    pillars,
+    visions,
+    goals,
+    projects,
+    reviews,
+    focusSessions,
+    timeBlocks,
+    customFieldDefinitions,
+    progressionPaths,
+    quranKhatmas,
+    quranHifzTrackers,
     sleepSchedules,
   } = store;
 
   const applySnapshot = useCallback((snapshot: AppDataSnapshot) => {
-    const calculated = recalculateAllHierarchicalProgress(snapshot.pillars, snapshot.visions, snapshot.goals, snapshot.projects, snapshot.tasks);
+    const calculated = recalculateAllHierarchicalProgress(
+      snapshot.pillars,
+      snapshot.visions,
+      snapshot.goals,
+      snapshot.projects,
+      snapshot.tasks,
+    );
     const setters = useAppStore.getState();
     setters.setPillars(calculated.pillars);
     setters.setVisions(calculated.visions);
@@ -89,16 +109,19 @@ export function useAppDataPersistence({ user, authStatus, onLoadError }: UseAppD
     let active = true;
     const saveQueue = saveQueueRef.current;
 
-    void repository.load().then((snapshot) => {
-      if (!active) return;
-      applySnapshot(snapshot);
-      setDataReady(true);
-    }).catch((error: unknown) => {
-      if (!active) return;
-      const normalized = error instanceof Error ? error : new Error('تعذر تحميل بيانات الحساب.');
-      setLoadError(normalized);
-      onLoadErrorRef.current?.(normalized);
-    });
+    void repository
+      .load()
+      .then((snapshot) => {
+        if (!active) return;
+        applySnapshot(snapshot);
+        setDataReady(true);
+      })
+      .catch((error: unknown) => {
+        if (!active) return;
+        const normalized = error instanceof Error ? error : new Error('تعذر تحميل بيانات الحساب.');
+        setLoadError(normalized);
+        onLoadErrorRef.current?.(normalized);
+      });
 
     return () => {
       active = false;
@@ -106,11 +129,53 @@ export function useAppDataPersistence({ user, authStatus, onLoadError }: UseAppD
     };
   }, [applySnapshot, authStatus, loadAttempt, user, user?.id, user?.isGuest]);
 
-  const snapshot = useMemo<AppDataSnapshot>(() => ({
-    schemaVersion: 5, pillars, visions, goals, projects, tasks, reviews, inboxItems, habits, vaults,
-    focusSessions, timeBlocks, customFieldDefinitions, worshipDefinitions, worshipLogs, progressionPaths,
-    quranKhatmas, quranHifzTrackers, sleepSchedules, journals, calendarEvents,
-  }), [pillars, visions, goals, projects, tasks, reviews, inboxItems, habits, vaults, focusSessions, timeBlocks, customFieldDefinitions, worshipDefinitions, worshipLogs, progressionPaths, quranKhatmas, quranHifzTrackers, sleepSchedules, journals, calendarEvents]);
+  const snapshot = useMemo<AppDataSnapshot>(
+    () => ({
+      schemaVersion: 5,
+      pillars,
+      visions,
+      goals,
+      projects,
+      tasks,
+      reviews,
+      inboxItems,
+      habits,
+      vaults,
+      focusSessions,
+      timeBlocks,
+      customFieldDefinitions,
+      worshipDefinitions,
+      worshipLogs,
+      progressionPaths,
+      quranKhatmas,
+      quranHifzTrackers,
+      sleepSchedules,
+      journals,
+      calendarEvents,
+    }),
+    [
+      pillars,
+      visions,
+      goals,
+      projects,
+      tasks,
+      reviews,
+      inboxItems,
+      habits,
+      vaults,
+      focusSessions,
+      timeBlocks,
+      customFieldDefinitions,
+      worshipDefinitions,
+      worshipLogs,
+      progressionPaths,
+      quranKhatmas,
+      quranHifzTrackers,
+      sleepSchedules,
+      journals,
+      calendarEvents,
+    ],
+  );
 
   const saveSnapshot = useCallback(async (nextSnapshot: AppDataSnapshot) => {
     const repository = repositoryRef.current;
@@ -132,7 +197,16 @@ export function useAppDataPersistence({ user, authStatus, onLoadError }: UseAppD
     return () => window.clearTimeout(timer);
   }, [dataReady, saveSnapshot, snapshot]);
 
-  return { dataReady, loadError, retryLoad: () => setLoadAttempt((value) => value + 1), snapshot, saveSnapshot, clearData, applySnapshot, repository: repositoryRef.current };
+  return {
+    dataReady,
+    loadError,
+    retryLoad: () => setLoadAttempt((value) => value + 1),
+    snapshot,
+    saveSnapshot,
+    clearData,
+    applySnapshot,
+    repository: repositoryRef.current,
+  };
 }
 
 export function emptyAppSnapshot() {

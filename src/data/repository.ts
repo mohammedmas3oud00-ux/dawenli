@@ -1,14 +1,14 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type {
-  AppDataSnapshot,
-  CustomFieldDefinition,
-  InboxItem,
-} from '../types/hierarchical';
+import type { AppDataSnapshot, CustomFieldDefinition, InboxItem } from '../types/hierarchical';
 
 export type RepositoryErrorCode = 'not_configured' | 'unauthorized' | 'network' | 'validation' | 'conflict' | 'unknown';
 
 export class RepositoryError extends Error {
-  constructor(public readonly code: RepositoryErrorCode, message: string, public readonly cause?: unknown) {
+  constructor(
+    public readonly code: RepositoryErrorCode,
+    message: string,
+    public readonly cause?: unknown,
+  ) {
     super(message);
     this.name = 'RepositoryError';
   }
@@ -96,13 +96,17 @@ const TABLES = [
 export class SupabaseRepository implements DataRepository {
   private snapshotRevision: number | null = null;
 
-  constructor(private readonly client: SupabaseClient, private readonly userId: string) {}
+  constructor(
+    private readonly client: SupabaseClient,
+    private readonly userId: string,
+  ) {}
 
   private async readSnapshotRevision(): Promise<number> {
     const { data, error } = await this.client.rpc('dawenli_get_snapshot_revision');
     if (error) throw error;
     const revision = Number(data ?? 0);
-    if (!Number.isSafeInteger(revision) || revision < 0) throw new RepositoryError('validation', 'إصدار المزامنة السحابية غير صالح.');
+    if (!Number.isSafeInteger(revision) || revision < 0)
+      throw new RepositoryError('validation', 'إصدار المزامنة السحابية غير صالح.');
     return revision;
   }
 
@@ -133,13 +137,21 @@ export class SupabaseRepository implements DataRepository {
       this.snapshotRevision = revisionAfter;
       const pendingRaw = typeof localStorage !== 'undefined' ? localStorage.getItem(pendingSyncKey(this.userId)) : null;
       if (pendingRaw) {
-        try { return normalizeSnapshot(JSON.parse(pendingRaw)); } catch { localStorage.removeItem(pendingSyncKey(this.userId)); }
+        try {
+          return normalizeSnapshot(JSON.parse(pendingRaw));
+        } catch {
+          localStorage.removeItem(pendingSyncKey(this.userId));
+        }
       }
       return normalizeSnapshot(snapshot);
     } catch (error) {
       const pendingRaw = typeof localStorage !== 'undefined' ? localStorage.getItem(pendingSyncKey(this.userId)) : null;
       if (pendingRaw) {
-        try { return normalizeSnapshot(JSON.parse(pendingRaw)); } catch { localStorage.removeItem(pendingSyncKey(this.userId)); }
+        try {
+          return normalizeSnapshot(JSON.parse(pendingRaw));
+        } catch {
+          localStorage.removeItem(pendingSyncKey(this.userId));
+        }
       }
       throw mapRepositoryError(error, 'تعذر تحميل بيانات الحساب من Supabase.');
     }
@@ -149,19 +161,29 @@ export class SupabaseRepository implements DataRepository {
     const normalizedSnapshot = normalizeSnapshot(snapshot);
     try {
       const payload = normalizeSnapshotForDatabase(normalizedSnapshot, this.userId);
-      const expectedRevision = this.snapshotRevision ?? await this.readSnapshotRevision();
-      const { data, error } = await this.client.rpc('dawenli_save_snapshot', { p_snapshot: payload, p_expected_revision: expectedRevision });
+      const expectedRevision = this.snapshotRevision ?? (await this.readSnapshotRevision());
+      const { data, error } = await this.client.rpc('dawenli_save_snapshot', {
+        p_snapshot: payload,
+        p_expected_revision: expectedRevision,
+      });
       if (error) throw error;
       const nextRevision = Number(data);
-      if (!Number.isSafeInteger(nextRevision) || nextRevision <= expectedRevision) throw new RepositoryError('validation', 'لم يرجع الخادم إصدار مزامنة صالحًا.');
+      if (!Number.isSafeInteger(nextRevision) || nextRevision <= expectedRevision)
+        throw new RepositoryError('validation', 'لم يرجع الخادم إصدار مزامنة صالحًا.');
       this.snapshotRevision = nextRevision;
       if (typeof localStorage !== 'undefined') localStorage.removeItem(pendingSyncKey(this.userId));
     } catch (error) {
-      const mapped = mapRepositoryError(error, 'تعذرت المزامنة السحابية؛ تم حفظ نسخة محلية مؤقتة وسيُعاد المحاولة تلقائيًا.');
+      const mapped = mapRepositoryError(
+        error,
+        'تعذرت المزامنة السحابية؛ تم حفظ نسخة محلية مؤقتة وسيُعاد المحاولة تلقائيًا.',
+      );
       if (mapped.code !== 'conflict') {
         try {
-          if (typeof localStorage !== 'undefined') localStorage.setItem(pendingSyncKey(this.userId), JSON.stringify(normalizedSnapshot));
-        } catch { /* Keep the cloud error if browser storage is unavailable. */ }
+          if (typeof localStorage !== 'undefined')
+            localStorage.setItem(pendingSyncKey(this.userId), JSON.stringify(normalizedSnapshot));
+        } catch {
+          /* Keep the cloud error if browser storage is unavailable. */
+        }
       }
       throw mapped;
     }
@@ -177,13 +199,17 @@ export class SupabaseRepository implements DataRepository {
       throw mapRepositoryError(error, 'تعذر حذف بيانات الحساب.');
     }
   }
-
 }
 
 export function normalizeSnapshotForDatabase(snapshot: AppDataSnapshot, userId: string): Record<string, unknown> {
   return {
     ...snapshot,
-    ...Object.fromEntries(TABLES.map(([table, key]) => [table, (snapshot[key] as unknown as Array<Record<string, unknown>>).map((row) => toDatabaseRow(row, userId, table))])),
+    ...Object.fromEntries(
+      TABLES.map(([table, key]) => [
+        table,
+        (snapshot[key] as unknown as Array<Record<string, unknown>>).map((row) => toDatabaseRow(row, userId, table)),
+      ]),
+    ),
     custom_field_definitions: snapshot.customFieldDefinitions.map((definition) => {
       const { entityType, ...rest } = definition;
       return toDatabaseRow({ ...rest, entity_type: entityType }, userId);
@@ -309,10 +335,19 @@ function mapRepositoryError(error: unknown, fallback: string): RepositoryError {
   const message = typed?.message || (error instanceof Error ? error.message : fallback);
   const errorCode = String(typed?.code || '').toLowerCase();
   const lower = message.toLowerCase();
-  if (errorCode === '42501' || lower.includes('jwt') || lower.includes('auth') || lower.includes('permission')) return new RepositoryError('unauthorized', `${fallback} (${message})`, error);
+  if (errorCode === '42501' || lower.includes('jwt') || lower.includes('auth') || lower.includes('permission'))
+    return new RepositoryError('unauthorized', `${fallback} (${message})`, error);
   if (lower.includes('fetch') || lower.includes('network')) return new RepositoryError('network', fallback, error);
-  if (errorCode === '40001' || errorCode === '23505' || errorCode === '23503' || lower.includes('duplicate') || lower.includes('conflict')) return new RepositoryError('conflict', `${fallback} (${message})`, error);
-  if (errorCode === '22p02' || errorCode === '23514') return new RepositoryError('validation', `${fallback} (${message})`, error);
+  if (
+    errorCode === '40001' ||
+    errorCode === '23505' ||
+    errorCode === '23503' ||
+    lower.includes('duplicate') ||
+    lower.includes('conflict')
+  )
+    return new RepositoryError('conflict', `${fallback} (${message})`, error);
+  if (errorCode === '22p02' || errorCode === '23514')
+    return new RepositoryError('validation', `${fallback} (${message})`, error);
   return new RepositoryError('unknown', `${fallback} (${message})`, error);
 }
 
@@ -325,33 +360,115 @@ export function normalizeSnapshot(value: Partial<AppDataSnapshot>): AppDataSnaps
     pillars: Array.isArray(value.pillars) ? value.pillars : [],
     visions: Array.isArray(value.visions) ? value.visions : [],
     goals: Array.isArray(value.goals) ? value.goals : [],
-    projects: Array.isArray(value.projects) ? value.projects.map((project) => ({ ...project, custom_fields: project.custom_fields ?? {} })) : [],
-    tasks: Array.isArray(value.tasks) ? value.tasks.map((task) => ({ ...task, custom_fields: task.custom_fields ?? {} })) : [],
-    reviews: Array.isArray(value.reviews) ? value.reviews.map((review) => ({ ...review, focus_goal_ids: review.focus_goal_ids ?? [], focus_project_ids: review.focus_project_ids ?? [] })) : [],
+    projects: Array.isArray(value.projects)
+      ? value.projects.map((project) => ({ ...project, custom_fields: project.custom_fields ?? {} }))
+      : [],
+    tasks: Array.isArray(value.tasks)
+      ? value.tasks.map((task) => ({ ...task, custom_fields: task.custom_fields ?? {} }))
+      : [],
+    reviews: Array.isArray(value.reviews)
+      ? value.reviews.map((review) => ({
+          ...review,
+          focus_goal_ids: review.focus_goal_ids ?? [],
+          focus_project_ids: review.focus_project_ids ?? [],
+        }))
+      : [],
     inboxItems: Array.isArray(value.inboxItems) ? value.inboxItems.map(normalizeInboxItem) : [],
-    habits: Array.isArray(value.habits) ? value.habits.map((habit) => {
-      const legacy = habit as unknown as typeof habit & { best_streak?: number };
-      const normalized = { ...habit, longest_streak: Math.max(Number(habit.longest_streak ?? 0), Number(legacy.best_streak ?? 0)), custom_days: habit.custom_days ?? [], completed_dates: habit.completed_dates ?? [] };
-      delete (normalized as unknown as { best_streak?: number }).best_streak;
-      return normalized;
-    }) : [],
-    vaults: Array.isArray(value.vaults) ? value.vaults.map((item) => ({ ...item, status: item.status || 'active' })) : [],
+    habits: Array.isArray(value.habits)
+      ? value.habits.map((habit) => {
+          const legacy = habit as unknown as typeof habit & { best_streak?: number };
+          const normalized = {
+            ...habit,
+            longest_streak: Math.max(Number(habit.longest_streak ?? 0), Number(legacy.best_streak ?? 0)),
+            custom_days: habit.custom_days ?? [],
+            completed_dates: habit.completed_dates ?? [],
+          };
+          delete (normalized as unknown as { best_streak?: number }).best_streak;
+          return normalized;
+        })
+      : [],
+    vaults: Array.isArray(value.vaults)
+      ? value.vaults.map((item) => ({ ...item, status: item.status || 'active' }))
+      : [],
     focusSessions: Array.isArray(value.focusSessions) ? value.focusSessions : [],
     timeBlocks: Array.isArray(value.timeBlocks) ? value.timeBlocks : [],
     customFieldDefinitions: Array.isArray(value.customFieldDefinitions) ? value.customFieldDefinitions : [],
-    worshipDefinitions: Array.isArray(value.worshipDefinitions) ? value.worshipDefinitions.map((definition) => ({ ...definition, frequency: definition.frequency ?? 'daily', scheduled_days: definition.scheduled_days ?? [], scheduled_hijri_days: definition.scheduled_hijri_days ?? [], settings_history: definition.settings_history ?? [], is_active: definition.is_active ?? true, sort_order: definition.sort_order ?? 0 })) : [],
-    worshipLogs: Array.isArray(value.worshipLogs) ? value.worshipLogs.map((log) => ({ ...log, is_completed: log.is_completed ?? false, congregation: (log.congregation as unknown) === '' ? null : log.congregation })) : [],
-    progressionPaths: Array.isArray(value.progressionPaths) ? value.progressionPaths.map((path) => ({ ...path, stages: path.stages ?? [], current_stage_index: path.current_stage_index ?? 0, consecutive_days: path.consecutive_days ?? 0, auto_promote: path.auto_promote ?? false })) : [],
-    quranKhatmas: Array.isArray(value.quranKhatmas) ? value.quranKhatmas.map((khatma) => ({ ...khatma, daily_target_pages: khatma.daily_target_pages ?? 2.5, is_completed: khatma.is_completed ?? false })) : [],
-    quranHifzTrackers: Array.isArray(value.quranHifzTrackers) ? value.quranHifzTrackers.map((tracker) => ({ ...tracker, surahs: tracker.surahs ?? [], total_memorized_pages: tracker.total_memorized_pages ?? 0, daily_review_pages: tracker.daily_review_pages ?? 0 })) : [],
-    sleepSchedules: Array.isArray(value.sleepSchedules) ? value.sleepSchedules.map((schedule) => ({ ...schedule, adjustment_minutes: schedule.adjustment_minutes ?? 15, adjustment_frequency_days: schedule.adjustment_frequency_days ?? 7, is_active: schedule.is_active ?? true })) : [],
-    journals: Array.isArray(value.journals) ? value.journals.map((entry) => ({ ...entry, content: entry.content || '', entry_date: entry.entry_date || String(entry.created_at || new Date().toISOString()).slice(0, 10), tags: entry.tags ?? [], audio_path: entry.audio_path ?? null })) : [],
-    calendarEvents: Array.isArray(value.calendarEvents) ? value.calendarEvents.map((event) => ({ ...event, description: event.description || '', all_day: event.all_day ?? false, timezone: event.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'Africa/Cairo', recurrence: event.recurrence ?? { frequency: 'none', interval: 1 }, reminder_minutes: event.reminder_minutes ?? null, is_cancelled: event.is_cancelled ?? false })) : [],
+    worshipDefinitions: Array.isArray(value.worshipDefinitions)
+      ? value.worshipDefinitions.map((definition) => ({
+          ...definition,
+          frequency: definition.frequency ?? 'daily',
+          scheduled_days: definition.scheduled_days ?? [],
+          scheduled_hijri_days: definition.scheduled_hijri_days ?? [],
+          settings_history: definition.settings_history ?? [],
+          is_active: definition.is_active ?? true,
+          sort_order: definition.sort_order ?? 0,
+        }))
+      : [],
+    worshipLogs: Array.isArray(value.worshipLogs)
+      ? value.worshipLogs.map((log) => ({
+          ...log,
+          is_completed: log.is_completed ?? false,
+          congregation: (log.congregation as unknown) === '' ? null : log.congregation,
+        }))
+      : [],
+    progressionPaths: Array.isArray(value.progressionPaths)
+      ? value.progressionPaths.map((path) => ({
+          ...path,
+          stages: path.stages ?? [],
+          current_stage_index: path.current_stage_index ?? 0,
+          consecutive_days: path.consecutive_days ?? 0,
+          auto_promote: path.auto_promote ?? false,
+        }))
+      : [],
+    quranKhatmas: Array.isArray(value.quranKhatmas)
+      ? value.quranKhatmas.map((khatma) => ({
+          ...khatma,
+          daily_target_pages: khatma.daily_target_pages ?? 2.5,
+          is_completed: khatma.is_completed ?? false,
+        }))
+      : [],
+    quranHifzTrackers: Array.isArray(value.quranHifzTrackers)
+      ? value.quranHifzTrackers.map((tracker) => ({
+          ...tracker,
+          surahs: tracker.surahs ?? [],
+          total_memorized_pages: tracker.total_memorized_pages ?? 0,
+          daily_review_pages: tracker.daily_review_pages ?? 0,
+        }))
+      : [],
+    sleepSchedules: Array.isArray(value.sleepSchedules)
+      ? value.sleepSchedules.map((schedule) => ({
+          ...schedule,
+          adjustment_minutes: schedule.adjustment_minutes ?? 15,
+          adjustment_frequency_days: schedule.adjustment_frequency_days ?? 7,
+          is_active: schedule.is_active ?? true,
+        }))
+      : [],
+    journals: Array.isArray(value.journals)
+      ? value.journals.map((entry) => ({
+          ...entry,
+          content: entry.content || '',
+          entry_date: entry.entry_date || String(entry.created_at || new Date().toISOString()).slice(0, 10),
+          tags: entry.tags ?? [],
+          audio_path: entry.audio_path ?? null,
+        }))
+      : [],
+    calendarEvents: Array.isArray(value.calendarEvents)
+      ? value.calendarEvents.map((event) => ({
+          ...event,
+          description: event.description || '',
+          all_day: event.all_day ?? false,
+          timezone: event.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'Africa/Cairo',
+          recurrence: event.recurrence ?? { frequency: 'none', interval: 1 },
+          reminder_minutes: event.reminder_minutes ?? null,
+          is_cancelled: event.is_cancelled ?? false,
+        }))
+      : [],
   };
 }
 
 function normalizeInboxItem(item: InboxItem): InboxItem {
-  const legacy = (item as unknown as { processed_into?: { entity_type: InboxItem['converted_to']; entity_id: string } }).processed_into;
+  const legacy = (item as unknown as { processed_into?: { entity_type: InboxItem['converted_to']; entity_id: string } })
+    .processed_into;
   const normalized = {
     ...item,
     converted_to: item.converted_to ?? legacy?.entity_type ?? null,

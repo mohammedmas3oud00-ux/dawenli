@@ -8,5 +8,6 @@ interface CalendarStoreState {
 
 export const useCalendarStore = create<CalendarStoreState>((set) => ({
   calendarEvents: [],
-  setCalendarEvents: (value) => set((state) => ({ calendarEvents: typeof value === 'function' ? value(state.calendarEvents) : value })),
+  setCalendarEvents: (value) =>
+    set((state) => ({ calendarEvents: typeof value === 'function' ? value(state.calendarEvents) : value })),
 }));

@@ -3,15 +3,16 @@ import { supabase } from './supabaseClient';
 let configured = false;
 
 async function authHeaders(): Promise<Record<string, string>> {
-  const { data } = await supabase?.auth.getSession() ?? { data: { session: null } };
+  const { data } = (await supabase?.auth.getSession()) ?? { data: { session: null } };
   if (!data.session?.access_token) throw new Error('سجّل الدخول لاستخدام ميزات Gemini.');
   return { Authorization: `Bearer ${data.session.access_token}`, 'Content-Type': 'application/json' };
 }
 
 async function readError(response: Response, fallback: string): Promise<Error> {
   const contentType = response.headers.get('content-type') || '';
-  if (!contentType.includes('application/json')) return new Error('خدمة API الخاصة بـ Gemini غير متاحة على هذه النسخة. أعد تحميل Preview ثم حاول مرة أخرى.');
-  const body = await response.json().catch(() => null) as { error?: { message?: string } } | null;
+  if (!contentType.includes('application/json'))
+    return new Error('خدمة API الخاصة بـ Gemini غير متاحة على هذه النسخة. أعد تحميل Preview ثم حاول مرة أخرى.');
+  const body = (await response.json().catch(() => null)) as { error?: { message?: string } } | null;
   return new Error(body?.error?.message || fallback);
 }
 
@@ -22,7 +23,7 @@ export function hasStoredGeminiCredential(): boolean {
 export async function refreshGeminiCredentialStatus(): Promise<boolean> {
   const response = await fetch('/api/ai/credential', { headers: await authHeaders() });
   if (!response.ok) throw await readError(response, 'تعذر التحقق من إعداد Gemini.');
-  const body = await response.json() as { data?: { configured?: boolean } };
+  const body = (await response.json()) as { data?: { configured?: boolean } };
   configured = Boolean(body.data?.configured);
   return configured;
 }
