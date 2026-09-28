@@ -35,6 +35,28 @@ test.describe('Dawenli published platform', () => {
     await expect(page.getByRole('alert')).toContainText('كلمة المرور يجب');
   });
 
+  test('navigates guest users through Inbox, Focus, and Calendar workflows', async ({ page }) => {
+    await page.goto('/');
+    await page.getByText('المتابعة كضيف محلي').click();
+    await expect(page.getByText('جلسة ضيف محلية')).toBeVisible();
+
+    await page
+      .getByRole('button', { name: /صندوق الوارد/ })
+      .first()
+      .click();
+    await expect(page.getByRole('banner').getByText('صندوق الوارد')).toBeVisible();
+    await page
+      .getByRole('button', { name: /جلسات التركيز/ })
+      .first()
+      .click();
+    await expect(page.getByRole('banner').getByText('جلسات التركيز')).toBeVisible();
+    await page
+      .getByRole('button', { name: /التقويم والمواعيد/ })
+      .first()
+      .click();
+    await expect(page.getByRole('banner').getByText('التقويم والمواعيد')).toBeVisible();
+  });
+
   test('allows a new guest to reach the empty عبادات setup without seed data', async ({ page }) => {
     await page.goto('/');
     const guest = page.getByText('المتابعة كضيف محلي');
