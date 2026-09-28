@@ -73,7 +73,7 @@ try {
   await repository.clear();
   const cleared = await repository.load();
   if (cleared.pillars.length || cleared.habits.length || cleared.worshipDefinitions.length || cleared.worshipLogs.length || cleared.journals.length || cleared.calendarEvents.length) throw new Error('Snapshot clear did not persist');
-  console.log('Authenticated Supabase round-trip passed for core, habits, and Ibadat data.');
+  console.log('Authenticated Supabase round-trip passed for core, habits, Ibadat, Journals, and Calendar Events.');
 } finally {
   await admin.auth.admin.deleteUser(created.user.id);
 }
