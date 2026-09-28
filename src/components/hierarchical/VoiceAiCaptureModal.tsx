@@ -31,69 +31,119 @@ export function VoiceAiCaptureModal({ isOpen, onClose, context, onApply, onSaveI
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const recognitionRef = useRef<any>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const lifecycleRef = useRef(0);
+  const isOpenRef = useRef(isOpen);
+  isOpenRef.current = isOpen;
 
   useEffect(() => {
     if (!isOpen) return;
+    const lifecycle = ++lifecycleRef.current;
     setInput(''); setPlan(null); setClarification(''); setError(null); setAudioBlob(null); setAttachAudio(false); setMessages([{ id: `assistant-${Date.now()}`, role: 'assistant', text: 'أهلًا بك. اكتب ما تريد فعله أو تحدث، وسأفهم مقصدك وأسألك عن أي معلومة ناقصة قبل عرض خطة التنفيذ.' }]);
-    return () => { recognitionRef.current?.abort?.(); if (recorderRef.current?.state === 'recording') recorderRef.current.stop(); chunksRef.current = []; };
+    return () => {
+      if (lifecycleRef.current === lifecycle) lifecycleRef.current += 1;
+      const recognition = recognitionRef.current;
+      recognitionRef.current = null;
+      if (recognition) {
+        recognition.onresult = null;
+        recognition.onerror = null;
+        recognition.onend = null;
+        try { recognition.abort?.(); } catch {}
+      }
+      const recorder = recorderRef.current;
+      recorderRef.current = null;
+      if (recorder) {
+        recorder.ondataavailable = null;
+        recorder.onstop = null;
+        if (recorder.state === 'recording') {
+          try { recorder.stop(); } catch {}
+        }
+      }
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+      chunksRef.current = [];
+    };
   }, [isOpen]);
 
   const stopSpeech = () => { recognitionRef.current?.stop?.(); recognitionRef.current = null; setListening(false); setInput((value) => deduplicateArabicSpeech(value)); };
   const startRecorder = async () => {
+    const lifecycle = lifecycleRef.current;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (!isOpenRef.current || lifecycleRef.current !== lifecycle) {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
+      streamRef.current = stream;
       chunksRef.current = [];
       const recorder = new MediaRecorder(stream);
       recorderRef.current = recorder;
       recorder.ondataavailable = (event) => { if (event.data.size) chunksRef.current.push(event.data); };
       recorder.onstop = async () => {
-        stream.getTracks().forEach((track) => track.stop()); setRecording(false);
+        stream.getTracks().forEach((track) => track.stop());
+        if (streamRef.current === stream) streamRef.current = null;
+        if (recorderRef.current === recorder) recorderRef.current = null;
+        if (!isOpenRef.current || lifecycleRef.current !== lifecycle) return;
+        setRecording(false);
         const blob = new Blob(chunksRef.current, { type: recorder.mimeType || 'audio/webm' }); chunksRef.current = [];
         if (!blob.size) return;
         setAudioBlob(blob); setBusy(true);
-        try { setInput(await transcribeAudioBlob(blob)); } catch (caught) { setError(caught instanceof Error ? caught.message : 'تعذر تفريغ التسجيل.'); } finally { setBusy(false); }
+        try {
+          const transcription = await transcribeAudioBlob(blob);
+          if (isOpenRef.current && lifecycleRef.current === lifecycle) setInput(transcription);
+        } catch (caught) {
+          if (isOpenRef.current && lifecycleRef.current === lifecycle) setError(caught instanceof Error ? caught.message : 'تعذر تفريغ التسجيل.');
+        } finally {
+          if (isOpenRef.current && lifecycleRef.current === lifecycle) setBusy(false);
+        }
       };
       recorder.start(); setRecording(true);
-    } catch { setError('تعذر الوصول إلى الميكروفون. تحقق من إذن المتصفح.'); }
+    } catch {
+      if (isOpenRef.current && lifecycleRef.current === lifecycle) setError('تعذر الوصول إلى الميكروفون. تحقق من إذن المتصفح.');
+    }
   };
   const startSpeech = () => {
     setError(null);
+    const lifecycle = lifecycleRef.current;
     const Recognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!Recognition) { void startRecorder(); return; }
     const recognition = new Recognition(); recognition.lang = 'ar-SA'; recognition.continuous = true; recognition.interimResults = true;
     let finalText = '';
-    recognition.onresult = (event: any) => { let interim = ''; for (let index = event.resultIndex; index < event.results.length; index += 1) { const phrase = event.results[index][0].transcript; if (event.results[index].isFinal) finalText += ` ${phrase}`; else interim += ` ${phrase}`; } setInput(deduplicateArabicSpeech(`${finalText} ${interim}`)); };
-    recognition.onerror = (event: any) => { setListening(false); if (event.error === 'not-allowed') setError('تم رفض إذن الميكروفون.'); };
-    recognition.onend = () => setListening(false); recognitionRef.current = recognition; recognition.start(); setListening(true);
+    recognition.onresult = (event: any) => { if (!isOpenRef.current || lifecycleRef.current !== lifecycle) return; let interim = ''; for (let index = event.resultIndex; index < event.results.length; index += 1) { const phrase = event.results[index][0].transcript; if (event.results[index].isFinal) finalText += ` ${phrase}`; else interim += ` ${phrase}`; } setInput(deduplicateArabicSpeech(`${finalText} ${interim}`)); };
+    recognition.onerror = (event: any) => { if (!isOpenRef.current || lifecycleRef.current !== lifecycle) return; setListening(false); if (event.error === 'not-allowed') setError('تم رفض إذن الميكروفون.'); };
+    recognition.onend = () => { if (isOpenRef.current && lifecycleRef.current === lifecycle) setListening(false); if (recognitionRef.current === recognition) recognitionRef.current = null; }; recognitionRef.current = recognition; recognition.start(); setListening(true);
   };
   const analyze = async (answer?: string) => {
     const submitted = (answer || input).trim();
     if (!submitted) return;
+    const lifecycle = lifecycleRef.current;
     setMessages((previous) => [...previous, { id: `user-${Date.now()}`, role: 'user', text: submitted }]);
     setBusy(true); setError(null);
     try {
       const next = await proposeAiCommands(input, context, answer);
+      if (!isOpenRef.current || lifecycleRef.current !== lifecycle) return;
       setPlan(next);
       setMessages((previous) => [...previous, { id: `assistant-${Date.now()}`, role: 'assistant', text: next.needsClarification ? (next.clarificationQuestion || 'أحتاج معلومة إضافية قبل المتابعة.') : next.summary }]);
       if (!next.needsClarification) setClarification('');
-    } catch (caught) { setError(caught instanceof Error ? caught.message : 'تعذر تحليل الأمر.'); }
-    finally { setBusy(false); }
+    } catch (caught) { if (isOpenRef.current && lifecycleRef.current === lifecycle) setError(caught instanceof Error ? caught.message : 'تعذر تحليل الأمر.'); }
+    finally { if (isOpenRef.current && lifecycleRef.current === lifecycle) setBusy(false); }
   };
   const saveInbox = () => { onSaveInbox(input.trim()); onClose(); };
   const apply = async () => {
     if (!plan || plan.needsClarification || !plan.actions.length) return;
+    const lifecycle = lifecycleRef.current;
     setBusy(true); setError(null);
-    try { await onApply(plan.actions, { audioBlob, attachAudioToJournal: attachAudio }); onClose(); }
-    catch (caught) { setError(caught instanceof Error ? caught.message : 'تعذر تنفيذ الخطة. لم يُحفظ أي تغيير.'); }
-    finally { setBusy(false); }
+    try { await onApply(plan.actions, { audioBlob, attachAudioToJournal: attachAudio }); if (isOpenRef.current && lifecycleRef.current === lifecycle) onClose(); }
+    catch (caught) { if (isOpenRef.current && lifecycleRef.current === lifecycle) setError(caught instanceof Error ? caught.message : 'تعذر تنفيذ الخطة. لم يُحفظ أي تغيير.'); }
+    finally { if (isOpenRef.current && lifecycleRef.current === lifecycle) setBusy(false); }
   };
   if (!isOpen) return null;
   const hasJournalCreate = plan?.actions.some((action) => action.entityType === 'journal' && action.operation === 'create');
 
   return <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-3 backdrop-blur-sm" dir="rtl">
-    <div className="flex max-h-[94vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-700 bg-white shadow-2xl dark:bg-slate-900">
-      <header className="flex items-center justify-between bg-gradient-to-l from-[#174235] to-emerald-700 p-4 text-white"><div className="flex items-center gap-3"><Sparkles className="h-5 w-5 text-amber-300" /><div><h2 className="font-bold">مساعد دوّنلي الذكي</h2><p className="text-[11px] text-emerald-100">تكلم أو اكتب؛ لن يتغير شيء قبل مراجعتك وتأكيدك.</p></div></div><button onClick={onClose}><X className="h-5 w-5" /></button></header>
+    <div role="dialog" aria-modal="true" aria-labelledby="voice-ai-title" className="flex max-h-[94vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-700 bg-white shadow-2xl dark:bg-slate-900">
+      <header className="flex items-center justify-between bg-gradient-to-l from-[#174235] to-emerald-700 p-4 text-white"><div className="flex items-center gap-3"><Sparkles className="h-5 w-5 text-amber-300" /><div><h2 id="voice-ai-title" className="font-bold">مساعد دوّنلي الذكي</h2><p className="text-[11px] text-emerald-100">تكلم أو اكتب؛ لن يتغير شيء قبل مراجعتك وتأكيدك.</p></div></div><button type="button" aria-label="إغلاق المساعد الصوتي" onClick={onClose}><X className="h-5 w-5" /></button></header>
       <div className="space-y-4 overflow-y-auto p-4 sm:p-5">{!!messages.length && <div className="space-y-2 rounded-2xl bg-slate-50 p-3 dark:bg-slate-800/70">{messages.map((message) => <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-start' : 'justify-end'}`}><div className={`max-w-[88%] rounded-2xl px-3 py-2 text-sm leading-7 ${message.role === 'user' ? 'bg-[#174235] text-white' : 'border border-emerald-100 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200'}`}>{message.text}</div></div>)}</div>}
         {error && <div className="flex gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200"><AlertCircle className="h-4 w-4 shrink-0" />{error}</div>}
         {!plan && <>

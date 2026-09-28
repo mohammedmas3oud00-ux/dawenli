@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Play, 
   Pause, 
@@ -18,6 +18,7 @@ import { Task, Project, Pillar, ValueGoal, FocusMode, FocusSessionRecord } from 
 import { playFocusSound } from '../../utils/audioChime';
 import { toLocalDateKey } from '../../utils/date';
 import { createId } from '../../utils/id';
+import { getFocusCompletionDuration, type PomodoroPhase } from './focusSessionLogic';
 
 interface FocusSessionViewProps {
   tasks: Task[];
@@ -26,13 +27,12 @@ interface FocusSessionViewProps {
   pillars: Pillar[];
   initialTask?: Task | null;
   onToggleTaskStatus: (taskId: string) => void;
+  onSetTaskDone?: (taskId: string) => void;
   onSaveSession: (session: FocusSessionRecord) => void;
   sessionsHistory: FocusSessionRecord[];
   onOpenTimeBlocking?: () => void;
   onBackToHierarchy?: () => void;
 }
-
-type PomodoroPhase = 'work' | 'short_break' | 'long_break';
 
 export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
   tasks,
@@ -41,6 +41,7 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
   pillars,
   initialTask,
   onToggleTaskStatus,
+  onSetTaskDone,
   onSaveSession,
   sessionsHistory,
   onOpenTimeBlocking,
@@ -71,6 +72,9 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
   const [completedPomodorosCount, setCompletedPomodorosCount] = useState<number>(0);
   const [suggestedBreakNotice, setSuggestedBreakNotice] = useState<string | null>(null);
+  const sessionIdRef = useRef<string | null>(null);
+  const sessionSavedRef = useRef(false);
+  const completedTaskIdsRef = useRef(new Set<string>());
 
   const activeTask = tasks.find(t => t.id === selectedTaskId) || initialTask;
   const activeProject = activeTask ? projects.find(p => p.id === activeTask.project_id) : undefined;
@@ -86,9 +90,15 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
     }
   }, [initialTask]);
 
+  const beginNewSession = () => {
+    sessionIdRef.current = createId();
+    sessionSavedRef.current = false;
+  };
+
   // Pomodoro Phase change handler
   const switchPomodoroPhase = (phase: PomodoroPhase) => {
     setIsActive(false);
+    beginNewSession();
     setPomodoroPhase(phase);
     if (phase === 'work') {
       setSecondsRemaining(workDurationMinutes * 60);
@@ -144,10 +154,12 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
   }, [isActive, secondsRemaining, flowSeconds, isInBreak, breakSecondsRemaining, mode, pomodoroPhase, soundEnabled]);
 
   const logCurrentSession = (durationSecs: number, sessionType: FocusMode) => {
-    if (durationSecs < 60) return;
+    if (durationSecs < 60 || sessionSavedRef.current) return;
 
+    if (!sessionIdRef.current) sessionIdRef.current = createId();
+    sessionSavedRef.current = true;
     const record: FocusSessionRecord = {
-      id: createId(),
+      id: sessionIdRef.current,
       task_id: selectedTaskId || null,
       task_title: activeTask?.title,
       project_title: activeProject?.title,
@@ -164,14 +176,18 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
   };
 
   const handleToggleTimer = () => {
-    if (!isActive && soundEnabled) {
-      playFocusSound('start');
+    if (!isActive) {
+      if (mode === 'flowtime' && !isInBreak && flowSeconds === 0 && sessionSavedRef.current) {
+        beginNewSession();
+      }
+      if (soundEnabled) playFocusSound('start');
     }
     setIsActive(!isActive);
   };
 
   const handleResetTimer = () => {
     setIsActive(false);
+    beginNewSession();
     if (mode === 'pomodoro') {
       setSecondsRemaining(
         pomodoroPhase === 'work' 
@@ -206,15 +222,21 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
   };
 
   const handleCompleteCurrentTask = () => {
-    if (activeTask) {
-      onToggleTaskStatus(activeTask.id);
-      if (mode === 'pomodoro') {
-        logCurrentSession(workDurationMinutes * 60 - secondsRemaining, 'pomodoro');
-      } else {
-        logCurrentSession(flowSeconds, 'flowtime');
-      }
-      setIsActive(false);
-    }
+    if (!activeTask || activeTask.status === 'done' || completedTaskIdsRef.current.has(activeTask.id)) return;
+
+    completedTaskIdsRef.current.add(activeTask.id);
+    if (onSetTaskDone) onSetTaskDone(activeTask.id);
+    else onToggleTaskStatus(activeTask.id);
+    const duration = getFocusCompletionDuration({
+      mode,
+      pomodoroPhase,
+      workDurationSeconds: workDurationMinutes * 60,
+      secondsRemaining,
+      flowSeconds,
+      isInBreak,
+    });
+    logCurrentSession(duration, mode);
+    setIsActive(false);
     if (soundEnabled) playFocusSound('complete');
   };
 
@@ -301,6 +323,7 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
             type="button"
             onClick={() => {
               setIsActive(false);
+              beginNewSession();
               setMode('pomodoro');
             }}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
@@ -318,6 +341,7 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
             type="button"
             onClick={() => {
               setIsActive(false);
+              beginNewSession();
               setMode('flowtime');
             }}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
@@ -569,7 +593,7 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
           )}
 
           {/* Complete Task Button */}
-          {activeTask && (
+          {activeTask && activeTask.status !== 'done' && (
             <button
               type="button"
               onClick={handleCompleteCurrentTask}

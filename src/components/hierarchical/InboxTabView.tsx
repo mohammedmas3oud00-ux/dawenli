@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { 
   InboxItem, 
   InboxSourceType, 
@@ -31,6 +31,7 @@ import {
   CalendarDays
 } from 'lucide-react';
 import { deduplicateArabicSpeech, analyzeInboxItemWithAi, AiInboxAnalysisResult } from '../../utils/speechRecognition';
+import { getInboxConversionBlockReason, type InboxConversionTarget } from './inboxConversion';
 
 interface InboxTabViewProps {
   inboxItems: InboxItem[];
@@ -76,6 +77,19 @@ export const InboxTabView: React.FC<InboxTabViewProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
 
+  useEffect(() => () => {
+    const recognition = recognitionRef.current;
+    recognitionRef.current = null;
+    if (!recognition) return;
+    recognition.onstart = null;
+    recognition.onresult = null;
+    recognition.onerror = null;
+    recognition.onend = null;
+    try {
+      recognition.abort?.();
+    } catch {}
+  }, []);
+
   const toggleVoiceDictation = () => {
     if (isListeningDirect) {
       if (recognitionRef.current) {
@@ -120,10 +134,12 @@ export const InboxTabView: React.FC<InboxTabViewProps> = ({
       };
 
       recognition.onerror = () => {
+        if (recognitionRef.current === recognition) recognitionRef.current = null;
         setIsListeningDirect(false);
       };
 
       recognition.onend = () => {
+        if (recognitionRef.current === recognition) recognitionRef.current = null;
         setIsListeningDirect(false);
         setQuickTitle((prev) => deduplicateArabicSpeech(prev));
       };
@@ -138,13 +154,15 @@ export const InboxTabView: React.FC<InboxTabViewProps> = ({
 
   // Convert Modal state
   const [convertingItem, setConvertingItem] = useState<InboxItem | null>(null);
-  const [convertTargetType, setConvertTargetType] = useState<'task' | 'vault' | 'habit' | 'calendar'>('task');
+  const [convertTargetType, setConvertTargetType] = useState<Exclude<InboxConversionTarget, 'project'>>('task');
   const [calendarDate, setCalendarDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [calendarStartTime, setCalendarStartTime] = useState('09:00');
   const [calendarEndTime, setCalendarEndTime] = useState('10:00');
   const [selectedProjectId, setSelectedProjectId] = useState<string>(projects[0]?.id || '');
   const [selectedPillarId, setSelectedPillarId] = useState<string>(pillars[0]?.id || '');
 
+  const conversionParents = { hasProjects: projects.length > 0, hasGoals: goals.length > 0, hasPillars: pillars.length > 0 };
+  const conversionBlockReason = getInboxConversionBlockReason(convertTargetType, conversionParents);
   const pendingCount = inboxItems.filter(i => i.status === 'inbox').length;
   const processedCount = inboxItems.filter(i => i.status === 'processed').length;
 
@@ -174,13 +192,13 @@ export const InboxTabView: React.FC<InboxTabViewProps> = ({
   };
 
   const handleExecuteConvert = () => {
-    if (!convertingItem) return;
+    if (!convertingItem || conversionBlockReason) return;
     if (convertTargetType === 'task') {
-      onConvertToTask(convertingItem, selectedProjectId || projects[0]?.id);
+      onConvertToTask(convertingItem, selectedProjectId || projects[0].id);
     } else if (convertTargetType === 'vault') {
-      onConvertToVault(convertingItem, selectedPillarId || pillars[0]?.id);
+      onConvertToVault(convertingItem, selectedPillarId || pillars[0].id);
     } else if (convertTargetType === 'habit') {
-      onConvertToHabit(convertingItem, selectedPillarId || pillars[0]?.id);
+      onConvertToHabit(convertingItem, selectedPillarId || pillars[0].id);
     } else if (convertTargetType === 'calendar') {
       const startAt = new Date(`${calendarDate}T${calendarStartTime}:00`).toISOString();
       const endAt = new Date(`${calendarDate}T${calendarEndTime}:00`).toISOString();
@@ -220,19 +238,21 @@ export const InboxTabView: React.FC<InboxTabViewProps> = ({
       title: aiRes.actionableTitle || item.title,
     };
 
+    const blockReason = getInboxConversionBlockReason(dest, conversionParents);
+    if (blockReason) {
+      alert(blockReason);
+      return;
+    }
+
     if (dest === 'task') {
-      onConvertToTask(enhancedItem, targetProject?.id || projects[0]?.id);
+      onConvertToTask(enhancedItem, targetProject?.id || projects[0].id);
     } else if (dest === 'project') {
       const targetGoal = goals.find((goal) => goal.pillar_id === targetPillar?.id) || goals[0];
-      if (!targetGoal) {
-        alert('أنشئ هدف قيمة أولًا حتى يمكن تأسيس المشروع تحته.');
-        return;
-      }
       onCreateProjectDraft(enhancedItem, targetGoal.id);
     } else if (dest === 'vault') {
-      onConvertToVault(enhancedItem, targetPillar?.id || pillars[0]?.id);
+      onConvertToVault(enhancedItem, targetPillar?.id || pillars[0].id);
     } else if (dest === 'habit') {
-      onConvertToHabit(enhancedItem, targetPillar?.id || pillars[0]?.id);
+      onConvertToHabit(enhancedItem, targetPillar?.id || pillars[0].id);
     }
   };
 
@@ -411,6 +431,7 @@ export const InboxTabView: React.FC<InboxTabViewProps> = ({
             const meta = sourceMeta[item.source_type] || sourceMeta.idea;
             const isProcessed = item.status === 'processed';
             const aiRes = aiAnalysisMap[item.id];
+            const aiBlockReason = aiRes ? getInboxConversionBlockReason(aiRes.suggestedDestination, conversionParents) : null;
             const isAnalyzingThis = analyzingItemId === item.id;
 
             return (
@@ -483,34 +504,40 @@ export const InboxTabView: React.FC<InboxTabViewProps> = ({
 
                         <div className="flex items-center bg-[#f4f2ec] dark:bg-slate-800 rounded-lg p-0.5 text-xs">
                           <button
+                            type="button"
+                            disabled={!projects.length}
                             onClick={() => {
                               setConvertingItem(item);
                               setConvertTargetType('task');
                             }}
-                            className="px-2.5 py-1 text-xs font-medium text-[#174235] dark:text-emerald-300 hover:bg-white dark:hover:bg-slate-700 rounded-md transition-all cursor-pointer flex items-center gap-1"
-                            title="تحويل لمهمة بمشروع"
+                            className="px-2.5 py-1 text-xs font-medium text-[#174235] dark:text-emerald-300 hover:bg-white dark:hover:bg-slate-700 rounded-md transition-all cursor-pointer flex items-center gap-1 disabled:cursor-not-allowed disabled:opacity-40"
+                            title={projects.length ? 'تحويل لمهمة بمشروع' : 'أنشئ مشروعًا أولًا'}
                           >
                             <CheckSquare className="w-3 h-3" />
                             <span>مهمة</span>
                           </button>
                           <button
+                            type="button"
+                            disabled={!pillars.length}
                             onClick={() => {
                               setConvertingItem(item);
                               setConvertTargetType('vault');
                             }}
-                            className="px-2.5 py-1 text-xs font-medium text-[#2c5282] dark:text-blue-300 hover:bg-white dark:hover:bg-slate-700 rounded-md transition-all cursor-pointer flex items-center gap-1"
-                            title="حفظ بخزائن المعرفة"
+                            className="px-2.5 py-1 text-xs font-medium text-[#2c5282] dark:text-blue-300 hover:bg-white dark:hover:bg-slate-700 rounded-md transition-all cursor-pointer flex items-center gap-1 disabled:cursor-not-allowed disabled:opacity-40"
+                            title={pillars.length ? 'حفظ بخزائن المعرفة' : 'أنشئ ركيزة أولًا'}
                           >
                             <BookOpen className="w-3 h-3" />
                             <span>خزينة</span>
                           </button>
                           <button
+                            type="button"
+                            disabled={!pillars.length}
                             onClick={() => {
                               setConvertingItem(item);
                               setConvertTargetType('habit');
                             }}
-                            className="px-2.5 py-1 text-xs font-medium text-[#8f691c] dark:text-amber-300 hover:bg-white dark:hover:bg-slate-700 rounded-md transition-all cursor-pointer flex items-center gap-1"
-                            title="تحويل لعادة تحت ركيزة"
+                            className="px-2.5 py-1 text-xs font-medium text-[#8f691c] dark:text-amber-300 hover:bg-white dark:hover:bg-slate-700 rounded-md transition-all cursor-pointer flex items-center gap-1 disabled:cursor-not-allowed disabled:opacity-40"
+                            title={pillars.length ? 'تحويل لعادة تحت ركيزة' : 'أنشئ ركيزة أولًا'}
                           >
                             <Repeat className="w-3 h-3" />
                             <span>عادة</span>
@@ -559,8 +586,10 @@ export const InboxTabView: React.FC<InboxTabViewProps> = ({
 
                       <button
                         type="button"
+                        disabled={Boolean(aiBlockReason)}
                         onClick={() => handleApplyAiSuggestion(item, aiRes)}
-                        className="px-3 py-1.5 bg-[#174235] dark:bg-emerald-700 hover:bg-[#12362b] text-white font-bold rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs shrink-0"
+                        title={aiBlockReason || undefined}
+                        className="px-3 py-1.5 bg-[#174235] dark:bg-emerald-700 hover:bg-[#12362b] text-white font-bold rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs shrink-0 disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         <span>تطبيق الاقتراح والفرز الفوري</span>
                         <ArrowRight className="w-3 h-3 rotate-180" />
@@ -588,13 +617,15 @@ export const InboxTabView: React.FC<InboxTabViewProps> = ({
       {/* Convert Item Modal */}
       {convertingItem && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-2xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-5 shadow-xl border border-[#e8e4db] dark:border-slate-800 space-y-4 animate-in fade-in text-xs">
+          <div role="dialog" aria-modal="true" aria-labelledby="inbox-convert-title" className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-5 shadow-xl border border-[#e8e4db] dark:border-slate-800 space-y-4 animate-in fade-in text-xs">
             <div className="flex items-center justify-between border-b border-[#f0ede6] dark:border-slate-800 pb-3">
-              <h3 className="font-semibold text-sm text-[#1a2420] dark:text-slate-100 flex items-center gap-2">
+              <h3 id="inbox-convert-title" className="font-semibold text-sm text-[#1a2420] dark:text-slate-100 flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-[#174235] dark:text-emerald-400" />
                 <span>توجيه وفرز العنصر</span>
               </h3>
               <button
+                type="button"
+                aria-label="إغلاق نافذة التحويل"
                 onClick={() => setConvertingItem(null)}
                 className="text-[#85928a] hover:text-[#1a2420] p-1"
               >
@@ -613,8 +644,9 @@ export const InboxTabView: React.FC<InboxTabViewProps> = ({
                 <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
                   <button
                     type="button"
+                    disabled={!projects.length}
                     onClick={() => setConvertTargetType('task')}
-                    className={`py-2 px-2 rounded-xl text-xs font-medium text-center border cursor-pointer transition-all ${
+                    className={`py-2 px-2 rounded-xl text-xs font-medium text-center border cursor-pointer transition-all disabled:cursor-not-allowed disabled:opacity-40 ${
                       convertTargetType === 'task'
                         ? 'bg-[#174235] dark:bg-emerald-700 text-white border-[#174235]'
                         : 'bg-white dark:bg-slate-800 text-[#4a554f] dark:text-slate-300 border-[#d8d4cc] dark:border-slate-700 hover:bg-[#faf9f6]'
@@ -624,8 +656,9 @@ export const InboxTabView: React.FC<InboxTabViewProps> = ({
                   </button>
                   <button
                     type="button"
+                    disabled={!pillars.length}
                     onClick={() => setConvertTargetType('vault')}
-                    className={`py-2 px-2 rounded-xl text-xs font-medium text-center border cursor-pointer transition-all ${
+                    className={`py-2 px-2 rounded-xl text-xs font-medium text-center border cursor-pointer transition-all disabled:cursor-not-allowed disabled:opacity-40 ${
                       convertTargetType === 'vault'
                         ? 'bg-[#174235] dark:bg-emerald-700 text-white border-[#174235]'
                         : 'bg-white dark:bg-slate-800 text-[#4a554f] dark:text-slate-300 border-[#d8d4cc] dark:border-slate-700 hover:bg-[#faf9f6]'
@@ -635,8 +668,9 @@ export const InboxTabView: React.FC<InboxTabViewProps> = ({
                   </button>
                   <button
                     type="button"
+                    disabled={!pillars.length}
                     onClick={() => setConvertTargetType('habit')}
-                    className={`py-2 px-2 rounded-xl text-xs font-medium text-center border cursor-pointer transition-all ${
+                    className={`py-2 px-2 rounded-xl text-xs font-medium text-center border cursor-pointer transition-all disabled:cursor-not-allowed disabled:opacity-40 ${
                       convertTargetType === 'habit'
                         ? 'bg-[#174235] dark:bg-emerald-700 text-white border-[#174235]'
                         : 'bg-white dark:bg-slate-800 text-[#4a554f] dark:text-slate-300 border-[#d8d4cc] dark:border-slate-700 hover:bg-[#faf9f6]'
@@ -687,6 +721,8 @@ export const InboxTabView: React.FC<InboxTabViewProps> = ({
               )}
             </div>
 
+            {conversionBlockReason && <p role="alert" className="text-xs text-amber-700 dark:text-amber-300">{conversionBlockReason}</p>}
+
             <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#f0ede6] dark:border-slate-800">
               <button
                 type="button"
@@ -697,8 +733,9 @@ export const InboxTabView: React.FC<InboxTabViewProps> = ({
               </button>
               <button
                 type="button"
+                disabled={Boolean(conversionBlockReason)}
                 onClick={handleExecuteConvert}
-                className="px-4 py-1.5 bg-[#174235] dark:bg-emerald-700 hover:bg-[#12352a] text-white rounded-xl font-medium shadow-xs cursor-pointer transition-all"
+                className="px-4 py-1.5 bg-[#174235] dark:bg-emerald-700 hover:bg-[#12352a] text-white rounded-xl font-medium shadow-xs cursor-pointer transition-all disabled:cursor-not-allowed disabled:opacity-50"
               >
                 تأكيد الفرز والتحويل
               </button>

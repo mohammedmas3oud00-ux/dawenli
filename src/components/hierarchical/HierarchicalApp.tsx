@@ -76,7 +76,7 @@ import { remapSnapshotIds } from '../../data/legacyMigration';
 import { createId } from '../../utils/id';
 import { toLocalDateKey } from '../../utils/date';
 import { calculateHabitStreak } from '../../utils/habitStreak';
-import type { PushNotificationPreferences } from '../../utils/pushNotifications';
+import { unsubscribeFromPush, type PushNotificationPreferences } from '../../utils/pushNotifications';
 import { useAI } from '../../features/ai/hooks/useAI';
 import { useNotifications } from '../../features/notifications/hooks/useNotifications';
 import { useReviews } from '../../features/reviews/hooks/useReviews';
@@ -110,28 +110,41 @@ export const HierarchicalApp: React.FC = () => {
     selectedPillarId, setSelectedPillarId, selectedVisionId, setSelectedVisionId, selectedGoalId, setSelectedGoalId,
     selectedProjectId, setSelectedProjectId,
   } = useDashboardNavigation();
-  const previousTabRef = useRef(currentTab);
+  const navigationKey = [currentTab, selectedPillarId, selectedVisionId, selectedGoalId, selectedProjectId].map((value) => value || '').join('|');
+  const previousNavigationKeyRef = useRef(navigationKey);
   const skipNextHistoryPushRef = useRef(false);
 
   useEffect(() => {
-    if (!window.history.state?.dawenliNavigation) window.history.replaceState({ dawenliNavigation: true, tab: currentTab }, '', window.location.href);
+    if (window.location.hash === '#ibadat') {
+      setCurrentTab('ibadat');
+      window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
+    }
+  }, [setCurrentTab]);
+
+  useEffect(() => {
+    if (!window.history.state?.dawenliNavigation) window.history.replaceState({ dawenliNavigation: true, tab: currentTab, pillarId: selectedPillarId, visionId: selectedVisionId, goalId: selectedGoalId, projectId: selectedProjectId }, '', window.location.href);
     const handlePopState = (event: PopStateEvent) => {
+      const state = event.state?.dawenliNavigation ? event.state : { tab: 'hierarchy', pillarId: null, visionId: null, goalId: null, projectId: null };
       skipNextHistoryPushRef.current = true;
-      setCurrentTab((event.state?.dawenliNavigation && event.state.tab) || 'hierarchy');
+      setCurrentTab(state.tab || 'hierarchy');
+      setSelectedPillarId(state.pillarId || null);
+      setSelectedVisionId(state.visionId || null);
+      setSelectedGoalId(state.goalId || null);
+      setSelectedProjectId(state.projectId || null);
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [currentTab, setCurrentTab]);
+  }, [currentTab, selectedPillarId, selectedVisionId, selectedGoalId, selectedProjectId, setCurrentTab, setSelectedPillarId, setSelectedVisionId, setSelectedGoalId, setSelectedProjectId]);
 
   useEffect(() => {
-    if (previousTabRef.current === currentTab) return;
+    if (previousNavigationKeyRef.current === navigationKey) return;
     if (skipNextHistoryPushRef.current) {
       skipNextHistoryPushRef.current = false;
     } else {
-      window.history.pushState({ dawenliNavigation: true, tab: currentTab }, '', window.location.href);
+      window.history.pushState({ dawenliNavigation: true, tab: currentTab, pillarId: selectedPillarId, visionId: selectedVisionId, goalId: selectedGoalId, projectId: selectedProjectId }, '', window.location.href);
     }
-    previousTabRef.current = currentTab;
-  }, [currentTab]);
+    previousNavigationKeyRef.current = navigationKey;
+  }, [navigationKey, currentTab, selectedPillarId, selectedVisionId, selectedGoalId, selectedProjectId]);
 
   // Modals state
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
@@ -143,7 +156,7 @@ export const HierarchicalApp: React.FC = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
-  const { dataReady, clearData, saveSnapshot, applySnapshot, snapshot } = useAppDataPersistence({
+  const { dataReady, loadError, retryLoad, clearData, saveSnapshot, applySnapshot, snapshot } = useAppDataPersistence({
     user: currentUser,
     authStatus,
     onLoadError: (error) => setToasts((previous) => [...previous, {
@@ -238,6 +251,7 @@ export const HierarchicalApp: React.FC = () => {
   };
 
   const handleSignOut = async () => {
+    try { await unsubscribeFromPush(); } catch (error) { console.warn('Push unsubscribe error:', error); }
     try { await authSignOut(); } catch (e) { console.warn('Supabase sign out error:', e); }
     setIsAuthModalOpen(true);
     setToasts((prev) => [
@@ -472,6 +486,23 @@ export const HierarchicalApp: React.FC = () => {
   const currentVision = visions.find((v) => v.id === selectedVisionId) || null;
   const currentGoal = goals.find((g) => g.id === selectedGoalId) || null;
   const currentProject = projects.find((p) => p.id === selectedProjectId) || null;
+  const cleanupDeletedRelationships = (ids: { pillarIds?: string[]; visionIds?: string[]; goalIds?: string[]; projectIds?: string[]; taskIds?: string[] }) => {
+    const pillarIds = new Set(ids.pillarIds || []);
+    const visionIds = new Set(ids.visionIds || []);
+    const goalIds = new Set(ids.goalIds || []);
+    const projectIds = new Set(ids.projectIds || []);
+    const taskIds = new Set(ids.taskIds || []);
+    const deletedWorshipIds = new Set(worshipDefinitions.filter((item) => pillarIds.has(item.pillar_id)).map((item) => item.id));
+    setJournals((items) => items.map((item) => ({ ...item, pillar_id: item.pillar_id && pillarIds.has(item.pillar_id) ? null : item.pillar_id, project_id: item.project_id && projectIds.has(item.project_id) ? null : item.project_id })));
+    setCalendarEvents((items) => items.map((item) => ({ ...item, pillar_id: item.pillar_id && pillarIds.has(item.pillar_id) ? null : item.pillar_id, project_id: item.project_id && projectIds.has(item.project_id) ? null : item.project_id, task_id: item.task_id && taskIds.has(item.task_id) ? null : item.task_id })));
+    setReviews((items) => items.map((item) => ({ ...item, focus_pillar_id: item.focus_pillar_id && pillarIds.has(item.focus_pillar_id) ? null : item.focus_pillar_id, focus_goal_ids: (item.focus_goal_ids || []).filter((id) => !goalIds.has(id)), focus_project_ids: (item.focus_project_ids || []).filter((id) => !projectIds.has(id)) })));
+    setWorshipDefinitions((items) => items.filter((item) => !pillarIds.has(item.pillar_id)).map((item) => ({ ...item, vision_id: item.vision_id && visionIds.has(item.vision_id) ? null : item.vision_id, goal_id: item.goal_id && goalIds.has(item.goal_id) ? null : item.goal_id })));
+    setWorshipLogs((items) => items.filter((item) => !deletedWorshipIds.has(item.worship_id)));
+    setProgressionPaths((items) => items.filter((item) => !deletedWorshipIds.has(item.worship_id)));
+    setQuranKhatmas((items) => items.filter((item) => !deletedWorshipIds.has(item.worship_id)));
+    setQuranHifzTrackers((items) => items.filter((item) => !pillarIds.has(item.pillar_id)).map((item) => ({ ...item, vision_id: item.vision_id && visionIds.has(item.vision_id) ? null : item.vision_id, goal_id: item.goal_id && goalIds.has(item.goal_id) ? null : item.goal_id })));
+    setSleepSchedules((items) => items.filter((item) => !pillarIds.has(item.pillar_id)));
+  };
   const hierarchyCrud = useHierarchyCrud({
     pillars, visions, goals, projects, tasks, habits, vaults, timeBlocks, focusSessions,
     selectedPillarId, selectedVisionId, selectedGoalId, selectedProjectId,
@@ -480,7 +511,7 @@ export const HierarchicalApp: React.FC = () => {
     setPillars, setVisions, setGoals, setProjects, setTasks, setHabits, setVaults, setTimeBlocks, setFocusSessions,
     setEditingPillar, setEditingVision, setEditingGoal, setEditingProject, setEditingTask,
     setSelectedPillarId, setSelectedVisionId, setSelectedGoalId, setSelectedProjectId,
-    setActiveFocusTask, setCurrentTab, applyStateUpdate,
+    setActiveFocusTask, setCurrentTab, cleanupDeletedRelationships, applyStateUpdate,
   });
 
   // Breadcrumbs Generator
@@ -519,6 +550,18 @@ export const HierarchicalApp: React.FC = () => {
       type: 'project',
     });
   }
+
+  const handleNavigateBack = () => {
+    if (window.history.state?.dawenliNavigation && window.history.length > 1) {
+      window.history.back();
+      return;
+    }
+    if (currentTab !== 'hierarchy') { setCurrentTab('hierarchy'); return; }
+    if (selectedProjectId) { setSelectedProjectId(null); return; }
+    if (selectedGoalId) { setSelectedGoalId(null); return; }
+    if (selectedVisionId) { setSelectedVisionId(null); return; }
+    if (selectedPillarId) setSelectedPillarId(null);
+  };
 
   const handleBreadcrumbClick = (item: BreadcrumbItem) => {
     setCurrentTab('hierarchy');
@@ -978,7 +1021,11 @@ export const HierarchicalApp: React.FC = () => {
   }
 
   if (!dataReady) {
-    return <div className="min-h-screen flex items-center justify-center bg-[#f8f7f4] dark:bg-slate-950" dir="rtl">جاري تحميل بياناتك...</div>;
+    return <div className="min-h-screen flex items-center justify-center bg-[#f8f7f4] dark:bg-slate-950 p-4" dir="rtl">
+      <div className="max-w-md space-y-4 rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        {loadError ? <><p role="alert" className="text-sm text-rose-700 dark:text-rose-300">{loadError.message}</p><button type="button" onClick={retryLoad} className="rounded-xl bg-[#174235] px-4 py-2 text-sm font-bold text-white">إعادة المحاولة</button></> : <p>جاري تحميل بياناتك...</p>}
+      </div>
+    </div>;
   }
 
   return (
@@ -1024,8 +1071,8 @@ export const HierarchicalApp: React.FC = () => {
             
             {/* Left section: mobile hamburger & breadcrumbs */}
             <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-              {currentTab !== 'hierarchy' && <button
-                onClick={() => { if (window.history.length > 1) window.history.back(); else setCurrentTab('hierarchy'); }}
+              {(currentTab !== 'hierarchy' || selectedPillarId || selectedVisionId || selectedGoalId || selectedProjectId) && <button
+                onClick={handleNavigateBack}
                 className="p-2 text-[#65736b] dark:text-slate-400 hover:text-[#1a2420] dark:hover:text-slate-100 rounded-xl hover:bg-[#f2efe8] dark:hover:bg-slate-800 cursor-pointer shrink-0"
                 title="رجوع"
                 aria-label="رجوع"
@@ -1498,7 +1545,8 @@ export const HierarchicalApp: React.FC = () => {
                 pillars={pillars}
                 initialTask={activeFocusTask}
                 onToggleTaskStatus={hierarchyCrud.toggleStatus}
-                onSaveSession={hierarchyCrud.saveFocusSession}
+                onSetTaskDone={(taskId) => hierarchyCrud.updateStatus(taskId, 'done')}
+                 onSaveSession={hierarchyCrud.saveFocusSession}
                 sessionsHistory={focusSessions}
                 onOpenTimeBlocking={() => setCurrentTab('timeblocking')}
                 onBackToHierarchy={() => setCurrentTab('hierarchy')}

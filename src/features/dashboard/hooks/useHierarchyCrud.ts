@@ -17,6 +17,7 @@ interface HierarchyCrudDependencies {
   setEditingPillar: Setter<Pillar | null>; setEditingVision: Setter<Vision | null>; setEditingGoal: Setter<ValueGoal | null>; setEditingProject: Setter<Project | null>; setEditingTask: Setter<Task | null>;
   setSelectedPillarId: Setter<string | null>; setSelectedVisionId: Setter<string | null>; setSelectedGoalId: Setter<string | null>; setSelectedProjectId: Setter<string | null>;
   setActiveFocusTask: Setter<Task | null>; setCurrentTab: Setter<SidebarTab>;
+  cleanupDeletedRelationships: (ids: { pillarIds?: string[]; visionIds?: string[]; goalIds?: string[]; projectIds?: string[]; taskIds?: string[] }) => void;
   applyStateUpdate: (pillars: Pillar[], visions: Vision[], goals: ValueGoal[], projects: Project[], tasks: Task[]) => void;
 }
 
@@ -28,7 +29,7 @@ export function useHierarchyCrud(deps: HierarchyCrudDependencies) {
     editingPillar, editingVision, editingGoal, editingProject, editingTask,
     setPillars, setVisions, setGoals, setProjects, setTasks, setHabits, setVaults, setTimeBlocks, setFocusSessions,
     setEditingPillar, setEditingVision, setEditingGoal, setEditingProject, setEditingTask,
-    setSelectedPillarId, setSelectedVisionId, setSelectedGoalId, setSelectedProjectId, setActiveFocusTask, setCurrentTab, applyStateUpdate,
+    setSelectedPillarId, setSelectedVisionId, setSelectedGoalId, setSelectedProjectId, setActiveFocusTask, setCurrentTab, cleanupDeletedRelationships, applyStateUpdate,
   } = deps;
 
   const savePillar = (data: Partial<Pillar>) => {
@@ -48,6 +49,7 @@ export function useHierarchyCrud(deps: HierarchyCrudDependencies) {
     setVaults((items) => items.filter((item) => item.pillar_id !== pillarId));
     setTimeBlocks((items) => items.filter((item) => item.pillar_id !== pillarId && (!item.project_id || !projectIds.includes(item.project_id))));
     setFocusSessions((items) => items.map((item) => item.task_id && !remainingTasks.some((task) => task.id === item.task_id) ? { ...item, task_id: null } : item));
+    cleanupDeletedRelationships({ pillarIds: [pillarId], visionIds, goalIds, projectIds, taskIds: tasks.filter((item) => !remainingTasks.some((task) => task.id === item.id)).map((item) => item.id) });
     if (selectedPillarId === pillarId) { setSelectedPillarId(null); setSelectedVisionId(null); setSelectedGoalId(null); setSelectedProjectId(null); }
   };
 
@@ -69,6 +71,7 @@ export function useHierarchyCrud(deps: HierarchyCrudDependencies) {
     applyStateUpdate(pillars, visions.filter((item) => item.id !== visionId), goals.filter((item) => item.vision_id !== visionId), projects.filter((item) => !projectIds.includes(item.id)), remainingTasks);
     setTimeBlocks((items) => items.filter((item) => !item.project_id || !projectIds.includes(item.project_id)));
     setFocusSessions((items) => items.map((item) => item.task_id && !remainingTasks.some((task) => task.id === item.task_id) ? { ...item, task_id: null } : item));
+    cleanupDeletedRelationships({ visionIds: [visionId], goalIds, projectIds, taskIds: tasks.filter((item) => !remainingTasks.some((task) => task.id === item.id)).map((item) => item.id) });
     if (selectedVisionId === visionId) { setSelectedVisionId(null); setSelectedGoalId(null); setSelectedProjectId(null); }
   };
 
@@ -91,6 +94,7 @@ export function useHierarchyCrud(deps: HierarchyCrudDependencies) {
     applyStateUpdate(pillars, visions, goals.filter((item) => item.id !== goalId), projects.filter((item) => item.goal_id !== goalId), remainingTasks);
     setTimeBlocks((items) => items.filter((item) => !item.project_id || !projectIds.includes(item.project_id)));
     setFocusSessions((items) => items.map((item) => item.task_id && !remainingTasks.some((task) => task.id === item.task_id) ? { ...item, task_id: null } : item));
+    cleanupDeletedRelationships({ goalIds: [goalId], projectIds, taskIds: tasks.filter((item) => !remainingTasks.some((task) => task.id === item.id)).map((item) => item.id) });
     if (selectedGoalId === goalId) { setSelectedGoalId(null); setSelectedProjectId(null); }
   };
 
@@ -112,6 +116,7 @@ export function useHierarchyCrud(deps: HierarchyCrudDependencies) {
     setVaults((items) => items.map((item) => item.project_id === projectId ? { ...item, project_id: null } : item));
     setTimeBlocks((items) => items.filter((item) => item.project_id !== projectId));
     setFocusSessions((items) => items.map((item) => item.task_id && !remainingTasks.some((task) => task.id === item.task_id) ? { ...item, task_id: null } : item));
+    cleanupDeletedRelationships({ projectIds: [projectId], taskIds: tasks.filter((item) => !remainingTasks.some((task) => task.id === item.id)).map((item) => item.id) });
     if (selectedProjectId === projectId) setSelectedProjectId(null);
   };
 
@@ -125,7 +130,7 @@ export function useHierarchyCrud(deps: HierarchyCrudDependencies) {
   const updateTaskCustomFields = (id: string, fields: Record<string, any>) => applyStateUpdate(pillars, visions, goals, projects, tasks.map((item) => item.id === id ? { ...item, custom_fields: fields, updated_at: new Date().toISOString() } : item));
   const updateProjectStatus = (id: string, status: Project['status']) => applyStateUpdate(pillars, visions, goals, projects.map((item) => item.id === id ? { ...item, status, updated_at: new Date().toISOString() } : item), tasks);
   const updateProjectCustomFields = (id: string, fields: Record<string, any>) => applyStateUpdate(pillars, visions, goals, projects.map((item) => item.id === id ? { ...item, custom_fields: fields, updated_at: new Date().toISOString() } : item), tasks);
-  const deleteTask = (id: string) => { const remaining = tasks.filter((item) => item.id !== id); applyStateUpdate(pillars, visions, goals, projects, remaining); setTimeBlocks((items) => items.map((item) => item.task_id === id ? { ...item, task_id: null } : item)); setFocusSessions((items) => items.map((item) => item.task_id === id ? { ...item, task_id: null } : item)); };
+  const deleteTask = (id: string) => { const remaining = tasks.filter((item) => item.id !== id); applyStateUpdate(pillars, visions, goals, projects, remaining); setTimeBlocks((items) => items.map((item) => item.task_id === id ? { ...item, task_id: null } : item)); setFocusSessions((items) => items.map((item) => item.task_id === id ? { ...item, task_id: null } : item)); cleanupDeletedRelationships({ taskIds: [id] }); };
 
   const startFocus = (task: Task) => { setActiveFocusTask(task); setCurrentTab('focus'); };
   const saveFocusSession = (session: FocusSessionRecord) => setFocusSessions((items) => [session, ...items.filter((item) => item.id !== session.id)]);

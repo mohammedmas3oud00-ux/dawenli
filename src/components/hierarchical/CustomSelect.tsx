@@ -91,6 +91,16 @@ export function CustomSelect<T extends string | number>({
         type="button"
         disabled={disabled}
         onClick={() => !disabled && setIsOpen(!isOpen)}
+        onKeyDown={(event) => {
+          if (disabled) return;
+          if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setIsOpen(true); }
+          if (event.key === 'Escape') setIsOpen(false);
+          if (event.key === 'ArrowDown' && options.length) { event.preventDefault(); const index = options.findIndex((option) => option.value === value); onChange(options[Math.min(options.length - 1, Math.max(0, index + 1))].value); }
+          if (event.key === 'ArrowUp' && options.length) { event.preventDefault(); const index = options.findIndex((option) => option.value === value); onChange(options[Math.max(0, index <= 0 ? 0 : index - 1)].value); }
+        }}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        aria-label={title || placeholder}
         className={`w-full flex items-center justify-between border bg-white dark:bg-slate-800 text-[#1a2420] dark:text-slate-100 transition-all cursor-pointer select-none font-medium ${
           isOpen
             ? 'border-[#174235] dark:border-emerald-500 ring-2 ring-[#174235]/15 dark:ring-emerald-500/20 shadow-xs'
@@ -113,6 +123,8 @@ export function CustomSelect<T extends string | number>({
       {/* Floating Popover Menu */}
       {isOpen && (
         <div
+          role="listbox"
+          aria-label={title || placeholder}
           className={`absolute top-full mt-1.5 z-50 min-w-full w-max max-w-xs bg-white dark:bg-slate-800 border border-[#e2ddd3] dark:border-slate-700 rounded-xl shadow-lg py-1 animate-in fade-in zoom-in-95 duration-100 overflow-hidden ${
             align === 'right' ? 'right-0' : 'left-0'
           } ${dropdownClassName}`}
@@ -129,6 +141,8 @@ export function CustomSelect<T extends string | number>({
                     key={String(option.value)}
                     type="button"
                     onClick={() => handleSelect(option.value)}
+                    role="option"
+                    aria-selected={isSelected}
                     className={`w-full flex items-center justify-between px-3 py-2 text-right text-xs transition-colors cursor-pointer group ${
                       isSelected
                         ? 'bg-[#ebf4f0] dark:bg-emerald-950/70 text-[#174235] dark:text-emerald-300 font-semibold'

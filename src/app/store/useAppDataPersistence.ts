@@ -25,6 +25,8 @@ interface UseAppDataPersistenceOptions {
 
 export function useAppDataPersistence({ user, authStatus, onLoadError }: UseAppDataPersistenceOptions) {
   const [dataReady, setDataReady] = useState(false);
+  const [loadError, setLoadError] = useState<Error | null>(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const repositoryRef = useRef<DataRepository | null>(null);
   const saveQueueRef = useRef(createSnapshotSaveQueue());
   const onLoadErrorRef = useRef(onLoadError);
@@ -75,6 +77,7 @@ export function useAppDataPersistence({ user, authStatus, onLoadError }: UseAppD
     if (!user || authStatus === 'loading' || authStatus === 'signedOut') {
       repositoryRef.current = null;
       setDataReady(false);
+      setLoadError(null);
       return;
     }
 
@@ -82,21 +85,26 @@ export function useAppDataPersistence({ user, authStatus, onLoadError }: UseAppD
     if (!repository) return;
     repositoryRef.current = repository;
     setDataReady(false);
+    setLoadError(null);
     let active = true;
+    const saveQueue = saveQueueRef.current;
 
     void repository.load().then((snapshot) => {
       if (!active) return;
       applySnapshot(snapshot);
       setDataReady(true);
     }).catch((error: unknown) => {
-      if (active) onLoadErrorRef.current?.(error);
+      if (!active) return;
+      const normalized = error instanceof Error ? error : new Error('تعذر تحميل بيانات الحساب.');
+      setLoadError(normalized);
+      onLoadErrorRef.current?.(normalized);
     });
 
     return () => {
       active = false;
-      invalidateSnapshotSaveQueue(saveQueueRef.current);
+      invalidateSnapshotSaveQueue(saveQueue);
     };
-  }, [applySnapshot, authStatus, user?.id, user?.isGuest]);
+  }, [applySnapshot, authStatus, loadAttempt, user, user?.id, user?.isGuest]);
 
   const snapshot = useMemo<AppDataSnapshot>(() => ({
     schemaVersion: 5, pillars, visions, goals, projects, tasks, reviews, inboxItems, habits, vaults,
@@ -124,7 +132,7 @@ export function useAppDataPersistence({ user, authStatus, onLoadError }: UseAppD
     return () => window.clearTimeout(timer);
   }, [dataReady, saveSnapshot, snapshot]);
 
-  return { dataReady, snapshot, saveSnapshot, clearData, applySnapshot, repository: repositoryRef.current };
+  return { dataReady, loadError, retryLoad: () => setLoadAttempt((value) => value + 1), snapshot, saveSnapshot, clearData, applySnapshot, repository: repositoryRef.current };
 }
 
 export function emptyAppSnapshot() {

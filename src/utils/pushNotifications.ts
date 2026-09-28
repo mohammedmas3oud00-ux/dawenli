@@ -25,8 +25,7 @@ export async function subscribeToPush(prayerTimes: Record<string, string> = {}, 
   if (applicationServerKey.byteLength !== 65) throw new Error('مفتاح إشعارات الخلفية غير صالح. أعد المحاولة بعد تحديث الصفحة.');
   const registration = await navigator.serviceWorker.ready;
   const previousSubscription = await registration.pushManager.getSubscription();
-  if (previousSubscription) await previousSubscription.unsubscribe();
-  const subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: applicationServerKey as unknown as BufferSource });
+  const subscription = previousSubscription || await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: applicationServerKey as unknown as BufferSource });
   const payload: Record<string, unknown> = { subscription, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone };
   for (const key of ['prayerEnabled', 'taskEnabled', 'worshipEnabled', 'adhkarEnabled', 'quranEnabled', 'qiyamEnabled', 'sleepEnabled', 'streakEnabled', 'calendarEnabled'] as const) {
     if (typeof options[key] === 'boolean') payload[key] = options[key];
@@ -34,6 +33,23 @@ export async function subscribeToPush(prayerTimes: Record<string, string> = {}, 
   if (Object.keys(prayerTimes).length) payload.prayerTimes = prayerTimes;
   const response = await fetch('/api/push/subscription', { method: 'POST', headers: await authHeaders(), body: JSON.stringify(payload) });
   if (!response.ok) throw new Error('تعذر حفظ إعداد إشعارات الخلفية.');
+}
+
+export async function unsubscribeFromPush(): Promise<void> {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  const registration = await navigator.serviceWorker.getRegistration();
+  const subscription = await registration?.pushManager.getSubscription();
+  if (!subscription) return;
+  let error: Error | null = null;
+  try {
+    const response = await fetch('/api/push/subscription', { method: 'DELETE', headers: await authHeaders(), body: JSON.stringify({ endpoint: subscription.endpoint }) });
+    if (!response.ok) error = new Error('تعذر حذف اشتراك الإشعارات من الخادم.');
+  } catch (cause) {
+    error = cause instanceof Error ? cause : new Error('تعذر حذف اشتراك الإشعارات من الخادم.');
+  } finally {
+    await subscription.unsubscribe();
+  }
+  if (error) throw error;
 }
 
 export async function getPushPreferences(): Promise<PushNotificationPreferences | null> {

@@ -3,6 +3,10 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=22.14 <23",
+    "npm": ">=10"
+  },
   "overrides": {
     "esbuild": "^0.28.1"
   },
@@ -15,11 +19,16 @@
     "start": "node build/server.js --production",
     "clean": "node -e \"for(const p of ['dist','build'])require('fs').rmSync(p,{recursive:true,force:true})\"",
     "typecheck": "tsc --noEmit",
-    "lint": "npm run typecheck",
-    "test": "vitest run",
+    "lint": "eslint .",
+    "format:check": "prettier --ignore-path .prettierignore.incremental --check PROJECT_MAP.md eslint.config.js index.html package.json playwright.config.ts playwright.production.config.ts scripts/verify-supabase-security.mjs src/components/hierarchical/focusSessionLogic.ts src/components/hierarchical/focusSessionLogic.test.ts src/components/hierarchical/inboxConversion.ts src/components/hierarchical/inboxConversion.test.ts src/components/hierarchical/prayerTimesRefresh.ts src/components/hierarchical/prayerTimesRefresh.test.ts src/features/calendar/utils/reminder.ts src/features/calendar/utils/reminder.test.ts src/shared/services/pushSecurity.ts src/shared/services/pushSecurity.test.ts tsconfig.json vercel.json vitest.config.ts",
+    "format:check:all": "prettier --check .",
+    "test": "vitest run --maxWorkers=1",
+    "test:coverage": "vitest run --coverage --maxWorkers=1",
     "test:supabase": "tsx scripts/verify-supabase-sync.mjs",
+    "test:supabase:security": "node scripts/verify-supabase-security.mjs",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:e2e:production": "playwright test --config=playwright.production.config.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
@@ -39,6 +48,7 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.63.0",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/jest-dom": "^7.0.1",
@@ -48,13 +58,20 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@types/supertest": "^7.2.1",
+    "@vitest/coverage-v8": "^5.0.2",
     "autoprefixer": "^10.4.21",
+    "eslint": "^10.11.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.12.0",
     "jsdom": "^29.1.1",
+    "prettier": "^3.9.9",
     "supertest": "^7.3.0",
     "tailwindcss": "^4.3.3",
     "tsup": "^8.5.1",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
-    "vitest": "^5.0.1"
+    "typescript-eslint": "^8.70.1",
+    "vitest": "^5.0.2"
   }
 }

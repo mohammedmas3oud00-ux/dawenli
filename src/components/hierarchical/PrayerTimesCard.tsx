@@ -5,6 +5,8 @@ import {
 } from '../../utils/speechRecognition';
 import { playFocusSound, stopAdhanSound } from '../../utils/audioChime';
 import { subscribeToPush } from '../../utils/pushNotifications';
+import { toLocalDateKey } from '../../utils/date';
+import { shouldRefreshPrayerTimes } from './prayerTimesRefresh';
 import { 
   Bell, 
   BellOff, 
@@ -55,6 +57,7 @@ export const PrayerTimesCard: React.FC<PrayerTimesCardProps> = ({
   const [cityLabel, setCityLabel] = useState<string>('القاهرة / التوقيت المحلي');
   const [loadError, setLoadError] = useState<string | null>(null);
   const [pushEnabled, setPushEnabled] = useState(false);
+  const [loadedLocalDate, setLoadedLocalDate] = useState('');
 
   // Load Prayer Times
   const loadTimes = async (useLocation = false) => {
@@ -70,6 +73,7 @@ export const PrayerTimesCard: React.FC<PrayerTimesCardProps> = ({
                 lng: pos.coords.longitude,
               });
               setData(res);
+               setLoadedLocalDate(toLocalDateKey());
               setCityLabel('موقعك الجغرافي المباشر');
             } catch {
               setLoadError('تعذر جلب مواقيت دقيقة لموقعك.');
@@ -86,6 +90,7 @@ export const PrayerTimesCard: React.FC<PrayerTimesCardProps> = ({
       } else {
         const cairo = await fetchPrayerTimes();
         setData(cairo);
+         setLoadedLocalDate(toLocalDateKey());
         setCityLabel('القاهرة — اختر الموقع لمواقيت مدينتك');
         setLoading(false);
       }
@@ -98,6 +103,15 @@ export const PrayerTimesCard: React.FC<PrayerTimesCardProps> = ({
   useEffect(() => {
     void loadTimes(false);
   }, []);
+
+  useEffect(() => {
+    const refreshIfNeeded = () => {
+      if (shouldRefreshPrayerTimes(loadedLocalDate, toLocalDateKey(), document.visibilityState)) void loadTimes(false);
+    };
+    const interval = window.setInterval(refreshIfNeeded, 30_000);
+    document.addEventListener('visibilitychange', refreshIfNeeded);
+    return () => { window.clearInterval(interval); document.removeEventListener('visibilitychange', refreshIfNeeded); };
+  }, [loadedLocalDate]);
 
   // Compute Next Prayer and Trigger Adhan Alert
   useEffect(() => {

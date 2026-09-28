@@ -5,10 +5,13 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -16,17 +19,49 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: npm
 
       - name: Install dependencies
         run: npm ci
 
+      - name: Lint
+        run: npm run lint
+
       - name: Typecheck
         run: npm run typecheck
 
       - name: Unit tests
-        run: npm test -- --run
+        run: npm test -- --maxWorkers=1
 
-      - name: Production web build
-        run: npm run build:web
+      - name: Coverage thresholds
+        run: npm run test:coverage
+
+      - name: Full production build
+        run: npm run build
+
+      - name: Audit high-severity production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+  e2e:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install managed Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Local end-to-end tests
+        run: npm run test:e2e

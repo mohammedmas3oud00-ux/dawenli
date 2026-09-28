@@ -95,11 +95,26 @@ const TABLES = [
 ] as const;
 
 export class SupabaseRepository implements DataRepository {
+  private snapshotRevision: number | null = null;
+
   constructor(private readonly client: SupabaseClient, private readonly userId: string) {}
 
+  private async readSnapshotRevision(): Promise<number> {
+    const { data, error } = await this.client.rpc('dawenli_get_snapshot_revision');
+    if (error) throw error;
+    const revision = Number(data ?? 0);
+    if (!Number.isSafeInteger(revision) || revision < 0) throw new RepositoryError('validation', 'إصدار المزامنة السحابية غير صالح.');
+    return revision;
+  }
+
   async load(): Promise<AppDataSnapshot> {
+    return this.loadConsistentSnapshot(false);
+  }
+
+  private async loadConsistentSnapshot(isRetry: boolean): Promise<AppDataSnapshot> {
     const snapshot = emptySnapshot();
     try {
+      const revisionBefore = await this.readSnapshotRevision();
       for (const [table, key] of TABLES) {
         const { data, error } = await this.client.from(table).select('*').eq('user_id', this.userId);
         if (error) throw error;
@@ -111,6 +126,12 @@ export class SupabaseRepository implements DataRepository {
         ...fromDatabaseRow(row),
         entityType: row.entity_type,
       })) as CustomFieldDefinition[];
+      const revisionAfter = await this.readSnapshotRevision();
+      if (revisionBefore !== revisionAfter) {
+        if (isRetry) throw new RepositoryError('conflict', 'تغيرت البيانات أثناء التحميل. أعد المحاولة.');
+        return this.loadConsistentSnapshot(true);
+      }
+      this.snapshotRevision = revisionAfter;
       const pendingRaw = typeof localStorage !== 'undefined' ? localStorage.getItem(pendingSyncKey(this.userId)) : null;
       if (pendingRaw) {
         try { return normalizeSnapshot(JSON.parse(pendingRaw)); } catch { localStorage.removeItem(pendingSyncKey(this.userId)); }
@@ -129,14 +150,21 @@ export class SupabaseRepository implements DataRepository {
     const normalizedSnapshot = normalizeSnapshot(snapshot);
     try {
       const payload = normalizeSnapshotForDatabase(normalizedSnapshot, this.userId);
-      const { error } = await this.client.rpc('dawenli_save_snapshot', { p_snapshot: payload });
+      const expectedRevision = this.snapshotRevision ?? await this.readSnapshotRevision();
+      const { data, error } = await this.client.rpc('dawenli_save_snapshot', { p_snapshot: payload, p_expected_revision: expectedRevision });
       if (error) throw error;
+      const nextRevision = Number(data);
+      if (!Number.isSafeInteger(nextRevision) || nextRevision <= expectedRevision) throw new RepositoryError('validation', 'لم يرجع الخادم إصدار مزامنة صالحًا.');
+      this.snapshotRevision = nextRevision;
       if (typeof localStorage !== 'undefined') localStorage.removeItem(pendingSyncKey(this.userId));
     } catch (error) {
-      try {
-        if (typeof localStorage !== 'undefined') localStorage.setItem(pendingSyncKey(this.userId), JSON.stringify(normalizedSnapshot));
-      } catch { /* Keep the cloud error if browser storage is unavailable. */ }
-      throw mapRepositoryError(error, 'تعذرت المزامنة السحابية؛ تم حفظ نسخة محلية مؤقتة وسيُعاد المحاولة تلقائيًا.');
+      const mapped = mapRepositoryError(error, 'تعذرت المزامنة السحابية؛ تم حفظ نسخة محلية مؤقتة وسيُعاد المحاولة تلقائيًا.');
+      if (mapped.code !== 'conflict') {
+        try {
+          if (typeof localStorage !== 'undefined') localStorage.setItem(pendingSyncKey(this.userId), JSON.stringify(normalizedSnapshot));
+        } catch { /* Keep the cloud error if browser storage is unavailable. */ }
+      }
+      throw mapped;
     }
   }
 
@@ -144,6 +172,7 @@ export class SupabaseRepository implements DataRepository {
     try {
       const { error } = await this.client.rpc('dawenli_clear_snapshot');
       if (error) throw error;
+      this.snapshotRevision = await this.readSnapshotRevision();
       if (typeof localStorage !== 'undefined') localStorage.removeItem(pendingSyncKey(this.userId));
     } catch (error) {
       throw mapRepositoryError(error, 'تعذر حذف بيانات الحساب.');
@@ -283,7 +312,7 @@ function mapRepositoryError(error: unknown, fallback: string): RepositoryError {
   const lower = message.toLowerCase();
   if (errorCode === '42501' || lower.includes('jwt') || lower.includes('auth') || lower.includes('permission')) return new RepositoryError('unauthorized', `${fallback} (${message})`, error);
   if (lower.includes('fetch') || lower.includes('network')) return new RepositoryError('network', fallback, error);
-  if (errorCode === '23505' || errorCode === '23503' || lower.includes('duplicate') || lower.includes('conflict')) return new RepositoryError('conflict', `${fallback} (${message})`, error);
+  if (errorCode === '40001' || errorCode === '23505' || errorCode === '23503' || lower.includes('duplicate') || lower.includes('conflict')) return new RepositoryError('conflict', `${fallback} (${message})`, error);
   if (errorCode === '22p02' || errorCode === '23514') return new RepositoryError('validation', `${fallback} (${message})`, error);
   return new RepositoryError('unknown', `${fallback} (${message})`, error);
 }

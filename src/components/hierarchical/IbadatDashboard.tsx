@@ -1,6 +1,6 @@
 import { WorshipPreferences } from './WorshipPreferences';
 import { sortWorshipDefinitions, worshipSections } from '../../utils/worshipLayout';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Check, CalendarDays, Moon, Plus, Sparkles } from 'lucide-react';
 import type { Pillar, ProgressionPath, QuranHifzTracker, QuranKhatma, SleepSchedule, WorshipDefinition, WorshipLog } from '../../types/hierarchical';
 import { toLocalDateKey } from '../../utils/date';
@@ -38,13 +38,28 @@ export const IbadatDashboard: React.FC<Props> = ({ onUpdateDefinition, pillars, 
   const [notificationPreferences, setNotificationPreferences] = useState({ prayerEnabled: true, taskEnabled: true, worshipEnabled: true, adhkarEnabled: true, quranEnabled: true, qiyamEnabled: true, sleepEnabled: true, streakEnabled: true });
   const [notificationLoading, setNotificationLoading] = useState(true);
   const [notificationError, setNotificationError] = useState('');
-  useEffect(() => {
-    let active = true;
-    getPushPreferences().then((saved) => {
-      if (active) { if (saved) setNotificationPreferences((current) => ({ ...current, ...saved })); setNotificationLoading(false); }
-    }).catch((error) => { if (active) setNotificationError(error instanceof Error ? error.message : 'تعذر تحميل الإعدادات'); });
-    return () => { active = false; };
+  const notificationRequestRef = useRef(0);
+  const loadNotificationPreferences = useCallback(async () => {
+    const requestId = ++notificationRequestRef.current;
+    setNotificationLoading(true);
+    setNotificationError('');
+    try {
+      const saved = await getPushPreferences();
+      if (requestId === notificationRequestRef.current && saved) {
+        setNotificationPreferences((current) => ({ ...current, ...saved }));
+      }
+    } catch (error) {
+      if (requestId === notificationRequestRef.current) {
+        setNotificationError(error instanceof Error ? error.message : 'تعذر تحميل الإعدادات');
+      }
+    } finally {
+      if (requestId === notificationRequestRef.current) setNotificationLoading(false);
+    }
   }, []);
+  useEffect(() => {
+    void loadNotificationPreferences();
+    return () => { notificationRequestRef.current += 1; };
+  }, [loadNotificationPreferences]);
   const today = toLocalDateKey();
   const dayDefinitions = definitions.filter((item) => item.is_active && (item.frequency === 'daily' || item.frequency === 'custom'));
   const summary = useMemo(() => worshipSummary(definitions, logs, date), [definitions, logs, date]);
@@ -68,7 +83,7 @@ export const IbadatDashboard: React.FC<Props> = ({ onUpdateDefinition, pillars, 
   };
   return <section className="min-w-0 space-y-5 pb-8">
     <button type="button" onClick={() => setShowSetup(true)} className="rounded-xl border px-4 py-3 text-sm dark:border-slate-700">إضافة عبادات ومسارات تدرّج — دون حذف السجلات الحالية</button>
-    <div className="flex flex-wrap items-center justify-between gap-3"><div><h1 className="text-2xl font-black">🕌 العبادات والأوراد</h1><p className="text-sm text-slate-500">مرتبطة بركيزة {pillars.find((p) => p.id === definitions[0].pillar_id)?.title || 'العلاقة مع الله'}</p></div><div className="flex flex-wrap items-center gap-2"><div className="flex max-w-full flex-wrap items-center gap-2 rounded-xl border px-3 py-2 text-xs dark:border-slate-700" role="group" aria-label="إعدادات أنواع الإشعارات">{([['prayerEnabled','الصلاة'],['taskEnabled','المهام'],['adhkarEnabled','الأذكار'],['quranEnabled','القرآن'],['qiyamEnabled','قيام الليل'],['sleepEnabled','النوم'],['streakEnabled','الستريك']] as const).map(([key, label]) => <label key={key} className="inline-flex items-center gap-1"><input type="checkbox" disabled={notificationLoading} checked={notificationPreferences[key]} onChange={(e) => setNotificationPreferences((old) => ({ ...old, [key]: e.target.checked }))} /> {label}</label>)}</div><button type="button" disabled={notificationLoading} onClick={() => onEnableNotifications(notificationPreferences)} className="rounded-xl border px-3 py-2 text-sm dark:border-slate-700">حفظ إعدادات التذكيرات</button>{notificationError && <p role="alert" className="text-sm text-red-600">{notificationError}؛ أعد فتح الصفحة للمحاولة مجددًا.</p>}<button type="button" onClick={onSuggestTimeBlocks} className="rounded-xl bg-emerald-700 text-white px-3 py-2 text-sm">إضافة الكتل المقترحة</button><button type="button" onClick={onOpenTimeBlocking} className="rounded-xl border px-3 py-2 text-sm dark:border-slate-700">حجب الوقت</button></div></div>
+    <div className="flex flex-wrap items-center justify-between gap-3"><div><h1 className="text-2xl font-black">🕌 العبادات والأوراد</h1><p className="text-sm text-slate-500">مرتبطة بركيزة {pillars.find((p) => p.id === definitions[0].pillar_id)?.title || 'العلاقة مع الله'}</p></div><div className="flex flex-wrap items-center gap-2"><div className="flex max-w-full flex-wrap items-center gap-2 rounded-xl border px-3 py-2 text-xs dark:border-slate-700" role="group" aria-label="إعدادات أنواع الإشعارات">{([['prayerEnabled','الصلاة'],['taskEnabled','المهام'],['adhkarEnabled','الأذكار'],['quranEnabled','القرآن'],['qiyamEnabled','قيام الليل'],['sleepEnabled','النوم'],['streakEnabled','الستريك']] as const).map(([key, label]) => <label key={key} className="inline-flex items-center gap-1"><input type="checkbox" disabled={notificationLoading} checked={notificationPreferences[key]} onChange={(e) => setNotificationPreferences((old) => ({ ...old, [key]: e.target.checked }))} /> {label}</label>)}</div><button type="button" disabled={notificationLoading} onClick={() => onEnableNotifications(notificationPreferences)} className="rounded-xl border px-3 py-2 text-sm dark:border-slate-700">حفظ إعدادات التذكيرات</button>{notificationError && <p role="alert" className="text-sm text-red-600">{notificationError}<button type="button" onClick={() => void loadNotificationPreferences()} className="mr-2 underline">إعادة المحاولة</button></p>}<button type="button" onClick={onSuggestTimeBlocks} className="rounded-xl bg-emerald-700 text-white px-3 py-2 text-sm">إضافة الكتل المقترحة</button><button type="button" onClick={onOpenTimeBlocking} className="rounded-xl border px-3 py-2 text-sm dark:border-slate-700">حجب الوقت</button></div></div>
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4"><Stat label="التزام اليوم" value={`${summary.rate}%`} /><Stat label="المكتمل" value={`${summary.completed}/${summary.total}`} /><Stat label="الستريك" value={`${streak} يوم`} /><Stat label="التاريخ" value={date} /></div>
     <div className="rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900"><div className="mb-2 flex items-center justify-between gap-3 text-xs"><span className="font-bold text-slate-700 dark:text-slate-200">تقدّم اليوم</span><span className="font-black text-emerald-700 dark:text-emerald-300">{summary.rate}%</span></div><div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><div className="h-full rounded-full bg-linear-to-l from-emerald-600 to-teal-400 transition-all" style={{ width: `${summary.rate}%` }} /></div></div>
     <aside className="rounded-2xl border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/30 p-4"><p className="font-bold text-sm">✨ ملخص التزامك</p><ul className="mt-2 space-y-1 text-sm text-slate-700 dark:text-slate-200">{worshipInsights(definitions, logs, date).map((insight) => <li key={insight}>• {insight}</li>)}</ul></aside>

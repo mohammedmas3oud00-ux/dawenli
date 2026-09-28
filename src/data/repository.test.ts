@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { emptySnapshot, normalizeSnapshot, normalizeSnapshotForDatabase } from './repository';
+import { describe, expect, it, vi } from 'vitest';
+import { emptySnapshot, normalizeSnapshot, normalizeSnapshotForDatabase, SupabaseRepository } from './repository';
 
 describe('repository snapshot normalization', () => {
   it('fills database-required defaults before persistence', () => {
@@ -29,6 +29,29 @@ describe('repository snapshot normalization', () => {
     expect(snapshot.quranHifzTrackers[0].surahs).toEqual([]);
     expect(snapshot.journals[0].tags).toEqual([]);
     expect(snapshot.calendarEvents[0].recurrence).toEqual({ frequency: 'none', interval: 1 });
+  });
+
+  it('uses the current revision for compare-and-swap snapshot writes', async () => {
+    const rpc = vi.fn()
+      .mockResolvedValueOnce({ data: 7, error: null })
+      .mockResolvedValueOnce({ data: 8, error: null });
+    const repository = new SupabaseRepository({ rpc } as never, 'user-1');
+
+    await repository.save(emptySnapshot());
+
+    expect(rpc).toHaveBeenNthCalledWith(1, 'dawenli_get_snapshot_revision');
+    expect(rpc).toHaveBeenNthCalledWith(2, 'dawenli_save_snapshot', expect.objectContaining({ p_expected_revision: 7 }));
+  });
+
+  it('maps snapshot revision conflicts without keeping a stale retry payload', async () => {
+    localStorage.clear();
+    const rpc = vi.fn()
+      .mockResolvedValueOnce({ data: 4, error: null })
+      .mockResolvedValueOnce({ data: null, error: { code: '40001', message: 'Snapshot revision conflict' } });
+    const repository = new SupabaseRepository({ rpc } as never, 'user-1');
+
+    await expect(repository.save(emptySnapshot())).rejects.toMatchObject({ code: 'conflict' });
+    expect(localStorage.getItem('dawenli_pending_sync_user-1')).toBeNull();
   });
 
   it('maps app fields and fills every live required row default', () => {

@@ -4,10 +4,11 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { GoogleGenAI, Type } from '@google/genai';
 import { createClient } from '@supabase/supabase-js';
-import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes, randomUUID, timingSafeEqual } from 'crypto';
+import { createCipheriv, createDecipheriv, createHash, randomBytes, randomUUID, timingSafeEqual } from 'crypto';
 import webpush from 'web-push';
 import { worshipReminderTime } from './src/utils/worshipReminderTime.js';
 import { aiCommandPlanSchema } from './src/features/ai/commands/schema.js';
+import { isAllowedPushEndpoint, isValidPushKey, isValidTimeZone } from './src/shared/services/pushSecurity.js';
 
 dotenv.config();
 
@@ -127,7 +128,7 @@ async function generateContentWithFallback(params: {
   throw lastError || new Error('تعذر معالجة الطلب عبر نماذج الذكاء الاصطناعي حالياً');
 }
 
-type ApiErrorCode = 'BAD_REQUEST' | 'UNAUTHORIZED' | 'PAYLOAD_TOO_LARGE' | 'RATE_LIMITED' | 'UPSTREAM_ERROR' | 'NOT_CONFIGURED';
+type ApiErrorCode = 'BAD_REQUEST' | 'UNAUTHORIZED' | 'CONFLICT' | 'PAYLOAD_TOO_LARGE' | 'RATE_LIMITED' | 'UPSTREAM_ERROR' | 'NOT_CONFIGURED';
 
 function apiError(res: express.Response, status: number, code: ApiErrorCode, message: string) {
   return res.status(status).json({ ok: false, error: { code, message, requestId: randomUUID() } });
@@ -139,7 +140,6 @@ const authClient = supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, su
 const serviceRoleKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
 const adminClient = supabaseUrl && serviceRoleKey ? createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false } }) : null;
 const credentialEncryptionSecret = (process.env.GEMINI_KEY_ENCRYPTION_SECRET || '').trim();
-const localRateLimits = new Map<string, { count: number; resetAt: number }>();
 const vapidPublicKey = (process.env.VAPID_PUBLIC_KEY || '').trim();
 const vapidPrivateKey = (process.env.VAPID_PRIVATE_KEY || '').trim();
 const vapidSubject = (process.env.VAPID_SUBJECT || 'mailto:admin@example.com').trim();
@@ -168,6 +168,19 @@ function decryptCredential(value: { ciphertext: string; iv: string; auth_tag: st
   return Buffer.concat([decipher.update(Buffer.from(value.ciphertext, 'base64')), decipher.final()]).toString('utf8');
 }
 
+async function acquireGoogleSyncLock(userId: string): Promise<boolean> {
+  if (!adminClient) return false;
+  const { data, error } = await adminClient.rpc('dawenli_try_acquire_google_sync_lock', { p_user_id: userId, p_lease_seconds: 90 });
+  if (error) { console.error('Google sync lock acquisition failed', { userId, error }); return false; }
+  return data === true;
+}
+
+async function releaseGoogleSyncLock(userId: string): Promise<void> {
+  if (!adminClient) return;
+  const { error } = await adminClient.rpc('dawenli_release_google_sync_lock', { p_user_id: userId });
+  if (error) console.error('Google sync lock release failed', { userId, error });
+}
+
 function googleConfig() {
   return {
     clientId: (process.env.GOOGLE_CLIENT_ID || '').trim(),
@@ -176,26 +189,31 @@ function googleConfig() {
   };
 }
 
-function encodeGoogleState(userId: string): string {
-  if (!credentialEncryptionSecret) throw new Error('Credential encryption is not configured');
-  const payload = `${userId}.${randomUUID()}`;
-  const signature = createHmac('sha256', credentialEncryptionSecret).update(payload).digest('base64url');
-  return Buffer.from(`${payload}.${signature}`, 'utf8').toString('base64url');
+const googleOAuthCookieName = 'dawenli_google_oauth';
+const googleOAuthStateTtlSeconds = 10 * 60;
+
+function googleOAuthStateHash(value: string): string {
+  return createHash('sha256').update(value).digest('hex');
 }
 
-function decodeGoogleState(value: string): string | null {
-  try {
-    if (!credentialEncryptionSecret) return null;
-    const decoded = Buffer.from(value, 'base64url').toString('utf8');
-    const lastDot = decoded.lastIndexOf('.');
-    const payload = decoded.slice(0, lastDot);
-    const supplied = decoded.slice(lastDot + 1);
-    const expected = createHmac('sha256', credentialEncryptionSecret).update(payload).digest('base64url');
-    if (!supplied || supplied.length !== expected.length || !timingSafeEqual(Buffer.from(supplied), Buffer.from(expected))) return null;
-    return payload.split('.')[0] || null;
-  } catch {
-    return null;
-  }
+function requestCookie(req: express.Request, name: string): string | null {
+  const entry = (req.headers.cookie || '').split(';').map((part) => part.trim()).find((part) => part.startsWith(`${name}=`));
+  if (!entry) return null;
+  try { return decodeURIComponent(entry.slice(name.length + 1)); } catch { return null; }
+}
+
+function setGoogleOAuthCookie(res: express.Response, value: string): void {
+  res.setHeader('Set-Cookie', `${googleOAuthCookieName}=${encodeURIComponent(value)}; Max-Age=${googleOAuthStateTtlSeconds}; Path=/api/integrations/google/callback; HttpOnly; Secure; SameSite=Lax`);
+}
+
+function clearGoogleOAuthCookie(res: express.Response): void {
+  res.setHeader('Set-Cookie', `${googleOAuthCookieName}=; Max-Age=0; Path=/api/integrations/google/callback; HttpOnly; Secure; SameSite=Lax`);
+}
+
+function safeEqualStrings(left: string, right: string): boolean {
+  const leftBuffer = Buffer.from(left);
+  const rightBuffer = Buffer.from(right);
+  return leftBuffer.length === rightBuffer.length && timingSafeEqual(leftBuffer, rightBuffer);
 }
 
 function userScopedClient(token: string) {
@@ -230,12 +248,10 @@ async function requireAiAuth(req: express.Request, res: express.Response, next: 
     return apiError(res, 503, 'NOT_CONFIGURED', 'تعذر فتح مفتاح Gemini المحفوظ. أضف المفتاح مجددًا.');
   }
 
-  const now = Date.now();
-  const current = localRateLimits.get(authenticated.userId);
-  const bucket = !current || current.resetAt <= now ? { count: 0, resetAt: now + 60_000 } : current;
-  if (bucket.count >= 20) return apiError(res, 429, 'RATE_LIMITED', 'تم بلوغ حد الطلبات المؤقت. حاول بعد دقيقة.');
-  bucket.count += 1;
-  localRateLimits.set(authenticated.userId, bucket);
+  if (!adminClient) return apiError(res, 503, 'NOT_CONFIGURED', 'خدمة حدود استخدام Gemini غير مهيأة.');
+  const { data: quotaAccepted, error: quotaError } = await adminClient.rpc('dawenli_consume_ai_quota', { p_user_id: authenticated.userId, p_limit: 20 });
+  if (quotaError) { console.error('AI quota check failed', { userId: authenticated.userId, error: quotaError }); return apiError(res, 503, 'UPSTREAM_ERROR', 'تعذر التحقق من حد استخدام Gemini.'); }
+  if (quotaAccepted !== true) return apiError(res, 429, 'RATE_LIMITED', 'تم بلوغ حد الطلبات المؤقت. حاول بعد دقيقة.');
   next();
 }
 
@@ -281,35 +297,44 @@ app.delete('/api/ai/credential', requireUserAuth, async (req, res) => {
   return res.json({ ok: true, data: { configured: false } });
 });
 
-app.get('/api/integrations/google/start', requireUserAuth, (req, res) => {
+app.get('/api/integrations/google/start', requireUserAuth, async (_req, res) => {
   const config = googleConfig();
-  if (!config.clientId || !config.redirectUri || !credentialEncryptionSecret) return apiError(res, 503, 'NOT_CONFIGURED', 'تكامل Google Calendar غير مهيأ على الخادم.');
-  const state = encodeGoogleState(res.locals.userId as string);
+  if (!config.clientId || !config.redirectUri || !credentialEncryptionSecret || !adminClient) return apiError(res, 503, 'NOT_CONFIGURED', 'تكامل Google Calendar غير مهيأ على الخادم.');
+  const state = randomBytes(32).toString('base64url');
+  const expiresAt = new Date(Date.now() + googleOAuthStateTtlSeconds * 1000).toISOString();
+  await requireSupabaseWrite(adminClient.from('google_oauth_states').delete().lt('expires_at', new Date().toISOString()), 'تعذر تنظيف حالات Google المنتهية.');
+  const { error } = await adminClient.from('google_oauth_states').insert({ nonce_hash: googleOAuthStateHash(state), user_id: res.locals.userId, expires_at: expiresAt });
+  if (error) return apiError(res, 503, 'UPSTREAM_ERROR', 'تعذر بدء ربط Google Calendar بأمان.');
+  setGoogleOAuthCookie(res, state);
   const params = new URLSearchParams({ client_id: config.clientId, redirect_uri: config.redirectUri, response_type: 'code', access_type: 'offline', prompt: 'consent', scope: 'openid email profile https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.calendarlist.readonly', state });
   return res.json({ ok: true, data: { authorizationUrl: `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}` } });
 });
 
 app.get('/api/integrations/google/callback', async (req, res) => {
   const state = typeof req.query.state === 'string' ? req.query.state : '';
-  const userId = decodeGoogleState(state);
+  const cookieState = requestCookie(req, googleOAuthCookieName) || '';
   const config = googleConfig();
   const redirectBack = (process.env.GOOGLE_POST_CONNECT_REDIRECT || '/').trim();
-  if (!userId || !config.clientId || !config.clientSecret || !config.redirectUri || !adminClient) return res.redirect(`${redirectBack}?google=error`);
-  if (typeof req.query.error === 'string') return res.redirect(`${redirectBack}?google=cancelled`);
+  const redirectResult = (result: 'connected' | 'cancelled' | 'error') => { clearGoogleOAuthCookie(res); return res.redirect(`${redirectBack}?google=${result}`); };
+  if (!state || !cookieState || !safeEqualStrings(state, cookieState) || !config.clientId || !config.clientSecret || !config.redirectUri || !adminClient) return redirectResult('error');
+  const { data: stateRecord, error: stateError } = await adminClient.from('google_oauth_states').delete().eq('nonce_hash', googleOAuthStateHash(state)).gt('expires_at', new Date().toISOString()).select('user_id').maybeSingle();
+  if (stateError || !stateRecord?.user_id) return redirectResult('error');
+  if (typeof req.query.error === 'string') return redirectResult('cancelled');
   const code = typeof req.query.code === 'string' ? req.query.code : '';
-  if (!code) return res.redirect(`${redirectBack}?google=error`);
+  if (!code) return redirectResult('error');
   try {
-    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ code, client_id: config.clientId, client_secret: config.clientSecret, redirect_uri: config.redirectUri, grant_type: 'authorization_code' }) });
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ code, client_id: config.clientId, client_secret: config.clientSecret, redirect_uri: config.redirectUri, grant_type: 'authorization_code' }), signal: AbortSignal.timeout(10_000) });
     const tokenBody = await tokenResponse.json() as { access_token?: string; refresh_token?: string; error?: string };
-    if (!tokenResponse.ok || !tokenBody.refresh_token) return res.redirect(`${redirectBack}?google=error`);
-    const profileResponse = await fetch('https://openidconnect.googleapis.com/v1/userinfo', { headers: { Authorization: `Bearer ${tokenBody.access_token || ''}` } });
+    if (!tokenResponse.ok || !tokenBody.access_token || !tokenBody.refresh_token) return redirectResult('error');
+    const profileResponse = await fetch('https://openidconnect.googleapis.com/v1/userinfo', { headers: { Authorization: `Bearer ${tokenBody.access_token || ''}` }, signal: AbortSignal.timeout(10_000) });
     const profile = profileResponse.ok ? await profileResponse.json() as { email?: string } : {};
     const encrypted = encryptCredential(tokenBody.refresh_token);
-    const { error } = await adminClient.from('google_calendar_connections').upsert({ user_id: userId, google_email: profile.email || null, calendar_id: 'primary', refresh_token_ciphertext: encrypted.ciphertext, refresh_token_iv: encrypted.iv, refresh_token_auth_tag: encrypted.authTag, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
-    if (error) return res.redirect(`${redirectBack}?google=error`);
-    return res.redirect(`${redirectBack}?google=connected`);
+    const { error } = await adminClient.from('google_calendar_connections').upsert({ user_id: stateRecord.user_id, google_email: profile.email || null, calendar_id: 'primary', refresh_token_ciphertext: encrypted.ciphertext, refresh_token_iv: encrypted.iv, refresh_token_auth_tag: encrypted.authTag, sync_token: null, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+    if (error) return redirectResult('error');
+    await requireSupabaseWrite(adminClient.from('google_calendar_event_links').delete().eq('user_id', stateRecord.user_id), 'تعذر تنظيف روابط Google القديمة.');
+    return redirectResult('connected');
   } catch {
-    return res.redirect(`${redirectBack}?google=error`);
+    return redirectResult('error');
   }
 });
 
@@ -391,8 +416,13 @@ async function googleAccessToken(connection: GoogleCalendarConnection) {
   return body.access_token;
 }
 
+async function requireSupabaseWrite(operation: PromiseLike<{ error: unknown }>, message: string): Promise<void> {
+  const result = await operation;
+  if (result.error) throw new Error(message);
+}
+
 async function googleCalendarRequest<T>(accessToken: string, path: string, init: RequestInit = {}) {
-  const response = await fetch(`https://www.googleapis.com/calendar/v3${path}`, { ...init, headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json', ...(init.headers || {}) } });
+  const response = await fetch(`https://www.googleapis.com/calendar/v3${path}`, { ...init, signal: init.signal || AbortSignal.timeout(15_000), headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json', ...(init.headers || {}) } });
   const body = response.status === 204 ? null : await response.json().catch(() => null);
   if (!response.ok) throw new Error((body as { error?: { message?: string } } | null)?.error?.message || `Google Calendar API error ${response.status}`);
   return body as T;
@@ -401,6 +431,8 @@ async function googleCalendarRequest<T>(accessToken: string, path: string, init:
 app.post('/api/integrations/google/sync', requireUserAuth, async (_req, res) => {
   if (!adminClient) return apiError(res, 503, 'NOT_CONFIGURED', 'تكامل Google Calendar غير مهيأ.');
   const userId = res.locals.userId as string;
+  const lockAcquired = await acquireGoogleSyncLock(userId);
+  if (!lockAcquired) return apiError(res, 409, 'CONFLICT', 'توجد مزامنة أخرى قيد التنفيذ لهذا الحساب. حاول بعد لحظات.');
   try {
     const { data: connection, error: connectionError } = await adminClient.from('google_calendar_connections').select('*').eq('user_id', userId).maybeSingle() as { data: GoogleCalendarConnection | null; error: any };
     if (connectionError || !connection) return apiError(res, 409, 'BAD_REQUEST', 'اربط Google Calendar أولًا.');
@@ -436,40 +468,46 @@ app.post('/api/integrations/google/sync', requireUserAuth, async (_req, res) => 
         const local = eventsById.get(link.calendar_event_id);
         if (!local) continue;
         if (googleEvent.status === 'cancelled') {
-          await adminClient.from('calendar_events').update({ is_cancelled: true, updated_at: new Date().toISOString() }).eq('id', local.id).eq('user_id', userId);
+          await requireSupabaseWrite(adminClient.from('calendar_events').update({ is_cancelled: true, updated_at: new Date().toISOString() }).eq('id', local.id).eq('user_id', userId), 'تعذر تحديث إلغاء موعد Google.');
           continue;
         }
         const googleTime = Date.parse(googleEvent.updated || '') || 0;
         const localTime = Date.parse(local.updated_at || local.created_at || '') || 0;
         if (googleTime >= localTime) {
           const merged = googleEventToLocal(googleEvent, userId, local.id, local); delete merged.created_at;
-          await adminClient.from('calendar_events').update(merged).eq('id', local.id).eq('user_id', userId);
+          await requireSupabaseWrite(adminClient.from('calendar_events').update(merged).eq('id', local.id).eq('user_id', userId), 'تعذر تحديث الموعد المحلي من Google.');
         } else {
           const updated = await googleCalendarRequest<GoogleCalendarApiEvent>(accessToken, `/calendars/${encodeURIComponent(connection.calendar_id || 'primary')}/events/${encodeURIComponent(googleEvent.id)}`, { method: 'PATCH', body: JSON.stringify(localCalendarEventToGoogle(local)) });
-          await adminClient.from('google_calendar_event_links').update({ google_etag: updated.etag || null, google_updated_at: updated.updated || null, updated_at: new Date().toISOString() }).eq('id', link.id);
+          await requireSupabaseWrite(adminClient.from('google_calendar_event_links').update({ google_etag: updated.etag || null, google_updated_at: updated.updated || null, updated_at: new Date().toISOString() }).eq('id', link.id), 'تعذر تحديث رابط موعد Google.');
         }
       } else if (googleEvent.status !== 'cancelled') {
         const local = googleEventToLocal(googleEvent, userId, randomUUID());
-        const { error } = await adminClient.from('calendar_events').insert(local);
-        if (!error) await adminClient.from('google_calendar_event_links').insert({ user_id: userId, calendar_event_id: local.id, google_event_id: googleEvent.id, google_etag: googleEvent.etag || null, google_updated_at: googleEvent.updated || null });
+        await requireSupabaseWrite(adminClient.from('calendar_events').insert(local), 'تعذر حفظ موعد Google محليًا.');
+        await requireSupabaseWrite(adminClient.from('google_calendar_event_links').insert({ user_id: userId, calendar_event_id: local.id, google_event_id: googleEvent.id, google_etag: googleEvent.etag || null, google_updated_at: googleEvent.updated || null }), 'تعذر حفظ رابط موعد Google.');
       }
     }
     for (const local of localRows || []) {
       const link = linksByLocal.get(local.id);
       if (local.is_cancelled && link) {
         await googleCalendarRequest(accessToken, `/calendars/${encodeURIComponent(connection.calendar_id || 'primary')}/events/${encodeURIComponent(link.google_event_id)}`, { method: 'DELETE' }).catch(() => undefined);
-        await adminClient.from('google_calendar_event_links').delete().eq('id', link.id);
+        await requireSupabaseWrite(adminClient.from('google_calendar_event_links').delete().eq('id', link.id), 'تعذر حذف رابط موعد Google.');
       } else if (!local.is_cancelled && !link) {
         const created = await googleCalendarRequest<GoogleCalendarApiEvent>(accessToken, `/calendars/${encodeURIComponent(connection.calendar_id || 'primary')}/events`, { method: 'POST', body: JSON.stringify(localCalendarEventToGoogle(local)) });
-        await adminClient.from('google_calendar_event_links').insert({ user_id: userId, calendar_event_id: local.id, google_event_id: created.id, google_etag: created.etag || null, google_updated_at: created.updated || null });
+        await requireSupabaseWrite(adminClient.from('google_calendar_event_links').insert({ user_id: userId, calendar_event_id: local.id, google_event_id: created.id, google_etag: created.etag || null, google_updated_at: created.updated || null }), 'تعذر حفظ رابط الموعد الجديد.');
       }
     }
-    await adminClient.from('google_calendar_connections').update({ sync_token: syncToken, last_synced_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('user_id', userId);
-    const { data: syncedEvents } = await adminClient.from('calendar_events').select('*').eq('user_id', userId).order('start_at', { ascending: true });
+    const { error: connectionUpdateError } = await adminClient.from('google_calendar_connections').update({ sync_token: syncToken, last_synced_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('user_id', userId);
+    if (connectionUpdateError) throw connectionUpdateError;
+    const { error: revisionError } = await adminClient.rpc('dawenli_bump_snapshot_revision', { p_user_id: userId });
+    if (revisionError) throw revisionError;
+    const { data: syncedEvents, error: syncedEventsError } = await adminClient.from('calendar_events').select('*').eq('user_id', userId).order('start_at', { ascending: true });
+    if (syncedEventsError) throw syncedEventsError;
     return res.json({ ok: true, data: { events: syncedEvents || [], syncedAt: new Date().toISOString() } });
   } catch (error) {
     console.error('Google Calendar sync failed', error);
     return apiError(res, 502, 'UPSTREAM_ERROR', error instanceof Error ? error.message : 'تعذرت مزامنة Google Calendar.');
+  } finally {
+    await releaseGoogleSyncLock(userId);
   }
 });
 
@@ -494,7 +532,7 @@ app.get('/api/push/public-key', (_req, res) => {
 
 app.get('/api/push/subscription', requireUserAuth, async (req, res) => {
   const endpoint = typeof req.query.endpoint === 'string' ? req.query.endpoint : '';
-  if (!endpoint) return apiError(res, 400, 'BAD_REQUEST', 'رابط الاشتراك مطلوب.');
+  if (!endpoint || endpoint.length > 4096) return apiError(res, 400, 'BAD_REQUEST', 'رابط الاشتراك مطلوب.');
   const client = userScopedClient(res.locals.accessToken as string);
   const { data, error } = await client!.from('push_subscriptions').select('prayer_enabled,task_enabled,worship_enabled,adhkar_enabled,quran_enabled,qiyam_enabled,sleep_enabled,streak_enabled,calendar_enabled').eq('endpoint', endpoint).eq('user_id', res.locals.userId).maybeSingle();
   if (error) return apiError(res, 503, 'UPSTREAM_ERROR', 'تعذر تحميل إعدادات الإشعارات.');
@@ -504,8 +542,10 @@ app.get('/api/push/subscription', requireUserAuth, async (req, res) => {
 app.post('/api/push/subscription', requireUserAuth, async (req, res) => {
   if (!vapidPublicKey || !vapidPrivateKey) return apiError(res, 503, 'NOT_CONFIGURED', 'إشعارات الخلفية غير مهيأة.');
   const subscription = req.body?.subscription;
-  if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
-    return apiError(res, 400, 'BAD_REQUEST', 'اشتراك الإشعارات غير صالح.');
+  const timezone = typeof req.body?.timezone === 'string' ? req.body.timezone : 'Africa/Cairo';
+  if (!isAllowedPushEndpoint(subscription?.endpoint) || !isValidPushKey(subscription?.keys?.p256dh) || !isValidPushKey(subscription?.keys?.auth) || !isValidTimeZone(timezone)) {
+    console.warn('Rejected invalid push subscription', { userId: res.locals.userId });
+    return apiError(res, 400, 'BAD_REQUEST', 'اشتراك الإشعارات أو المنطقة الزمنية غير صالح.');
   }
   const client = userScopedClient(res.locals.accessToken as string);
   const { data: existingSubscription, error: readError } = await client!.from('push_subscriptions').select('*').eq('endpoint', subscription.endpoint).eq('user_id', res.locals.userId).maybeSingle();
@@ -525,7 +565,7 @@ app.post('/api/push/subscription', requireUserAuth, async (req, res) => {
     sleep_enabled: preference('sleepEnabled', 'sleep_enabled'),
     streak_enabled: preference('streakEnabled', 'streak_enabled'),
     calendar_enabled: preference('calendarEnabled', 'calendar_enabled'),
-    timezone: typeof req.body?.timezone === 'string' ? req.body.timezone.slice(0, 80) : 'Africa/Cairo',
+    timezone,
     prayer_times: req.body?.prayerTimes && typeof req.body.prayerTimes === 'object' ? req.body.prayerTimes : existingSubscription?.prayer_times || {},
     updated_at: new Date().toISOString(),
   }, { onConflict: 'user_id,endpoint' });
@@ -588,6 +628,10 @@ app.all('/api/push/dispatch', async (req, res) => {
   const delivered: string[] = [];
   const now = new Date();
   for (const subscription of subscriptions ?? []) {
+    if (!isAllowedPushEndpoint(subscription.endpoint) || !isValidPushKey(subscription.p256dh) || !isValidPushKey(subscription.auth) || !isValidTimeZone(subscription.timezone || 'Africa/Cairo')) {
+      console.warn('Skipping invalid stored push subscription', { subscriptionId: subscription.id });
+      continue;
+    }
     const localParts = new Intl.DateTimeFormat('en-CA', { timeZone: subscription.timezone || 'Africa/Cairo', hour: '2-digit', minute: '2-digit', hour12: false, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(now);
     const values = Object.fromEntries(localParts.map((part) => [part.type, part.value]));
     const hhmm = `${values.hour}:${values.minute}`;
@@ -608,15 +652,18 @@ app.all('/api/push/dispatch', async (req, res) => {
     if (subscription.calendar_enabled !== false) {
       const { data: events } = await adminClient.from('calendar_events').select('id,title,start_at,timezone,recurrence,reminder_minutes,all_day').eq('user_id', subscription.user_id).eq('is_cancelled', false).not('reminder_minutes', 'is', null);
       for (const event of events ?? []) {
-        const timezone = event.timezone || subscription.timezone || 'Africa/Cairo';
+        const timezone = isValidTimeZone(event.timezone || '') ? event.timezone : subscription.timezone;
         const current = zonedDateParts(now, timezone);
         const start = zonedDateParts(new Date(event.start_at), timezone);
-        const rawReminderMinute = start.hour * 60 + start.minute - Number(event.reminder_minutes || 0);
-        const notificationMinute = (rawReminderMinute + 1440) % 1440;
+        const reminderMinutes = Number(event.reminder_minutes || 0);
+        if (!Number.isFinite(reminderMinutes) || reminderMinutes < 0 || reminderMinutes > 10080) continue;
+        const rawReminderMinute = start.hour * 60 + start.minute - reminderMinutes;
+        const notificationMinute = ((rawReminderMinute % 1440) + 1440) % 1440;
         if (current.hour * 60 + current.minute !== notificationMinute) continue;
-        const occurrenceDate = rawReminderMinute < 0 ? addLocalDays(current.date, 1) : current.date;
+        const occurrenceOffsetDays = rawReminderMinute < 0 ? Math.ceil(Math.abs(rawReminderMinute) / 1440) : 0;
+        const occurrenceDate = addLocalDays(current.date, occurrenceOffsetDays);
         if (!calendarEventOccursOn(event, occurrenceDate)) continue;
-        messages.push({ title: `موعدك: ${event.title}`, body: event.all_day ? 'لديك موعد طوال اليوم.' : `يبدأ بعد ${event.reminder_minutes} دقيقة.`, deliveryKey: `calendar:${event.id}:${occurrenceDate}:${event.reminder_minutes}` });
+        messages.push({ title: `موعدك: ${event.title}`, body: event.all_day ? 'لديك موعد طوال اليوم.' : `يبدأ بعد ${reminderMinutes} دقيقة.`, deliveryKey: `calendar:${event.id}:${occurrenceDate}:${reminderMinutes}` });
       }
     }
     if (subscription.worship_enabled) {
@@ -668,7 +715,7 @@ app.all('/api/push/dispatch', async (req, res) => {
       // The unique reservation makes repeated Cron runs idempotent. A duplicate is expected.
       if (reservationError || !reservation) continue;
       try {
-        await webpush.sendNotification({ endpoint: subscription.endpoint, keys: { p256dh: subscription.p256dh, auth: subscription.auth } }, JSON.stringify({ ...message, url: '/' }));
+        await webpush.sendNotification({ endpoint: subscription.endpoint, keys: { p256dh: subscription.p256dh, auth: subscription.auth } }, JSON.stringify({ ...message, url: '/' }), { TTL: 60, timeout: 10_000 });
         delivered.push(subscription.id);
       } catch (pushError: any) {
         await adminClient.from('push_delivery_log').delete().eq('id', reservation.id);
@@ -1258,14 +1305,23 @@ app.post('/api/ai/analyze-inbox', async (req, res) => {
  * Endpoint 6: Prayer Times & Adhan Schedule
  * Provides accurate daily prayer times via Aladhan API with server-side caching & fallback
  */
-let cachedPrayerTimes: { date: string; data: any } | null = null;
+const prayerTimesCache = new Map<string, { expiresAt: number; data: any }>();
+const prayerTimesRate = new Map<string, { count: number; resetAt: number }>();
 
 app.get('/api/prayer-times', async (req, res) => {
   try {
     const lat = req.query.lat ? Number(req.query.lat) : 30.0444;
     const lng = req.query.lng ? Number(req.query.lng) : 31.2357;
-    const city = req.query.city ? String(req.query.city) : '';
-    const country = req.query.country ? String(req.query.country) : '';
+    const city = req.query.city ? String(req.query.city).trim() : '';
+    const country = req.query.country ? String(req.query.country).trim() : '';
+    if (city.length > 80 || country.length > 80) return apiError(res, 400, 'BAD_REQUEST', 'اسم المدينة أو الدولة طويل جدًا.');
+    const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
+    const now = Date.now();
+    const rate = prayerTimesRate.get(clientIp);
+    const bucket = !rate || rate.resetAt <= now ? { count: 0, resetAt: now + 60_000 } : rate;
+    if (bucket.count >= 30) return apiError(res, 429, 'RATE_LIMITED', 'تم بلوغ حد طلبات مواقيت الصلاة. حاول بعد دقيقة.');
+    bucket.count += 1; prayerTimesRate.set(clientIp, bucket);
+    if (prayerTimesRate.size > 5000) for (const [key, value] of prayerTimesRate) if (value.resetAt <= now) prayerTimesRate.delete(key);
 
     if (!Number.isFinite(lat) || lat < -90 || lat > 90 || !Number.isFinite(lng) || lng < -180 || lng > 180) {
       return apiError(res, 400, 'BAD_REQUEST', 'إحداثيات الموقع غير صالحة.');
@@ -1273,9 +1329,9 @@ app.get('/api/prayer-times', async (req, res) => {
     const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Cairo' }).format(new Date());
     const cacheKey = `${todayStr}_${lat}_${lng}_${city}_${country}`;
 
-    if (cachedPrayerTimes && cachedPrayerTimes.date === cacheKey) {
-      return res.json({ ok: true, data: cachedPrayerTimes.data });
-    }
+    const cached = prayerTimesCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) return res.json({ ok: true, data: cached.data });
+    if (prayerTimesCache.size > 100) prayerTimesCache.delete(prayerTimesCache.keys().next().value as string);
 
     let url = `https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lng}&method=5`; // Egyptian General Authority of Survey or Umm Al-Qura
     if (city && country) {
@@ -1302,10 +1358,7 @@ app.get('/api/prayer-times', async (req, res) => {
       hijriMonthArabic: json?.data?.date?.hijri?.month?.ar || '',
     };
 
-    cachedPrayerTimes = {
-      date: cacheKey,
-      data: cleanTimings,
-    };
+    prayerTimesCache.set(cacheKey, { expiresAt: Date.now() + 5 * 60_000, data: cleanTimings });
 
     return res.json({ ok: true, data: cleanTimings });
   } catch (error: any) {
