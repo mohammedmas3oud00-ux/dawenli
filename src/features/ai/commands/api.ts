@@ -8,8 +8,8 @@ async function headers() {
 }
 
 export async function proposeAiCommands(text: string, context: AiCommandContextItem[], clarificationAnswer?: string): Promise<AiCommandPlan> {
-  const response = await fetch('/api/ai/commands/propose', {
-    method: 'POST', headers: await headers(), body: JSON.stringify({ text, context, clarificationAnswer, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone, today: new Date().toISOString() }),
+  const response = await fetch('/api/ai/analyze-text', {
+    method: 'POST', headers: await headers(), body: JSON.stringify({ commandMode: true, text, context, clarificationAnswer, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone, today: new Date().toISOString() }),
   });
   const body = await response.json() as { data?: unknown; error?: { message?: string } };
   if (!response.ok) throw new Error(body.error?.message || 'تعذر تحليل الأمر.');

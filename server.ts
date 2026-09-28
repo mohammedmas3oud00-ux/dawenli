@@ -629,9 +629,9 @@ ${preCleanedText}
 }
 
 app.post('/api/ai/analyze-voice', handleAnalyzeInput);
-app.post('/api/ai/analyze-text', handleAnalyzeInput);
+app.post('/api/ai/analyze-text', (req, res) => req.body?.commandMode ? handleAnalyzeCommand(req, res) : handleAnalyzeInput(req, res));
 
-app.post('/api/ai/commands/propose', async (req, res) => {
+const handleAnalyzeCommand = async (req: express.Request, res: express.Response) => {
   try {
     const text = typeof req.body?.text === 'string' ? req.body.text.trim() : '';
     const context = Array.isArray(req.body?.context) ? req.body.context.slice(0, 1000) : [];
@@ -684,7 +684,7 @@ ${JSON.stringify(context)}
   } catch {
     return apiError(res, 502, 'UPSTREAM_ERROR', 'فشل تحليل الأمر الذكي.');
   }
-});
+};
 
 /**
  * Endpoint 2: Audio Transcription using Gemini
