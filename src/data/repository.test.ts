@@ -1,5 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
-import { emptySnapshot, normalizeSnapshot, normalizeSnapshotForDatabase, SupabaseRepository } from './repository';
+import {
+  emptySnapshot,
+  GuestLocalRepository,
+  normalizeSnapshot,
+  normalizeSnapshotForDatabase,
+  SupabaseRepository,
+} from './repository';
 
 describe('repository snapshot normalization', () => {
   it('fills database-required defaults before persistence', () => {
@@ -55,6 +61,20 @@ describe('repository snapshot normalization', () => {
 
     await expect(repository.save(emptySnapshot())).rejects.toMatchObject({ code: 'conflict' });
     expect(localStorage.getItem('dawenli_pending_sync_user-1')).toBeNull();
+  });
+
+  it('round-trips and clears guest snapshots locally', async () => {
+    const repository = new GuestLocalRepository();
+    const snapshot = { ...emptySnapshot(), tasks: [{ id: 'task-1' } as never] };
+    await repository.save(snapshot);
+    await expect(repository.load()).resolves.toMatchObject({ tasks: [{ id: 'task-1' }] });
+    await repository.clear();
+    await expect(repository.load()).resolves.toMatchObject({ tasks: [] });
+  });
+
+  it('maps invalid guest storage to a validation repository error', async () => {
+    localStorage.setItem('dawenli_guest_snapshot_v3', '{invalid');
+    await expect(new GuestLocalRepository().load()).rejects.toMatchObject({ code: 'validation' });
   });
 
   it('maps app fields and fills every live required row default', () => {
