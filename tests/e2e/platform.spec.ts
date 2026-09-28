@@ -57,6 +57,52 @@ test.describe('Dawenli published platform', () => {
     await expect(page.getByRole('banner').getByText('التقويم والمواعيد')).toBeVisible();
   });
 
+  test('restores a guest snapshot after a fresh page load', async ({ page }) => {
+    const snapshot = {
+      schemaVersion: 5,
+      pillars: [],
+      visions: [],
+      goals: [],
+      projects: [],
+      reviews: [],
+      inboxItems: [],
+      habits: [],
+      vaults: [],
+      focusSessions: [],
+      timeBlocks: [],
+      customFieldDefinitions: [],
+      worshipDefinitions: [],
+      worshipLogs: [],
+      progressionPaths: [],
+      quranKhatmas: [],
+      quranHifzTrackers: [],
+      sleepSchedules: [],
+      journals: [],
+      calendarEvents: [],
+      tasks: [
+        {
+          id: 'e2e-task',
+          title: 'مهمة محفوظة محليًا',
+          status: 'todo',
+          priority: 'medium',
+          created_at: '2026-01-01T00:00:00.000Z',
+        },
+      ],
+    };
+    await page.addInitScript(
+      (value) => localStorage.setItem('dawenli_guest_snapshot_v3', JSON.stringify(value)),
+      snapshot,
+    );
+    await page.goto('/');
+    await page.getByText('المتابعة كضيف محلي').click();
+    await expect(page.getByText('جلسة ضيف محلية')).toBeVisible();
+    await page
+      .getByRole('button', { name: /كل المهام اليومية/ })
+      .first()
+      .click();
+    await expect(page.getByText('مهمة محفوظة محليًا')).toBeVisible();
+  });
+
   test('allows a new guest to reach the empty عبادات setup without seed data', async ({ page }) => {
     await page.goto('/');
     const guest = page.getByText('المتابعة كضيف محلي');
