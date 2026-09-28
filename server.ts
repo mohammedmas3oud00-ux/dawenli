@@ -313,6 +313,159 @@ app.get('/api/integrations/google/callback', async (req, res) => {
   }
 });
 
+type GoogleCalendarConnection = {
+  user_id: string;
+  google_email?: string | null;
+  calendar_id: string;
+  refresh_token_ciphertext: string;
+  refresh_token_iv: string;
+  refresh_token_auth_tag: string;
+  sync_token?: string | null;
+};
+
+type GoogleCalendarApiEvent = {
+  id: string;
+  status?: string;
+  etag?: string;
+  updated?: string;
+  summary?: string;
+  description?: string;
+  start?: { date?: string; dateTime?: string; timeZone?: string };
+  end?: { date?: string; dateTime?: string; timeZone?: string };
+  recurrence?: string[];
+  reminders?: { overrides?: Array<{ method: string; minutes: number }> };
+};
+
+const googleWeekdays = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
+const googleWeekdayToNumber = new Map(googleWeekdays.map((day, index) => [day, index]));
+
+function googleRecurrenceToLocal(rules: string[] | undefined) {
+  const rule = rules?.find((value) => value.startsWith('RRULE:'))?.replace(/^RRULE:/, '');
+  if (!rule) return { frequency: 'none', interval: 1, days_of_week: [], until: null };
+  const values = Object.fromEntries(rule.split(';').map((part) => part.split('=')));
+  const frequency = values.FREQ?.toLowerCase();
+  return {
+    frequency: ['daily', 'weekly', 'monthly'].includes(frequency) ? frequency : 'none',
+    interval: Math.max(1, Number(values.INTERVAL) || 1),
+    days_of_week: values.BYDAY ? values.BYDAY.split(',').map((day: string) => googleWeekdayToNumber.get(day.replace(/^[+-]?\\d+/, ''))).filter((day: number | undefined): day is number => day !== undefined) : [],
+    until: values.UNTIL ? new Date(values.UNTIL.replace(/Z$/, 'Z')).toISOString() : null,
+  };
+}
+
+function localRecurrenceToGoogle(recurrence: any): string[] | undefined {
+  if (!recurrence || recurrence.frequency === 'none') return undefined;
+  const parts = [`FREQ=${String(recurrence.frequency).toUpperCase()}`, `INTERVAL=${Math.max(1, Number(recurrence.interval) || 1)}`];
+  if (recurrence.frequency === 'weekly' && Array.isArray(recurrence.days_of_week) && recurrence.days_of_week.length) parts.push(`BYDAY=${recurrence.days_of_week.map((day: number) => googleWeekdays[day]).join(',')}`);
+  if (recurrence.until) parts.push(`UNTIL=${new Date(recurrence.until).toISOString().replace(/[-:]/g, '').replace(/\\.\\d{3}/, '')}`);
+  return [`RRULE:${parts.join(';')}`];
+}
+
+function localCalendarEventToGoogle(event: any) {
+  const start = event.all_day ? { date: String(event.start_at).slice(0, 10) } : { dateTime: event.start_at, timeZone: event.timezone || 'Africa/Cairo' };
+  const end = event.all_day ? { date: String(event.end_at || event.start_at).slice(0, 10) } : { dateTime: event.end_at || new Date(new Date(event.start_at).getTime() + 3600000).toISOString(), timeZone: event.timezone || 'Africa/Cairo' };
+  const reminder = event.reminder_minutes == null ? [] : [{ method: 'popup', minutes: Math.max(0, Number(event.reminder_minutes)) }];
+  return { summary: event.title, description: event.description || '', start, end, recurrence: localRecurrenceToGoogle(event.recurrence), reminders: { useDefault: false, overrides: reminder }, extendedProperties: { private: { dawenli_event_id: event.id } } };
+}
+
+function googleEventToLocal(event: GoogleCalendarApiEvent, userId: string, id: string, existing?: any) {
+  const allDay = Boolean(event.start?.date);
+  const startAt = allDay ? new Date(`${event.start?.date || ''}T00:00:00Z`).toISOString() : new Date(event.start?.dateTime || new Date().toISOString()).toISOString();
+  const endAt = allDay ? new Date(`${event.end?.date || event.start?.date || ''}T00:00:00Z`).toISOString() : new Date(event.end?.dateTime || startAt).toISOString();
+  const override = event.reminders?.overrides?.find((item) => item.method === 'popup');
+  return { id, user_id: userId, title: event.summary || 'موعد Google Calendar', description: event.description || '', start_at: startAt, end_at: endAt, all_day: allDay, timezone: event.start?.timeZone || existing?.timezone || 'Africa/Cairo', recurrence: googleRecurrenceToLocal(event.recurrence), reminder_minutes: override?.minutes ?? null, task_id: existing?.task_id || null, project_id: existing?.project_id || null, pillar_id: existing?.pillar_id || null, is_cancelled: event.status === 'cancelled', created_at: existing?.created_at || new Date().toISOString(), updated_at: event.updated || new Date().toISOString() };
+}
+
+async function googleAccessToken(connection: GoogleCalendarConnection) {
+  const config = googleConfig();
+  const refreshToken = decryptCredential({ ciphertext: connection.refresh_token_ciphertext, iv: connection.refresh_token_iv, auth_tag: connection.refresh_token_auth_tag });
+  const response = await fetch('https://oauth2.googleapis.com/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ client_id: config.clientId, client_secret: config.clientSecret, refresh_token: refreshToken, grant_type: 'refresh_token' }) });
+  const body = await response.json() as { access_token?: string; error?: string };
+  if (!response.ok || !body.access_token) throw new Error(body.error || 'تعذر تحديث جلسة Google Calendar.');
+  return body.access_token;
+}
+
+async function googleCalendarRequest<T>(accessToken: string, path: string, init: RequestInit = {}) {
+  const response = await fetch(`https://www.googleapis.com/calendar/v3${path}`, { ...init, headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json', ...(init.headers || {}) } });
+  const body = response.status === 204 ? null : await response.json().catch(() => null);
+  if (!response.ok) throw new Error((body as { error?: { message?: string } } | null)?.error?.message || `Google Calendar API error ${response.status}`);
+  return body as T;
+}
+
+app.post('/api/integrations/google/sync', requireUserAuth, async (_req, res) => {
+  if (!adminClient) return apiError(res, 503, 'NOT_CONFIGURED', 'تكامل Google Calendar غير مهيأ.');
+  const userId = res.locals.userId as string;
+  try {
+    const { data: connection, error: connectionError } = await adminClient.from('google_calendar_connections').select('*').eq('user_id', userId).maybeSingle() as { data: GoogleCalendarConnection | null; error: any };
+    if (connectionError || !connection) return apiError(res, 409, 'BAD_REQUEST', 'اربط Google Calendar أولًا.');
+    const accessToken = await googleAccessToken(connection);
+    const { data: localRows, error: localError } = await adminClient.from('calendar_events').select('*').eq('user_id', userId);
+    if (localError) throw localError;
+    const { data: links, error: linksError } = await adminClient.from('google_calendar_event_links').select('*').eq('user_id', userId);
+    if (linksError) throw linksError;
+    const linksByGoogle = new Map((links || []).map((link: any) => [link.google_event_id, link]));
+    const linksByLocal = new Map((links || []).map((link: any) => [link.calendar_event_id, link]));
+    const eventsById = new Map((localRows || []).map((event: any) => [event.id, event]));
+    let syncToken = connection.sync_token || null;
+    let googleEvents: GoogleCalendarApiEvent[] = [];
+    let nextPageToken: string | undefined;
+    try {
+      do {
+        const params = new URLSearchParams({ showDeleted: 'true', maxResults: '2500' });
+        if (syncToken) params.set('syncToken', syncToken);
+        if (nextPageToken) params.set('pageToken', nextPageToken);
+        const page = await googleCalendarRequest<{ items?: GoogleCalendarApiEvent[]; nextPageToken?: string; nextSyncToken?: string }>(accessToken, `/calendars/${encodeURIComponent(connection.calendar_id || 'primary')}/events?${params}`);
+        googleEvents.push(...(page.items || [])); nextPageToken = page.nextPageToken; if (page.nextSyncToken) syncToken = page.nextSyncToken;
+      } while (nextPageToken);
+    } catch (error) {
+      if (syncToken && String(error).includes('Sync token is no longer valid')) {
+        syncToken = null;
+        const page = await googleCalendarRequest<{ items?: GoogleCalendarApiEvent[]; nextSyncToken?: string }>(accessToken, `/calendars/${encodeURIComponent(connection.calendar_id || 'primary')}/events?showDeleted=true&maxResults=2500`);
+        googleEvents = page.items || []; syncToken = page.nextSyncToken || null;
+      } else throw error;
+    }
+    for (const googleEvent of googleEvents) {
+      const link = linksByGoogle.get(googleEvent.id);
+      if (link) {
+        const local = eventsById.get(link.calendar_event_id);
+        if (!local) continue;
+        if (googleEvent.status === 'cancelled') {
+          await adminClient.from('calendar_events').update({ is_cancelled: true, updated_at: new Date().toISOString() }).eq('id', local.id).eq('user_id', userId);
+          continue;
+        }
+        const googleTime = Date.parse(googleEvent.updated || '') || 0;
+        const localTime = Date.parse(local.updated_at || local.created_at || '') || 0;
+        if (googleTime >= localTime) {
+          const merged = googleEventToLocal(googleEvent, userId, local.id, local); delete merged.created_at;
+          await adminClient.from('calendar_events').update(merged).eq('id', local.id).eq('user_id', userId);
+        } else {
+          const updated = await googleCalendarRequest<GoogleCalendarApiEvent>(accessToken, `/calendars/${encodeURIComponent(connection.calendar_id || 'primary')}/events/${encodeURIComponent(googleEvent.id)}`, { method: 'PATCH', body: JSON.stringify(localCalendarEventToGoogle(local)) });
+          await adminClient.from('google_calendar_event_links').update({ google_etag: updated.etag || null, google_updated_at: updated.updated || null, updated_at: new Date().toISOString() }).eq('id', link.id);
+        }
+      } else if (googleEvent.status !== 'cancelled') {
+        const local = googleEventToLocal(googleEvent, userId, randomUUID());
+        const { error } = await adminClient.from('calendar_events').insert(local);
+        if (!error) await adminClient.from('google_calendar_event_links').insert({ user_id: userId, calendar_event_id: local.id, google_event_id: googleEvent.id, google_etag: googleEvent.etag || null, google_updated_at: googleEvent.updated || null });
+      }
+    }
+    for (const local of localRows || []) {
+      const link = linksByLocal.get(local.id);
+      if (local.is_cancelled && link) {
+        await googleCalendarRequest(accessToken, `/calendars/${encodeURIComponent(connection.calendar_id || 'primary')}/events/${encodeURIComponent(link.google_event_id)}`, { method: 'DELETE' }).catch(() => undefined);
+        await adminClient.from('google_calendar_event_links').delete().eq('id', link.id);
+      } else if (!local.is_cancelled && !link) {
+        const created = await googleCalendarRequest<GoogleCalendarApiEvent>(accessToken, `/calendars/${encodeURIComponent(connection.calendar_id || 'primary')}/events`, { method: 'POST', body: JSON.stringify(localCalendarEventToGoogle(local)) });
+        await adminClient.from('google_calendar_event_links').insert({ user_id: userId, calendar_event_id: local.id, google_event_id: created.id, google_etag: created.etag || null, google_updated_at: created.updated || null });
+      }
+    }
+    await adminClient.from('google_calendar_connections').update({ sync_token: syncToken, last_synced_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('user_id', userId);
+    const { data: syncedEvents } = await adminClient.from('calendar_events').select('*').eq('user_id', userId).order('start_at', { ascending: true });
+    return res.json({ ok: true, data: { events: syncedEvents || [], syncedAt: new Date().toISOString() } });
+  } catch (error) {
+    console.error('Google Calendar sync failed', error);
+    return apiError(res, 502, 'UPSTREAM_ERROR', error instanceof Error ? error.message : 'تعذرت مزامنة Google Calendar.');
+  }
+});
+
 app.get('/api/integrations/google/status', requireUserAuth, async (_req, res) => {
   if (!adminClient) return apiError(res, 503, 'NOT_CONFIGURED', 'تكامل Google Calendar غير مهيأ.');
   const { data, error } = await adminClient.from('google_calendar_connections').select('google_email,calendar_id,last_synced_at').eq('user_id', res.locals.userId).maybeSingle();
@@ -730,6 +883,9 @@ ${JSON.stringify(context)}
 - إذا كان الهدف أو الأب أو الموعد ملتبسًا، اجعل needsClarification=true واكتب سؤالًا واحدًا واضحًا ولا تقترح عملية خطرة.
 - إذا كان الكلام تأملًا أو سردًا شخصيًا فوجهه إلى journal مع النص كما هو في content، ولا تحوله إلى مهمة إلا إذا طلب المستخدم فعلًا واضحًا.
 - الموعد المحدد يذهب إلى calendar_event مع startAt/endAt بصيغة ISO والتكرار والتذكير عند ذكرهما.
+- عبارات مثل «عايز أروح»، «زيارة»، «مقابلة»، «موعد»، «مشوار»، «اتصال»، أو أي فعل مخطط مرتبط بوقت أو يوم هي نية calendar_event، وليست task أو inbox.
+- إذا ذُكر اليوم أو غدًا أو تاريخ بدون ساعة محددة، أنشئ خطة calendar_event واحدة مع needsClarification=true واسأل عن الساعة؛ لا تحفظها في inbox ولا تجبر المستخدم على اختيار task أو vault أو habit.
+- لا تستخدم inbox إلا إذا طلب المستخدم صراحة «احفظها في الوارد» أو عبّر عن فكرة غير مرتبطة بتنفيذ أو موعد.
 - الفكرة غير المحسومة يمكن أن تذهب إلى inbox، لكن عند الشك اسأل أولًا.
 - لا تعدل progress أو streak أو ownership أو timestamps.
 - parentId يجب أن يكون معرف الأب الموجود؛ عند إنشاء سلسلة جديدة استخدم parentTitle لربطها بعنوان عملية create سابقة.
@@ -756,7 +912,12 @@ ${JSON.stringify(context)}
     });
     const parsed = aiCommandPlanSchema.safeParse(safeParseJson(response.text));
     if (!parsed.success) return apiError(res, 502, 'UPSTREAM_ERROR', 'تعذر تكوين خطة آمنة قابلة للمراجعة.');
-    return res.json({ ok: true, data: { ...parsed.data, modelUsed } });
+    const schedulingIntent = /(?:عايز|أريد|اريد|حابب|محتاج).*(?:أروح|اروح|اذهب|أذهب|زيارة|مقابلة|موعد|مشوار|اتصال)|(?:زيارة|مقابلة|موعد|مشوار).*(?:اليوم|انهارده|النهارده|غدًا|بكره|بكرا)/i.test(text);
+    const hasExplicitTime = /(?:الساعة|ساعه|صباحًا|مساءً|صباحا|مساء|[01]?\d|2[0-3])\s*(?::|：|ونصف|إلا ربع|ربع|صباح|مساء)?/i.test(`${text} ${clarificationAnswer}`);
+    const adjustedPlan = schedulingIntent && !hasExplicitTime && !clarificationAnswer
+      ? { ...parsed.data, needsClarification: true, clarificationQuestion: 'في أي ساعة تريد هذا الموعد؟ وسأضعه في التقويم مباشرة، وليس في الوارد.', actions: [], warnings: [...parsed.data.warnings, 'تم تصنيف الطلب كموعد لأن النص يتضمن زيارة أو مشوارًا مرتبطًا بيوم.'] }
+      : parsed.data;
+    return res.json({ ok: true, data: { ...adjustedPlan, modelUsed } });
   } catch {
     return apiError(res, 502, 'UPSTREAM_ERROR', 'فشل تحليل الأمر الذكي.');
   }

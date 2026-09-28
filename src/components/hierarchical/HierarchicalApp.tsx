@@ -116,6 +116,7 @@ export const HierarchicalApp: React.FC = () => {
   const [isGeminiModalOpen, setIsGeminiModalOpen] = useState(false);
   const [geminiKeyDraft, setGeminiKeyDraft] = useState('');
   const [googleCalendarConnected, setGoogleCalendarConnected] = useState(false);
+  const [syncingGoogleCalendar, setSyncingGoogleCalendar] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
@@ -160,6 +161,27 @@ export const HierarchicalApp: React.FC = () => {
     })();
     return () => { active = false; };
   }, [authStatus, currentUser?.id]);
+
+  useEffect(() => {
+    if (!googleCalendarConnected || !supabase) return;
+    const client = supabase;
+    let active = true;
+    const sync = async () => {
+      try {
+        const { data } = await client.auth.getSession();
+        if (!data.session?.access_token) return;
+        setSyncingGoogleCalendar(true);
+        const response = await fetch('/api/integrations/google/sync', { method: 'POST', headers: { Authorization: `Bearer ${data.session.access_token}`, Accept: 'application/json' } });
+        const body = await response.json().catch(() => null) as { data?: { events?: CalendarEvent[] }; error?: { message?: string } } | null;
+        if (active && response.ok && body?.data?.events) setCalendarEvents(body.data.events);
+      } finally {
+        if (active) setSyncingGoogleCalendar(false);
+      }
+    };
+    void sync();
+    const timer = window.setInterval(() => void sync(), 5 * 60 * 1000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, [googleCalendarConnected]);
 
   useEffect(() => {
     const result = new URLSearchParams(window.location.search).get('google');
@@ -328,7 +350,7 @@ export const HierarchicalApp: React.FC = () => {
 
   const handleDeleteCalendarEvent = (event: CalendarEvent) => {
     if (!confirm(`حذف الموعد «${event.title}»؟`)) return;
-    setCalendarEvents((current) => current.filter((item) => item.id !== event.id));
+    setCalendarEvents((current) => current.map((item) => item.id === event.id ? { ...item, is_cancelled: true, updated_at: new Date().toISOString() } : item));
   };
 
   const handleConnectGoogleCalendar = async () => {
@@ -344,6 +366,21 @@ export const HierarchicalApp: React.FC = () => {
     } catch (error) {
       setToasts((previous) => [...previous, { id: createId(), type: 'error', title: 'تعذر ربط Google Calendar', description: error instanceof Error ? error.message : 'حاول مرة أخرى.' }]);
     }
+  };
+
+  const handleSyncGoogleCalendar = async () => {
+    if (!supabase || syncingGoogleCalendar) return;
+    setSyncingGoogleCalendar(true);
+    try {
+      const { data } = await supabase.auth.getSession();
+      const response = await fetch('/api/integrations/google/sync', { method: 'POST', headers: { Authorization: `Bearer ${data.session?.access_token || ''}`, Accept: 'application/json' } });
+      const body = await response.json().catch(() => null) as { data?: { events?: CalendarEvent[] }; error?: { message?: string } } | null;
+      if (!response.ok || !body?.data?.events) throw new Error(body?.error?.message || 'تعذرت مزامنة Google Calendar.');
+      setCalendarEvents(body.data.events);
+      setToasts((previous) => [...previous, { id: createId(), type: 'success', title: 'اكتملت مزامنة Google Calendar', description: 'تم تحديث المواعيد في الاتجاهين.' }]);
+    } catch (error) {
+      setToasts((previous) => [...previous, { id: createId(), type: 'error', title: 'تعذرت مزامنة Google Calendar', description: error instanceof Error ? error.message : 'حاول مرة أخرى.' }]);
+    } finally { setSyncingGoogleCalendar(false); }
   };
 
   const handleApplyAiActions = async (actions: AiCommandAction[], options: { audioBlob: Blob | null; attachAudioToJournal: boolean }) => {
@@ -1336,7 +1373,9 @@ export const HierarchicalApp: React.FC = () => {
                 onDelete={handleDeleteCalendarEvent}
                 onEnableNotifications={() => void subscribeNotifications({ calendarEnabled: true }).then(() => setToasts((previous) => [...previous, { id: createId(), type: 'success', title: 'تم تفعيل تذكيرات التقويم', description: 'ستصلك التذكيرات وفق المواعيد التي تختارها.' }])).catch((error) => setToasts((previous) => [...previous, { id: createId(), type: 'error', title: 'تعذر تفعيل التذكيرات', description: error instanceof Error ? error.message : 'حاول مرة أخرى.' }]))}
                 onConnectGoogle={() => void handleConnectGoogleCalendar()}
+                onSyncGoogle={() => void handleSyncGoogleCalendar()}
                 googleConnected={googleCalendarConnected}
+                syncingGoogle={syncingGoogleCalendar}
               />
             )}
 

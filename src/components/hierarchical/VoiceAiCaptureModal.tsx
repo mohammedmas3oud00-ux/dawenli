@@ -16,6 +16,7 @@ const entityLabels: Record<AiCommandAction['entityType'], string> = {
   pillar: 'ركيزة', vision: 'رؤية', goal: 'هدف قيمة', project: 'مشروع', task: 'مهمة', habit: 'عادة', ibadat: 'عبادة', inbox: 'الوارد', journal: 'يومية', calendar_event: 'موعد',
 };
 const operationLabels = { create: 'إضافة', update: 'تعديل', delete: 'حذف' } as const;
+type ChatMessage = { id: string; role: 'user' | 'assistant'; text: string };
 
 export function VoiceAiCaptureModal({ isOpen, onClose, context, onApply, onSaveInbox }: Props) {
   const [input, setInput] = useState('');
@@ -27,13 +28,14 @@ export function VoiceAiCaptureModal({ isOpen, onClose, context, onApply, onSaveI
   const [error, setError] = useState<string | null>(null);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [attachAudio, setAttachAudio] = useState(false);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const recognitionRef = useRef<any>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
 
   useEffect(() => {
     if (!isOpen) return;
-    setInput(''); setPlan(null); setClarification(''); setError(null); setAudioBlob(null); setAttachAudio(false);
+    setInput(''); setPlan(null); setClarification(''); setError(null); setAudioBlob(null); setAttachAudio(false); setMessages([{ id: `assistant-${Date.now()}`, role: 'assistant', text: 'أهلًا بك. اكتب ما تريد فعله أو تحدث، وسأفهم مقصدك وأسألك عن أي معلومة ناقصة قبل عرض خطة التنفيذ.' }]);
     return () => { recognitionRef.current?.abort?.(); if (recorderRef.current?.state === 'recording') recorderRef.current.stop(); chunksRef.current = []; };
   }, [isOpen]);
 
@@ -66,10 +68,16 @@ export function VoiceAiCaptureModal({ isOpen, onClose, context, onApply, onSaveI
     recognition.onend = () => setListening(false); recognitionRef.current = recognition; recognition.start(); setListening(true);
   };
   const analyze = async (answer?: string) => {
-    if (!input.trim()) return;
+    const submitted = (answer || input).trim();
+    if (!submitted) return;
+    setMessages((previous) => [...previous, { id: `user-${Date.now()}`, role: 'user', text: submitted }]);
     setBusy(true); setError(null);
-    try { const next = await proposeAiCommands(input, context, answer); setPlan(next); if (!next.needsClarification) setClarification(''); }
-    catch (caught) { setError(caught instanceof Error ? caught.message : 'تعذر تحليل الأمر.'); }
+    try {
+      const next = await proposeAiCommands(input, context, answer);
+      setPlan(next);
+      setMessages((previous) => [...previous, { id: `assistant-${Date.now()}`, role: 'assistant', text: next.needsClarification ? (next.clarificationQuestion || 'أحتاج معلومة إضافية قبل المتابعة.') : next.summary }]);
+      if (!next.needsClarification) setClarification('');
+    } catch (caught) { setError(caught instanceof Error ? caught.message : 'تعذر تحليل الأمر.'); }
     finally { setBusy(false); }
   };
   const saveInbox = () => { onSaveInbox(input.trim()); onClose(); };
@@ -86,7 +94,7 @@ export function VoiceAiCaptureModal({ isOpen, onClose, context, onApply, onSaveI
   return <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-3 backdrop-blur-sm" dir="rtl">
     <div className="flex max-h-[94vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-700 bg-white shadow-2xl dark:bg-slate-900">
       <header className="flex items-center justify-between bg-gradient-to-l from-[#174235] to-emerald-700 p-4 text-white"><div className="flex items-center gap-3"><Sparkles className="h-5 w-5 text-amber-300" /><div><h2 className="font-bold">مساعد دوّنلي الذكي</h2><p className="text-[11px] text-emerald-100">تكلم أو اكتب؛ لن يتغير شيء قبل مراجعتك وتأكيدك.</p></div></div><button onClick={onClose}><X className="h-5 w-5" /></button></header>
-      <div className="space-y-4 overflow-y-auto p-4 sm:p-5">
+      <div className="space-y-4 overflow-y-auto p-4 sm:p-5">{!!messages.length && <div className="space-y-2 rounded-2xl bg-slate-50 p-3 dark:bg-slate-800/70">{messages.map((message) => <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-start' : 'justify-end'}`}><div className={`max-w-[88%] rounded-2xl px-3 py-2 text-sm leading-7 ${message.role === 'user' ? 'bg-[#174235] text-white' : 'border border-emerald-100 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200'}`}>{message.text}</div></div>)}</div>}
         {error && <div className="flex gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200"><AlertCircle className="h-4 w-4 shrink-0" />{error}</div>}
         {!plan && <>
           <textarea rows={6} value={input} onChange={(event) => setInput(event.target.value)} placeholder="مثال: اكتب في يومياتي أن اليوم كان جيدًا، وأضف موعدًا غدًا الساعة الخامسة لمراجعة خطة الإنجليزية مع تذكير قبل نصف ساعة." className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-7 outline-none focus:border-emerald-600 dark:border-slate-700 dark:bg-slate-800" />
