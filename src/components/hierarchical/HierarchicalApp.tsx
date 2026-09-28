@@ -297,6 +297,19 @@ export const HierarchicalApp: React.FC = () => {
     setCalendarEvents((current) => current.filter((item) => item.id !== event.id));
   };
 
+  const handleConnectGoogleCalendar = async () => {
+    if (!supabase) { setToasts((previous) => [...previous, { id: createId(), type: 'error', title: 'تعذر ربط Google Calendar', description: 'خدمة الحساب غير مهيأة.' }]); return; }
+    try {
+      const { data } = await supabase.auth.getSession();
+      const response = await fetch('/api/integrations/google/start', { headers: { Authorization: `Bearer ${data.session?.access_token || ''}` } });
+      const body = await response.json() as { data?: { authorizationUrl?: string }; error?: { message?: string } };
+      if (!response.ok || !body.data?.authorizationUrl) throw new Error(body.error?.message || 'تعذر بدء ربط Google Calendar.');
+      window.location.assign(body.data.authorizationUrl);
+    } catch (error) {
+      setToasts((previous) => [...previous, { id: createId(), type: 'error', title: 'تعذر ربط Google Calendar', description: error instanceof Error ? error.message : 'حاول مرة أخرى.' }]);
+    }
+  };
+
   const handleApplyAiActions = async (actions: AiCommandAction[], options: { audioBlob: Blob | null; attachAudioToJournal: boolean }) => {
     const latest = snapshot;
     const result = applyAiCommandActions(latest, actions);
@@ -1286,6 +1299,7 @@ export const HierarchicalApp: React.FC = () => {
                 onSave={handleSaveCalendarEvent}
                 onDelete={handleDeleteCalendarEvent}
                 onEnableNotifications={() => void subscribeNotifications({ calendarEnabled: true }).then(() => setToasts((previous) => [...previous, { id: createId(), type: 'success', title: 'تم تفعيل تذكيرات التقويم', description: 'ستصلك التذكيرات وفق المواعيد التي تختارها.' }])).catch((error) => setToasts((previous) => [...previous, { id: createId(), type: 'error', title: 'تعذر تفعيل التذكيرات', description: error instanceof Error ? error.message : 'حاول مرة أخرى.' }]))}
+                onConnectGoogle={() => void handleConnectGoogleCalendar()}
               />
             )}
 

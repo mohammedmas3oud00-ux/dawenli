@@ -4,7 +4,7 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { GoogleGenAI, Type } from '@google/genai';
 import { createClient } from '@supabase/supabase-js';
-import { createCipheriv, createDecipheriv, createHash, randomBytes, randomUUID } from 'crypto';
+import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes, randomUUID, timingSafeEqual } from 'crypto';
 import webpush from 'web-push';
 import { worshipReminderTime } from './src/utils/worshipReminderTime.js';
 import { aiCommandPlanSchema } from './src/features/ai/commands/schema.js';
@@ -168,6 +168,36 @@ function decryptCredential(value: { ciphertext: string; iv: string; auth_tag: st
   return Buffer.concat([decipher.update(Buffer.from(value.ciphertext, 'base64')), decipher.final()]).toString('utf8');
 }
 
+function googleConfig() {
+  return {
+    clientId: (process.env.GOOGLE_CLIENT_ID || '').trim(),
+    clientSecret: (process.env.GOOGLE_CLIENT_SECRET || '').trim(),
+    redirectUri: (process.env.GOOGLE_REDIRECT_URI || '').trim(),
+  };
+}
+
+function encodeGoogleState(userId: string): string {
+  if (!credentialEncryptionSecret) throw new Error('Credential encryption is not configured');
+  const payload = `${userId}.${randomUUID()}`;
+  const signature = createHmac('sha256', credentialEncryptionSecret).update(payload).digest('base64url');
+  return Buffer.from(`${payload}.${signature}`, 'utf8').toString('base64url');
+}
+
+function decodeGoogleState(value: string): string | null {
+  try {
+    if (!credentialEncryptionSecret) return null;
+    const decoded = Buffer.from(value, 'base64url').toString('utf8');
+    const lastDot = decoded.lastIndexOf('.');
+    const payload = decoded.slice(0, lastDot);
+    const supplied = decoded.slice(lastDot + 1);
+    const expected = createHmac('sha256', credentialEncryptionSecret).update(payload).digest('base64url');
+    if (!supplied || supplied.length !== expected.length || !timingSafeEqual(Buffer.from(supplied), Buffer.from(expected))) return null;
+    return payload.split('.')[0] || null;
+  } catch {
+    return null;
+  }
+}
+
 function userScopedClient(token: string) {
   if (!supabaseUrl || !supabaseAnonKey) return null;
   return createClient(supabaseUrl, supabaseAnonKey, {
@@ -249,6 +279,52 @@ app.delete('/api/ai/credential', requireUserAuth, async (req, res) => {
   const { error } = await client!.rpc('dawenli_delete_gemini_credential');
   if (error) return apiError(res, 503, 'NOT_CONFIGURED', 'تعذر حذف مفتاح Gemini.');
   return res.json({ ok: true, data: { configured: false } });
+});
+
+app.get('/api/integrations/google/start', requireUserAuth, (req, res) => {
+  const config = googleConfig();
+  if (!config.clientId || !config.redirectUri || !credentialEncryptionSecret) return apiError(res, 503, 'NOT_CONFIGURED', 'تكامل Google Calendar غير مهيأ على الخادم.');
+  const state = encodeGoogleState(res.locals.userId as string);
+  const params = new URLSearchParams({ client_id: config.clientId, redirect_uri: config.redirectUri, response_type: 'code', access_type: 'offline', prompt: 'consent', scope: 'openid email profile https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.calendarlist.readonly', state });
+  return res.json({ ok: true, data: { authorizationUrl: `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}` } });
+});
+
+app.get('/api/integrations/google/callback', async (req, res) => {
+  const state = typeof req.query.state === 'string' ? req.query.state : '';
+  const userId = decodeGoogleState(state);
+  const config = googleConfig();
+  const redirectBack = (process.env.GOOGLE_POST_CONNECT_REDIRECT || '/').trim();
+  if (!userId || !config.clientId || !config.clientSecret || !config.redirectUri || !adminClient) return res.redirect(`${redirectBack}?google=error`);
+  if (typeof req.query.error === 'string') return res.redirect(`${redirectBack}?google=cancelled`);
+  const code = typeof req.query.code === 'string' ? req.query.code : '';
+  if (!code) return res.redirect(`${redirectBack}?google=error`);
+  try {
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ code, client_id: config.clientId, client_secret: config.clientSecret, redirect_uri: config.redirectUri, grant_type: 'authorization_code' }) });
+    const tokenBody = await tokenResponse.json() as { access_token?: string; refresh_token?: string; error?: string };
+    if (!tokenResponse.ok || !tokenBody.refresh_token) return res.redirect(`${redirectBack}?google=error`);
+    const profileResponse = await fetch('https://openidconnect.googleapis.com/v1/userinfo', { headers: { Authorization: `Bearer ${tokenBody.access_token || ''}` } });
+    const profile = profileResponse.ok ? await profileResponse.json() as { email?: string } : {};
+    const encrypted = encryptCredential(tokenBody.refresh_token);
+    const { error } = await adminClient.from('google_calendar_connections').upsert({ user_id: userId, google_email: profile.email || null, calendar_id: 'primary', refresh_token_ciphertext: encrypted.ciphertext, refresh_token_iv: encrypted.iv, refresh_token_auth_tag: encrypted.authTag, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+    if (error) return res.redirect(`${redirectBack}?google=error`);
+    return res.redirect(`${redirectBack}?google=connected`);
+  } catch {
+    return res.redirect(`${redirectBack}?google=error`);
+  }
+});
+
+app.get('/api/integrations/google/status', requireUserAuth, async (_req, res) => {
+  if (!adminClient) return apiError(res, 503, 'NOT_CONFIGURED', 'تكامل Google Calendar غير مهيأ.');
+  const { data, error } = await adminClient.from('google_calendar_connections').select('google_email,calendar_id,last_synced_at').eq('user_id', res.locals.userId).maybeSingle();
+  if (error) return apiError(res, 503, 'UPSTREAM_ERROR', 'تعذر قراءة حالة Google Calendar.');
+  return res.json({ ok: true, data: { connected: Boolean(data), ...data } });
+});
+
+app.delete('/api/integrations/google/disconnect', requireUserAuth, async (_req, res) => {
+  if (!adminClient) return apiError(res, 503, 'NOT_CONFIGURED', 'تكامل Google Calendar غير مهيأ.');
+  const { error } = await adminClient.from('google_calendar_connections').delete().eq('user_id', res.locals.userId);
+  if (error) return apiError(res, 503, 'UPSTREAM_ERROR', 'تعذر فصل Google Calendar.');
+  return res.json({ ok: true, data: { connected: false } });
 });
 
 app.get('/api/push/public-key', (_req, res) => {
