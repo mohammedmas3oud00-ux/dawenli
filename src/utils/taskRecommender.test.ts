@@ -57,6 +57,54 @@ describe('task recommendations', () => {
     expect(determineTaskEnergy(task)).toBe('high');
   });
 
+  it('uses priority defaults when duration and energy are missing', () => {
+    expect(estimateTaskDuration({ ...task, estimated_hours: null, priority: 'high' })).toBe(45);
+    expect(estimateTaskDuration({ ...task, estimated_hours: null, priority: 'medium' })).toBe(30);
+    expect(estimateTaskDuration({ ...task, estimated_hours: null, priority: 'low' })).toBe(15);
+    expect(determineTaskEnergy({ ...task, energy_level: null, priority: 'medium' })).toBe('medium');
+    expect(determineTaskEnergy({ ...task, energy_level: null, priority: 'low' })).toBe('low');
+  });
+
+  it('ranks overdue and matching tasks with useful reasons', () => {
+    const overdue = {
+      ...task,
+      id: 'overdue',
+      estimated_hours: 1,
+      priority: 'high',
+      due_date: '2020-01-01',
+      status: 'in_progress' as const,
+    };
+    const results = getRecommendedTasks(
+      [task, overdue, { ...task, id: 'done', status: 'done' }],
+      [project],
+      [goal],
+      [pillar],
+      {
+        availableMinutes: 60,
+        energyLevel: 'high',
+      },
+    );
+    expect(results[0].task.id).toBe('overdue');
+    expect(results[0].urgencyLabel).toContain('متأخرة');
+    expect(results[0].reasons.length).toBeLessThanOrEqual(3);
+    expect(results.some((item) => item.task.id === 'done')).toBe(false);
+  });
+
+  it('penalizes tasks that exceed time or energy availability', () => {
+    const result = getRecommendedTasks(
+      [{ ...task, estimated_hours: 4, energy_level: 'high' }],
+      [project],
+      [goal],
+      [pillar],
+      {
+        availableMinutes: 15,
+        energyLevel: 'low',
+      },
+    )[0];
+    expect(result.score).toBeGreaterThanOrEqual(50);
+    expect(result.score).toBeLessThan(80);
+  });
+
   it('excludes orphan tasks and tasks outside the selected pillar', () => {
     const orphan = { ...task, id: 'orphan', project_id: 'missing' };
     expect(
