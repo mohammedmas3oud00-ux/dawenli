@@ -38,6 +38,8 @@ try {
   const habitId = randomUUID();
   const worshipId = randomUUID();
   const logId = randomUUID();
+  const journalId = randomUUID();
+  const eventId = randomUUID();
 
   const snapshot = {
     ...emptySnapshot(),
@@ -50,6 +52,8 @@ try {
     vaults: [{ id: randomUUID(), pillar_id: pillarId, project_id: null, title: 'Sync vault', vault_type: 'notes', summary: '', content: '', tags: [], status: 'active', created_at: now }],
     worshipDefinitions: [{ id: worshipId, pillar_id: pillarId, vision_id: null, goal_id: null, title: 'Sync worship', category: 'custom_dua', tracking_type: 'checkbox', frequency: 'daily', scheduled_days: [], scheduled_hijri_days: [], settings_history: [], is_active: true, sort_order: 0, created_at: now }],
     worshipLogs: [{ id: logId, worship_id: worshipId, date, is_completed: true, count: null, amount: null, pages_read: null, performance: null, congregation: null, sunnah_completed: null, rakaat_count: null, performed_at_time: null, fasting_type: null, notes: null, completed_at: now, created_at: now }],
+    journals: [{ id: journalId, title: 'Sync journal', content: 'Round-trip text', entry_date: date, mood: 'good', tags: ['sync'], pillar_id: pillarId, project_id: projectId, audio_path: null, created_at: now, updated_at: now }],
+    calendarEvents: [{ id: eventId, title: 'Sync event', description: '', start_at: new Date(Date.now() + 3600000).toISOString(), end_at: new Date(Date.now() + 7200000).toISOString(), all_day: false, timezone: 'UTC', recurrence: { frequency: 'weekly', interval: 1, days_of_week: [1], until: null }, reminder_minutes: 15, task_id: taskId, project_id: projectId, pillar_id: pillarId, is_cancelled: false, created_at: now, updated_at: now }],
   };
 
   await repository.save(snapshot);
@@ -57,16 +61,18 @@ try {
   if (loaded.projects.length !== 1 || loaded.tasks.length !== 1 || loaded.inboxItems.length !== 1 || loaded.vaults.length !== 1) throw new Error('Core collections did not round-trip');
   if (loaded.habits[0]?.longest_streak !== 5 || loaded.habits[0]?.completed_dates?.[0] !== date) throw new Error('Habit data did not round-trip');
   if (loaded.worshipDefinitions.length !== 1 || loaded.worshipLogs[0]?.is_completed !== true) throw new Error('Ibadat data did not round-trip');
+   if (loaded.journals[0]?.content !== 'Round-trip text' || loaded.calendarEvents[0]?.recurrence?.frequency !== 'weekly') throw new Error('Journal or calendar data did not round-trip');
 
-  const updated = { ...loaded, habits: [{ ...loaded.habits[0], current_streak: 3, longest_streak: 6 }], worshipLogs: [{ ...loaded.worshipLogs[0], notes: 'updated' }] };
+  const updated = { ...loaded, habits: [{ ...loaded.habits[0], current_streak: 3, longest_streak: 6 }], worshipLogs: [{ ...loaded.worshipLogs[0], notes: 'updated' }], journals: [{ ...loaded.journals[0], content: 'updated journal' }], calendarEvents: [{ ...loaded.calendarEvents[0], title: 'Updated event' }] };
   await repository.save(updated);
   const reloaded = await repository.load();
   if (reloaded.habits[0]?.current_streak !== 3 || reloaded.habits[0]?.longest_streak !== 6) throw new Error('Habit update did not persist');
   if (reloaded.worshipLogs[0]?.notes !== 'updated') throw new Error('Ibadat update did not persist');
+   if (reloaded.journals[0]?.content !== 'updated journal' || reloaded.calendarEvents[0]?.title !== 'Updated event') throw new Error('Journal or calendar update did not persist');
 
   await repository.clear();
   const cleared = await repository.load();
-  if (cleared.pillars.length || cleared.habits.length || cleared.worshipDefinitions.length || cleared.worshipLogs.length) throw new Error('Snapshot clear did not persist');
+  if (cleared.pillars.length || cleared.habits.length || cleared.worshipDefinitions.length || cleared.worshipLogs.length || cleared.journals.length || cleared.calendarEvents.length) throw new Error('Snapshot clear did not persist');
   console.log('Authenticated Supabase round-trip passed for core, habits, and Ibadat data.');
 } finally {
   await admin.auth.admin.deleteUser(created.user.id);

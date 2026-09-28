@@ -4,6 +4,8 @@ import type {
   Project, QuranHifzTracker, QuranKhatma, SleepSchedule, SystemReview, Task, TimeBlock, ValueGoal, Vision,
   VaultItem, WorshipDefinition, WorshipLog,
 } from '../../types/hierarchical';
+import { useJournalStore } from '../../features/journals/store/journalStore';
+import { useCalendarStore } from '../../features/calendar/store/calendarStore';
 
 export interface AppStoreState {
   pillars: Pillar[];
@@ -74,11 +76,12 @@ export const useAppStore = create<AppStoreState>((set) => ({
 
 export function snapshotFromState(state: AppStoreState): AppDataSnapshot {
   return {
-    schemaVersion: 4,
+    schemaVersion: 5,
     pillars: state.pillars, visions: state.visions, goals: state.goals, projects: state.projects, tasks: state.tasks,
     reviews: state.reviews, inboxItems: state.inboxItems, habits: state.habits, vaults: state.vaults,
     focusSessions: state.focusSessions, timeBlocks: state.timeBlocks, customFieldDefinitions: state.customFieldDefinitions,
     worshipDefinitions: state.worshipDefinitions, worshipLogs: state.worshipLogs, progressionPaths: state.progressionPaths,
     quranKhatmas: state.quranKhatmas, quranHifzTrackers: state.quranHifzTrackers, sleepSchedules: state.sleepSchedules,
+    journals: useJournalStore.getState().journals, calendarEvents: useCalendarStore.getState().calendarEvents,
   };
 }

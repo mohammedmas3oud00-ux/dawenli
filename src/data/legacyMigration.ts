@@ -45,7 +45,7 @@ export function remapSnapshotIds(source: AppDataSnapshot): AppDataSnapshot {
     pillar: new Map<string, string>(), vision: new Map<string, string>(), goal: new Map<string, string>(),
     project: new Map<string, string>(), task: new Map<string, string>(), review: new Map<string, string>(),
     inbox: new Map<string, string>(), habit: new Map<string, string>(), vault: new Map<string, string>(),
-    focus: new Map<string, string>(), block: new Map<string, string>(),
+    focus: new Map<string, string>(), block: new Map<string, string>(), journal: new Map<string, string>(), event: new Map<string, string>(),
   };
   const remap = <T extends { id: string }>(items: T[], map: Map<string, string>) => items.map((item) => {
     const id = crypto.randomUUID();
@@ -63,6 +63,8 @@ export function remapSnapshotIds(source: AppDataSnapshot): AppDataSnapshot {
   snapshot.vaults = remap(snapshot.vaults, maps.vault).flatMap((item) => maps.pillar.has(item.pillar_id) ? [{ ...item, pillar_id: maps.pillar.get(item.pillar_id)!, project_id: item.project_id ? maps.project.get(item.project_id) ?? null : null }] : []);
   snapshot.focusSessions = remap(snapshot.focusSessions, maps.focus).map((item) => ({ ...item, task_id: item.task_id ? maps.task.get(item.task_id) ?? null : null }));
   snapshot.timeBlocks = remap(snapshot.timeBlocks, maps.block).map((item) => ({ ...item, task_id: item.task_id ? maps.task.get(item.task_id) ?? null : null, project_id: item.project_id ? maps.project.get(item.project_id) ?? null : null, pillar_id: item.pillar_id ? maps.pillar.get(item.pillar_id) ?? null : null }));
+  snapshot.journals = remap(snapshot.journals, maps.journal).map((item) => ({ ...item, pillar_id: item.pillar_id ? maps.pillar.get(item.pillar_id) ?? null : null, project_id: item.project_id ? maps.project.get(item.project_id) ?? null : null, audio_path: null }));
+  snapshot.calendarEvents = remap(snapshot.calendarEvents, maps.event).map((item) => ({ ...item, task_id: item.task_id ? maps.task.get(item.task_id) ?? null : null, project_id: item.project_id ? maps.project.get(item.project_id) ?? null : null, pillar_id: item.pillar_id ? maps.pillar.get(item.pillar_id) ?? null : null }));
   snapshot.customFieldDefinitions = snapshot.customFieldDefinitions.map((item) => ({ ...item, id: crypto.randomUUID() }));
   return snapshot;
 }

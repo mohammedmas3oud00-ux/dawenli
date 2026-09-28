@@ -16,13 +16,14 @@ import {
   FocusSessionRecord,
   TimeBlock,
   CustomFieldDefinition,
-  AppDataSnapshot,
   WorshipDefinition,
   WorshipLog,
   ProgressionPath,
   QuranKhatma,
   QuranHifzTracker,
-  SleepSchedule
+  SleepSchedule,
+  JournalEntry,
+  CalendarEvent
 } from '../../types/hierarchical';
 import { recalculateAllHierarchicalProgress } from '../../utils/hierarchicalStore';
 
@@ -45,6 +46,8 @@ const VaultsTabView = lazy(() => import('../../features/vaults/components/Vaults
 const FocusSessionView = lazy(() => import('./FocusSessionView').then((module) => ({ default: module.FocusSessionView })));
 const TimeBlockingView = lazy(() => import('./TimeBlockingView').then((module) => ({ default: module.TimeBlockingView })));
 const IbadatDashboard = lazy(() => import('../../features/ibadat/components/IbadatDashboard').then((module) => ({ default: module.IbadatDashboard })));
+const JournalTabView = lazy(() => import('../../features/journals/components/JournalTabView').then((module) => ({ default: module.JournalTabView })));
+const CalendarTabView = lazy(() => import('../../features/calendar/components/CalendarTabView').then((module) => ({ default: module.CalendarTabView })));
 const entityModals = () => import('./EntityFormModals');
 const PillarModal = lazy(() => entityModals().then((module) => ({ default: module.PillarModal })));
 const VisionModal = lazy(() => entityModals().then((module) => ({ default: module.VisionModal })));
@@ -77,6 +80,11 @@ import { useAI } from '../../features/ai/hooks/useAI';
 import { useNotifications } from '../../features/notifications/hooks/useNotifications';
 import { useReviews } from '../../features/reviews/hooks/useReviews';
 import { useHierarchyCrud } from '../../features/dashboard/hooks/useHierarchyCrud';
+import { useJournalStore } from '../../features/journals/store/journalStore';
+import { useCalendarStore } from '../../features/calendar/store/calendarStore';
+import { applyAiCommandActions, buildAiCommandContext } from '../../features/ai/commands/executor';
+import type { AiCommandAction } from '../../features/ai/commands/schema';
+import { supabase } from '../../shared/services/supabaseClient';
 
 export const HierarchicalApp: React.FC = () => {
   const { status: authStatus, user: currentUser, adoptUser, signOut: authSignOut } = useAuth();
@@ -88,6 +96,8 @@ export const HierarchicalApp: React.FC = () => {
   const { inboxItems, setInboxItems } = useInboxStore();
   const { vaults, setVaults } = useVaultStore();
   const { worshipDefinitions, worshipLogs, setWorshipDefinitions, setWorshipLogs } = useIbadatStore();
+  const { journals, setJournals } = useJournalStore();
+  const { calendarEvents, setCalendarEvents } = useCalendarStore();
   // Remaining cross-feature collections stay in appStore during the incremental migration.
   const { pillars, visions, goals, projects, reviews, focusSessions, timeBlocks,
     customFieldDefinitions, progressionPaths, quranKhatmas, quranHifzTrackers,
@@ -106,7 +116,7 @@ export const HierarchicalApp: React.FC = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
-  const { dataReady, clearData, saveSnapshot, applySnapshot } = useAppDataPersistence({
+  const { dataReady, clearData, saveSnapshot, applySnapshot, snapshot } = useAppDataPersistence({
     user: currentUser,
     authStatus,
     onLoadError: (error) => setToasts((previous) => [...previous, {
@@ -258,6 +268,61 @@ export const HierarchicalApp: React.FC = () => {
     }
   };
 
+  const handleSaveJournal = (input: Partial<JournalEntry>) => {
+    const now = new Date().toISOString();
+    setJournals((current) => {
+      const existing = input.id ? current.find((entry) => entry.id === input.id) : undefined;
+      const entry: JournalEntry = { id: input.id || createId(), title: input.title || 'يومياتي', content: input.content || '', entry_date: input.entry_date || toLocalDateKey(), mood: input.mood || null, tags: input.tags || [], pillar_id: input.pillar_id || null, project_id: input.project_id || null, audio_path: input.audio_path ?? existing?.audio_path ?? null, created_at: existing?.created_at || now, updated_at: now };
+      return existing ? current.map((item) => item.id === entry.id ? entry : item) : [...current, entry];
+    });
+  };
+
+  const handleDeleteJournal = (entry: JournalEntry) => {
+    if (!confirm(`حذف اليومية «${entry.title}»؟`)) return;
+    setJournals((current) => current.filter((item) => item.id !== entry.id));
+    if (entry.audio_path && !currentUser?.isGuest && supabase) void supabase.storage.from('journal-audio').remove([entry.audio_path]);
+  };
+
+  const handleSaveCalendarEvent = (input: Partial<CalendarEvent>) => {
+    const now = new Date().toISOString();
+    setCalendarEvents((current) => {
+      const existing = input.id ? current.find((event) => event.id === input.id) : undefined;
+      const event: CalendarEvent = { id: input.id || createId(), title: input.title || 'موعد جديد', description: input.description || '', start_at: input.start_at || now, end_at: input.end_at || null, all_day: input.all_day || false, timezone: input.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'Africa/Cairo', recurrence: input.recurrence || { frequency: 'none', interval: 1 }, reminder_minutes: input.reminder_minutes ?? null, task_id: input.task_id || null, project_id: input.project_id || null, pillar_id: input.pillar_id || null, is_cancelled: input.is_cancelled || false, created_at: existing?.created_at || now, updated_at: now };
+      return existing ? current.map((item) => item.id === event.id ? event : item) : [...current, event];
+    });
+  };
+
+  const handleDeleteCalendarEvent = (event: CalendarEvent) => {
+    if (!confirm(`حذف الموعد «${event.title}»؟`)) return;
+    setCalendarEvents((current) => current.filter((item) => item.id !== event.id));
+  };
+
+  const handleApplyAiActions = async (actions: AiCommandAction[], options: { audioBlob: Blob | null; attachAudioToJournal: boolean }) => {
+    const latest = snapshot;
+    const result = applyAiCommandActions(latest, actions);
+    const recalculated = recalculateAllHierarchicalProgress(result.snapshot.pillars, result.snapshot.visions, result.snapshot.goals, result.snapshot.projects, result.snapshot.tasks);
+    result.snapshot.pillars = recalculated.pillars; result.snapshot.visions = recalculated.visions; result.snapshot.goals = recalculated.goals; result.snapshot.projects = recalculated.projects; result.snapshot.tasks = recalculated.tasks;
+    let uploadedPath: string | null = null;
+    if (options.attachAudioToJournal && options.audioBlob && result.createdJournalIds.length) {
+      if (!currentUser || currentUser.isGuest || !supabase) throw new Error('إرفاق الصوت متاح للحسابات المسجلة فقط.');
+      const journalId = result.createdJournalIds[0];
+      const extension = options.audioBlob.type.includes('mpeg') ? 'mp3' : options.audioBlob.type.includes('mp4') ? 'm4a' : options.audioBlob.type.includes('ogg') ? 'ogg' : 'webm';
+      uploadedPath = `${currentUser.id}/${journalId}/${createId()}.${extension}`;
+      const { error } = await supabase.storage.from('journal-audio').upload(uploadedPath, options.audioBlob, { contentType: options.audioBlob.type || 'audio/webm', upsert: false });
+      if (error) throw new Error('تعذر رفع التسجيل الصوتي.');
+      result.snapshot.journals = result.snapshot.journals.map((entry) => entry.id === journalId ? { ...entry, audio_path: uploadedPath } : entry);
+    }
+    try {
+      await saveSnapshot(result.snapshot);
+      applySnapshot(result.snapshot);
+    } catch (error) {
+      if (uploadedPath && supabase) await supabase.storage.from('journal-audio').remove([uploadedPath]);
+      throw error;
+    }
+    if (result.removedAudioPaths.length && supabase) void supabase.storage.from('journal-audio').remove(result.removedAudioPaths);
+    setToasts((previous) => [...previous, { id: createId(), type: 'success', title: 'تم تنفيذ الخطة بعد موافقتك', description: `تم تطبيق ${actions.length} تغييرات بأمان.` }]);
+  };
+
   // Recalculate & Persist Helper
   const applyStateUpdate = (
     newPillars: Pillar[],
@@ -391,101 +456,6 @@ export const HierarchicalApp: React.FC = () => {
     }
     setSelectedProjectId(projectId);
     setCurrentTab('hierarchy');
-  };
-
-  const handleVoiceAiCommit = async (data: {
-    pillarId: string;
-    goalId?: string;
-    projectTitle: string;
-    projectDescription?: string;
-    tasks: Array<{
-      title: string;
-      description?: string;
-      priority: 'high' | 'medium' | 'low';
-      energyLevel?: 'high' | 'medium' | 'low';
-      estimatedHours?: number;
-    }>;
-  }): Promise<void> => {
-    const today = toLocalDateKey();
-    const newProjectId = createId();
-
-    // Target goal under chosen pillar
-    let targetGoalId = data.goalId;
-    let updatedGoals = [...goals];
-    if (!targetGoalId) {
-      const existingGoal = goals.find((g) => g.pillar_id === data.pillarId);
-      if (existingGoal) {
-        targetGoalId = existingGoal.id;
-      } else {
-        const newGoal: ValueGoal = {
-          id: createId(),
-          pillar_id: data.pillarId,
-          title: `هدف: ${data.projectTitle}`,
-          description: 'هدف قيمة استراتيجي مستخلص ومولد آلياً بالذكاء الاصطناعي',
-          status: 'in_progress',
-          progress: 0,
-          target_date: null,
-          created_at: today,
-        };
-        updatedGoals.push(newGoal);
-        targetGoalId = newGoal.id;
-      }
-    }
-
-    const newProject: Project = {
-      id: newProjectId,
-      goal_id: targetGoalId,
-      title: data.projectTitle,
-      description: data.projectDescription || '',
-      status: 'in_progress',
-      progress: 0,
-      start_date: today,
-      due_date: today,
-      created_at: today,
-    };
-
-    const newTasks: Task[] = data.tasks.map((t, idx) => ({
-      id: createId(),
-      project_id: newProjectId,
-      title: t.title,
-      description: t.description || '',
-      status: 'todo',
-      priority: t.priority,
-      due_date: today,
-      estimated_hours: t.estimatedHours || 1,
-      energy_level: t.energyLevel || 'medium',
-      completed_at: null,
-      created_at: today,
-    }));
-
-    const updatedProjects = [...projects, newProject];
-    const updatedTasks = [...tasks, ...newTasks];
-
-    const nextSnapshot: AppDataSnapshot = {
-      schemaVersion: 4,
-      pillars, visions, goals: updatedGoals, projects: updatedProjects, tasks: updatedTasks,
-      reviews, inboxItems, habits, vaults, focusSessions, timeBlocks, customFieldDefinitions,
-      worshipDefinitions, worshipLogs, progressionPaths, quranKhatmas, quranHifzTrackers, sleepSchedules,
-    };
-    await saveSnapshot(nextSnapshot);
-
-    applyStateUpdate(pillars, visions, updatedGoals, updatedProjects, updatedTasks);
-
-    // Drill down to show the created project & tasks immediately
-    setSelectedPillarId(data.pillarId);
-    setSelectedGoalId(targetGoalId);
-    setSelectedProjectId(newProjectId);
-    setCurrentTab('hierarchy');
-
-    setToasts((prev) => [
-      ...prev,
-      {
-        id: `toast-${Date.now()}`,
-        type: 'success',
-        title: 'تم تفكيك وإضافة المشروع بالذكاء الاصطناعي!',
-        description: `تم إدراج المشروع "${data.projectTitle}" مع ${newTasks.length} مهام تنفيذية.`,
-      },
-    ]);
   };
 
   const handleBatchAddTasks = (newTasksData: Partial<Task>[]) => {
@@ -847,9 +817,9 @@ export const HierarchicalApp: React.FC = () => {
   };
 
   const handleExportData = () => createSnapshotBackup({
-    schemaVersion: 4, pillars, visions, goals, projects, tasks, reviews,
+    schemaVersion: 5, pillars, visions, goals, projects, tasks, reviews,
     inboxItems, habits, vaults, focusSessions, timeBlocks, customFieldDefinitions,
-    worshipDefinitions, worshipLogs, progressionPaths, quranKhatmas, quranHifzTrackers, sleepSchedules,
+    worshipDefinitions, worshipLogs, progressionPaths, quranKhatmas, quranHifzTrackers, sleepSchedules, journals, calendarEvents,
   });
 
   const handleImportData = async (file: File) => {
@@ -906,6 +876,8 @@ export const HierarchicalApp: React.FC = () => {
           vaults: vaults.length,
           focus: focusSessions.length,
           timeBlocks: timeBlocks.filter(b => b.date === toLocalDateKey()).length,
+          calendar: calendarEvents.filter((event) => !event.is_cancelled).length,
+          journals: journals.length,
           ibadat: worshipDefinitions.filter((item) => item.is_active).length,
         }}
         isOpenMobile={isMobileSidebarOpen}
@@ -948,6 +920,8 @@ export const HierarchicalApp: React.FC = () => {
                     {currentTab === 'inbox' && 'صندوق الوارد'}
                     {currentTab === 'focus' && 'جلسات التركيز'}
                     {currentTab === 'timeblocking' && 'حجب الوقت اليومي'}
+                    {currentTab === 'calendar' && 'التقويم والمواعيد'}
+                    {currentTab === 'journals' && 'اليوميات'}
                     {currentTab === 'habits' && 'متتبع العادات'}
                     {currentTab === 'vaults' && 'خزائن المعرفة'}
                     {currentTab === 'pillars' && 'الركائز الأساسية'}
@@ -1303,6 +1277,22 @@ export const HierarchicalApp: React.FC = () => {
               />
             )}
 
+            {currentTab === 'calendar' && (
+              <CalendarTabView
+                events={calendarEvents}
+                pillars={pillars}
+                projects={projects}
+                tasks={tasks}
+                onSave={handleSaveCalendarEvent}
+                onDelete={handleDeleteCalendarEvent}
+                onEnableNotifications={() => void subscribeNotifications({ calendarEnabled: true }).then(() => setToasts((previous) => [...previous, { id: createId(), type: 'success', title: 'تم تفعيل تذكيرات التقويم', description: 'ستصلك التذكيرات وفق المواعيد التي تختارها.' }])).catch((error) => setToasts((previous) => [...previous, { id: createId(), type: 'error', title: 'تعذر تفعيل التذكيرات', description: error instanceof Error ? error.message : 'حاول مرة أخرى.' }]))}
+              />
+            )}
+
+            {currentTab === 'journals' && (
+              <JournalTabView entries={journals} pillars={pillars} projects={projects} onSave={handleSaveJournal} onDelete={handleDeleteJournal} />
+            )}
+
             {/* TAB 8: GTD INBOX TAB (صندوق الوارد والالتقاط السريع والتوضيح) */}
             {currentTab === 'inbox' && (
               <InboxTabView
@@ -1511,11 +1501,9 @@ export const HierarchicalApp: React.FC = () => {
       <VoiceAiCaptureModal
         isOpen={isVoiceAiModalOpen}
         onClose={() => setIsVoiceAiModalOpen(false)}
-        pillars={pillars}
-        projects={projects}
-        goals={goals}
-        onCommitHierarchy={handleVoiceAiCommit}
-        onCommitSingleTask={hierarchyCrud.saveTask}
+        context={buildAiCommandContext(snapshot)}
+        onApply={handleApplyAiActions}
+        onSaveInbox={(text) => handleAddInboxItem({ title: text.slice(0, 80), content: text, source_type: 'idea' })}
       />
       </React.Suspense>
 

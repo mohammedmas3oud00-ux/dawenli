@@ -13,6 +13,8 @@ describe('repository snapshot normalization', () => {
       worshipLogs: [{ id: 'log-1' } as never],
       progressionPaths: [{ id: 'path-1' } as never],
       quranHifzTrackers: [{ id: 'hifz-1' } as never],
+      journals: [{ id: 'journal-1' } as never],
+      calendarEvents: [{ id: 'event-1' } as never],
     });
 
     expect(snapshot.projects[0].custom_fields).toEqual({});
@@ -25,6 +27,8 @@ describe('repository snapshot normalization', () => {
     expect(snapshot.worshipLogs[0].is_completed).toBe(false);
     expect(snapshot.progressionPaths[0].stages).toEqual([]);
     expect(snapshot.quranHifzTrackers[0].surahs).toEqual([]);
+    expect(snapshot.journals[0].tags).toEqual([]);
+    expect(snapshot.calendarEvents[0].recurrence).toEqual({ frequency: 'none', interval: 1 });
   });
 
   it('maps app fields and fills every live required row default', () => {

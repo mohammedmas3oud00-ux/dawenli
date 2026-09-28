@@ -6,11 +6,13 @@ describe('app store snapshot contract', () => {
     useAppStore.setState({ pillars: [], tasks: [], worshipLogs: [] });
     const state = useAppStore.getState();
     const snapshot = snapshotFromState(state);
-    expect(snapshot.schemaVersion).toBe(4);
+    expect(snapshot.schemaVersion).toBe(5);
     expect(snapshot.pillars).toEqual([]);
     expect(snapshot.tasks).toEqual([]);
     expect(snapshot.worshipLogs).toEqual([]);
     expect(snapshot.sleepSchedules).toEqual([]);
+    expect(snapshot.journals).toEqual([]);
+    expect(snapshot.calendarEvents).toEqual([]);
   });
 
   it('preserves functional setter semantics used by existing handlers', () => {

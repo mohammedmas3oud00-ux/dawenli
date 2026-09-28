@@ -245,6 +245,8 @@ export type SidebarTab =
   | 'tasks' 
   | 'focus'
   | 'timeblocking'
+  | 'calendar'
+  | 'journals'
   | 'inbox'
   | 'habits'
   | 'vaults'
@@ -381,8 +383,53 @@ export interface SleepSchedule {
   linked_qiyam_path_id?: string | null; is_active: boolean; created_at: string; updated_at?: string;
 }
 
+export type JournalMood = 'great' | 'good' | 'neutral' | 'difficult';
+
+export interface JournalEntry {
+  id: string;
+  user_id?: string;
+  title: string;
+  content: string;
+  entry_date: string;
+  mood?: JournalMood | null;
+  tags: string[];
+  pillar_id?: string | null;
+  project_id?: string | null;
+  audio_path?: string | null;
+  created_at: string;
+  updated_at?: string;
+}
+
+export type CalendarRecurrenceFrequency = 'none' | 'daily' | 'weekly' | 'monthly';
+
+export interface CalendarRecurrence {
+  frequency: CalendarRecurrenceFrequency;
+  interval: number;
+  days_of_week?: number[];
+  until?: string | null;
+}
+
+export interface CalendarEvent {
+  id: string;
+  user_id?: string;
+  title: string;
+  description: string;
+  start_at: string;
+  end_at?: string | null;
+  all_day: boolean;
+  timezone: string;
+  recurrence: CalendarRecurrence;
+  reminder_minutes?: number | null;
+  task_id?: string | null;
+  project_id?: string | null;
+  pillar_id?: string | null;
+  is_cancelled: boolean;
+  created_at: string;
+  updated_at?: string;
+}
+
 export interface AppDataSnapshot {
-  schemaVersion: 4;
+  schemaVersion: 5;
   pillars: Pillar[];
   visions: Vision[];
   goals: ValueGoal[];
@@ -401,5 +448,7 @@ export interface AppDataSnapshot {
   quranKhatmas: QuranKhatma[];
   quranHifzTrackers: QuranHifzTracker[];
   sleepSchedules: SleepSchedule[];
+  journals: JournalEntry[];
+  calendarEvents: CalendarEvent[];
 }
 

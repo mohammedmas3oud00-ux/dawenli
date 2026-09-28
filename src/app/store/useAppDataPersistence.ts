@@ -12,6 +12,8 @@ import { useHabitStore } from '../../features/habits/store/habitStore';
 import { useInboxStore } from '../../features/inbox/store/inboxStore';
 import { useVaultStore } from '../../features/vaults/store/vaultStore';
 import { useIbadatStore } from '../../features/ibadat/store/ibadatStore';
+import { useJournalStore } from '../../features/journals/store/journalStore';
+import { useCalendarStore } from '../../features/calendar/store/calendarStore';
 
 type AuthStatus = 'loading' | 'signedOut' | 'guest' | 'authenticated';
 
@@ -34,6 +36,8 @@ export function useAppDataPersistence({ user, authStatus, onLoadError }: UseAppD
   const { inboxItems } = useInboxStore();
   const { vaults } = useVaultStore();
   const { worshipDefinitions, worshipLogs } = useIbadatStore();
+  const { journals } = useJournalStore();
+  const { calendarEvents } = useCalendarStore();
   const {
     pillars, visions, goals, projects, reviews, focusSessions, timeBlocks,
     customFieldDefinitions, progressionPaths, quranKhatmas, quranHifzTrackers,
@@ -54,6 +58,8 @@ export function useAppDataPersistence({ user, authStatus, onLoadError }: UseAppD
     useVaultStore.getState().setVaults(snapshot.vaults);
     useIbadatStore.getState().setWorshipDefinitions(snapshot.worshipDefinitions);
     useIbadatStore.getState().setWorshipLogs(snapshot.worshipLogs);
+    useJournalStore.getState().setJournals(snapshot.journals);
+    useCalendarStore.getState().setCalendarEvents(snapshot.calendarEvents);
     setters.setFocusSessions(snapshot.focusSessions);
     setters.setTimeBlocks(snapshot.timeBlocks);
     setters.setCustomFieldDefinitions(snapshot.customFieldDefinitions);
@@ -93,10 +99,10 @@ export function useAppDataPersistence({ user, authStatus, onLoadError }: UseAppD
   }, [applySnapshot, authStatus, user?.id, user?.isGuest]);
 
   const snapshot = useMemo<AppDataSnapshot>(() => ({
-    schemaVersion: 4, pillars, visions, goals, projects, tasks, reviews, inboxItems, habits, vaults,
+    schemaVersion: 5, pillars, visions, goals, projects, tasks, reviews, inboxItems, habits, vaults,
     focusSessions, timeBlocks, customFieldDefinitions, worshipDefinitions, worshipLogs, progressionPaths,
-    quranKhatmas, quranHifzTrackers, sleepSchedules,
-  }), [pillars, visions, goals, projects, tasks, reviews, inboxItems, habits, vaults, focusSessions, timeBlocks, customFieldDefinitions, worshipDefinitions, worshipLogs, progressionPaths, quranKhatmas, quranHifzTrackers, sleepSchedules]);
+    quranKhatmas, quranHifzTrackers, sleepSchedules, journals, calendarEvents,
+  }), [pillars, visions, goals, projects, tasks, reviews, inboxItems, habits, vaults, focusSessions, timeBlocks, customFieldDefinitions, worshipDefinitions, worshipLogs, progressionPaths, quranKhatmas, quranHifzTrackers, sleepSchedules, journals, calendarEvents]);
 
   const saveSnapshot = useCallback(async (nextSnapshot: AppDataSnapshot) => {
     const repository = repositoryRef.current;

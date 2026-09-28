@@ -22,7 +22,7 @@ export interface DataRepository {
 }
 
 export const emptySnapshot = (): AppDataSnapshot => ({
-  schemaVersion: 4,
+  schemaVersion: 5,
   pillars: [],
   visions: [],
   goals: [],
@@ -41,6 +41,8 @@ export const emptySnapshot = (): AppDataSnapshot => ({
   quranKhatmas: [],
   quranHifzTrackers: [],
   sleepSchedules: [],
+  journals: [],
+  calendarEvents: [],
 });
 
 const GUEST_KEY = 'dawenli_guest_snapshot_v3';
@@ -86,6 +88,8 @@ const TABLES = [
   ['quran_khatmas', 'quranKhatmas'],
   ['quran_hifz_trackers', 'quranHifzTrackers'],
   ['sleep_schedules', 'sleepSchedules'],
+  ['journal_entries', 'journals'],
+  ['calendar_events', 'calendarEvents'],
 ] as const;
 
 export class SupabaseRepository implements DataRepository {
@@ -231,6 +235,20 @@ function toDatabaseRow(row: Record<string, unknown>, userId: string, table?: str
       normalized.adjustment_frequency_days = row.adjustment_frequency_days ?? 7;
       normalized.is_active = row.is_active ?? true;
       break;
+    case 'journal_entries':
+      normalized.content = row.content || '';
+      normalized.entry_date = row.entry_date || String(row.created_at || now).slice(0, 10);
+      normalized.tags = row.tags ?? [];
+      normalized.audio_path = row.audio_path ?? null;
+      break;
+    case 'calendar_events':
+      normalized.description = row.description || '';
+      normalized.all_day = row.all_day ?? false;
+      normalized.timezone = row.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'Africa/Cairo';
+      normalized.recurrence = row.recurrence ?? { frequency: 'none', interval: 1 };
+      normalized.reminder_minutes = row.reminder_minutes ?? null;
+      normalized.is_cancelled = row.is_cancelled ?? false;
+      break;
   }
 
   delete normalized.schemaVersion;
@@ -260,7 +278,7 @@ export function normalizeSnapshot(value: Partial<AppDataSnapshot>): AppDataSnaps
   return {
     ...base,
     ...value,
-    schemaVersion: 4,
+    schemaVersion: 5,
     pillars: Array.isArray(value.pillars) ? value.pillars : [],
     visions: Array.isArray(value.visions) ? value.visions : [],
     goals: Array.isArray(value.goals) ? value.goals : [],
@@ -284,6 +302,8 @@ export function normalizeSnapshot(value: Partial<AppDataSnapshot>): AppDataSnaps
     quranKhatmas: Array.isArray(value.quranKhatmas) ? value.quranKhatmas.map((khatma) => ({ ...khatma, is_completed: khatma.is_completed ?? false })) : [],
     quranHifzTrackers: Array.isArray(value.quranHifzTrackers) ? value.quranHifzTrackers.map((tracker) => ({ ...tracker, surahs: tracker.surahs ?? [], total_memorized_pages: tracker.total_memorized_pages ?? 0, daily_review_pages: tracker.daily_review_pages ?? 0 })) : [],
     sleepSchedules: Array.isArray(value.sleepSchedules) ? value.sleepSchedules.map((schedule) => ({ ...schedule, adjustment_minutes: schedule.adjustment_minutes ?? 15, adjustment_frequency_days: schedule.adjustment_frequency_days ?? 7, is_active: schedule.is_active ?? true })) : [],
+    journals: Array.isArray(value.journals) ? value.journals.map((entry) => ({ ...entry, content: entry.content || '', entry_date: entry.entry_date || String(entry.created_at || new Date().toISOString()).slice(0, 10), tags: entry.tags ?? [], audio_path: entry.audio_path ?? null })) : [],
+    calendarEvents: Array.isArray(value.calendarEvents) ? value.calendarEvents.map((event) => ({ ...event, description: event.description || '', all_day: event.all_day ?? false, timezone: event.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'Africa/Cairo', recurrence: event.recurrence ?? { frequency: 'none', interval: 1 }, reminder_minutes: event.reminder_minutes ?? null, is_cancelled: event.is_cancelled ?? false })) : [],
   };
 }
 

@@ -9,7 +9,7 @@ async function authHeaders() {
 export type PushNotificationPreferences = {
   prayerEnabled?: boolean; taskEnabled?: boolean; worshipEnabled?: boolean;
   adhkarEnabled?: boolean; quranEnabled?: boolean; qiyamEnabled?: boolean;
-  sleepEnabled?: boolean; streakEnabled?: boolean;
+  sleepEnabled?: boolean; streakEnabled?: boolean; calendarEnabled?: boolean;
 };
 
 export async function subscribeToPush(prayerTimes: Record<string, string> = {}, options: PushNotificationPreferences = {}): Promise<void> {
@@ -24,7 +24,7 @@ export async function subscribeToPush(prayerTimes: Record<string, string> = {}, 
   const registration = await navigator.serviceWorker.ready;
   const subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(keyBody.data.publicKey) as unknown as BufferSource });
   const payload: Record<string, unknown> = { subscription, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone };
-  for (const key of ['prayerEnabled', 'taskEnabled', 'worshipEnabled', 'adhkarEnabled', 'quranEnabled', 'qiyamEnabled', 'sleepEnabled', 'streakEnabled'] as const) {
+  for (const key of ['prayerEnabled', 'taskEnabled', 'worshipEnabled', 'adhkarEnabled', 'quranEnabled', 'qiyamEnabled', 'sleepEnabled', 'streakEnabled', 'calendarEnabled'] as const) {
     if (typeof options[key] === 'boolean') payload[key] = options[key];
   }
   if (Object.keys(prayerTimes).length) payload.prayerTimes = prayerTimes;
@@ -41,7 +41,7 @@ export async function getPushPreferences(): Promise<PushNotificationPreferences 
   if (!response.ok) throw new Error('تعذر تحميل إعدادات الإشعارات المحفوظة.');
   const { data } = await response.json();
   if (!data) return null;
-  return Object.fromEntries(['prayer', 'task', 'worship', 'adhkar', 'quran', 'qiyam', 'sleep', 'streak'].map((name) => [`${name}Enabled`, data[`${name}_enabled`] !== false]));
+  return Object.fromEntries(['prayer', 'task', 'worship', 'adhkar', 'quran', 'qiyam', 'sleep', 'streak', 'calendar'].map((name) => [`${name}Enabled`, data[`${name}_enabled`] !== false]));
 }
 
 function urlBase64ToUint8Array(value: string): Uint8Array {

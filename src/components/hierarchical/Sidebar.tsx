@@ -19,7 +19,9 @@ import {
   Mic,
   Sparkles,
   LogIn,
-  LogOut
+  LogOut,
+  BookHeart,
+  CalendarClock
 } from 'lucide-react';
 import { SidebarTab } from '../../types/hierarchical';
 
@@ -38,6 +40,8 @@ interface SidebarProps {
     vaults?: number;
     focus?: number;
     timeBlocks?: number;
+    calendar?: number;
+    journals?: number;
     ibadat?: number;
   };
   isOpenMobile: boolean;
@@ -89,6 +93,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: 'حجب الوقت',
       icon: <Calendar className="w-4 h-4 text-sky-700 dark:text-sky-400" />,
       badge: counts.timeBlocks || 0,
+    },
+    {
+      id: 'calendar',
+      label: 'التقويم والمواعيد',
+      icon: <CalendarClock className="w-4 h-4 text-sky-700 dark:text-sky-400" />,
+      badge: counts.calendar || 0,
+    },
+    {
+      id: 'journals',
+      label: 'اليوميات',
+      icon: <BookHeart className="w-4 h-4 text-rose-700 dark:text-rose-400" />,
+      badge: counts.journals || 0,
     },
     {
       id: 'inbox',
