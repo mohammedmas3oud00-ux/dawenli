@@ -75,15 +75,15 @@ alter table public.push_subscriptions add column if not exists calendar_enabled 
 
 create or replace function public.dawenli_save_snapshot(p_snapshot jsonb) returns void language plpgsql security definer set search_path = public, pg_temp as $$
 declare table_name text; item jsonb; source_key text; schema_version integer;
-  insert_order text[] := array['pillars','visions','value_goals','projects','tasks','system_reviews','inbox_items','habits','vault_items','focus_sessions','time_blocks','custom_field_definitions','worship_definitions','worship_logs','progression_paths','quran_khatmas','quran_hifz_trackers','sleep_schedules'];
-  delete_order text[] := array['sleep_schedules','quran_hifz_trackers','quran_khatmas','progression_paths','worship_logs','worship_definitions','time_blocks','focus_sessions','tasks','projects','value_goals','visions','system_reviews','inbox_items','habits','vault_items','custom_field_definitions','pillars'];
+  insert_order text[] := array['pillars','visions','value_goals','projects','tasks','system_reviews','inbox_items','habits','vault_items','focus_sessions','time_blocks','journal_entries','calendar_events','custom_field_definitions','worship_definitions','worship_logs','progression_paths','quran_khatmas','quran_hifz_trackers','sleep_schedules'];
+  delete_order text[] := array['sleep_schedules','quran_hifz_trackers','quran_khatmas','progression_paths','worship_logs','worship_definitions','calendar_events','journal_entries','time_blocks','focus_sessions','tasks','projects','value_goals','visions','system_reviews','inbox_items','habits','vault_items','custom_field_definitions','pillars'];
 begin
   if auth.uid() is null then raise exception using errcode='42501', message='Authentication required'; end if;
   if p_snapshot is null or jsonb_typeof(p_snapshot) <> 'object' then raise exception using errcode='22P02', message='Invalid snapshot'; end if;
   schema_version := coalesce(nullif(p_snapshot->>'schemaVersion','')::integer, 0);
-  if schema_version >= 5 then
-    insert_order := array_cat(insert_order, array['journal_entries','calendar_events']);
-    delete_order := array_cat(array['calendar_events','journal_entries'], delete_order);
+  if schema_version < 5 then
+    insert_order := array['pillars','visions','value_goals','projects','tasks','system_reviews','inbox_items','habits','vault_items','focus_sessions','time_blocks','custom_field_definitions','worship_definitions','worship_logs','progression_paths','quran_khatmas','quran_hifz_trackers','sleep_schedules'];
+    delete_order := array['sleep_schedules','quran_hifz_trackers','quran_khatmas','progression_paths','worship_logs','worship_definitions','time_blocks','focus_sessions','tasks','projects','value_goals','visions','system_reviews','inbox_items','habits','vault_items','custom_field_definitions','pillars'];
   end if;
   foreach source_key in array insert_order loop
     for item in select value from jsonb_array_elements(coalesce(p_snapshot->source_key, '[]'::jsonb)) loop
