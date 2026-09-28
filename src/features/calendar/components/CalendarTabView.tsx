@@ -40,11 +40,13 @@ export function CalendarTabView({ events, pillars, projects, tasks, onSave, onDe
   const [pillarId, setPillarId] = useState('');
   const [projectId, setProjectId] = useState('');
   const [taskId, setTaskId] = useState('');
+  const [formError, setFormError] = useState('');
 
   const sorted = useMemo(() => [...events].filter((event) => !event.is_cancelled).sort((a, b) => a.start_at.localeCompare(b.start_at)), [events]);
   const showForm = (event?: CalendarEvent) => {
-    const start = localParts(event?.start_at);
-    const end = localParts(event?.end_at || event?.start_at);
+    const start = event ? localParts(event.start_at) : { date: toLocalDateKey(), time: '09:00' };
+    const end = event ? localParts(event.end_at || new Date(new Date(event.start_at).getTime() + 3600000).toISOString()) : { date: toLocalDateKey(), time: '10:00' };
+    setFormError('');
     setEditing(event || null); setTitle(event?.title || ''); setDescription(event?.description || ''); setDate(start.date);
     setStartTime(start.time); setEndTime(end.time); setAllDay(event?.all_day || false); setFrequency(event?.recurrence.frequency || 'none');
     setInterval(event?.recurrence.interval || 1); setDays(event?.recurrence.days_of_week || []); setUntil(event?.recurrence.until || '');
@@ -54,7 +56,9 @@ export function CalendarTabView({ events, pillars, projects, tasks, onSave, onDe
     formEvent.preventDefault();
     const startAt = toIso(date, startTime, allDay);
     const endAt = allDay ? new Date(new Date(startAt).getTime() + 86400000).toISOString() : toIso(date, endTime, false);
-    if (new Date(endAt) <= new Date(startAt)) return;
+    if (!title.trim()) { setFormError('أدخل عنوان الموعد.'); return; }
+    if (new Date(endAt) <= new Date(startAt)) { setFormError('يجب أن يكون وقت النهاية بعد وقت البداية.'); return; }
+    setFormError('');
     onSave({ ...(editing ? { id: editing.id, created_at: editing.created_at } : {}), title: title.trim(), description: description.trim(), start_at: startAt, end_at: endAt, all_day: allDay,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Africa/Cairo', recurrence: { frequency, interval: Math.max(1, interval), days_of_week: frequency === 'weekly' ? days : [], until: until || null },
       reminder_minutes: reminder === '' ? null : Math.max(0, Number(reminder)), pillar_id: pillarId || null, project_id: projectId || null, task_id: taskId || null, is_cancelled: false });
@@ -73,7 +77,8 @@ export function CalendarTabView({ events, pillars, projects, tasks, onSave, onDe
       <div className="grid gap-3 sm:grid-cols-3"><label className="text-xs">التكرار<select value={frequency} onChange={(event) => setFrequency(event.target.value as CalendarRecurrenceFrequency)} className="mt-1 w-full rounded-xl border p-2.5 dark:border-slate-700 dark:bg-slate-800">{Object.entries(recurrenceLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label className="text-xs">كل<input type="number" min="1" value={interval} onChange={(event) => setInterval(Number(event.target.value))} className="mt-1 w-full rounded-xl border p-2.5 dark:border-slate-700 dark:bg-slate-800" /></label><label className="text-xs">حتى<input type="date" value={until} onChange={(event) => setUntil(event.target.value)} className="mt-1 w-full rounded-xl border p-2.5 dark:border-slate-700 dark:bg-slate-800" /></label></div>
       {frequency === 'weekly' && <div className="flex flex-wrap gap-1">{dayLabels.map((label, index) => <button type="button" key={label} onClick={() => setDays((current) => current.includes(index) ? current.filter((day) => day !== index) : [...current, index])} className={`rounded-lg px-2 py-1 text-xs ${days.includes(index) ? 'bg-[#174235] text-white' : 'bg-slate-100 dark:bg-slate-800'}`}>{label}</button>)}</div>}
       <div className="grid gap-3 sm:grid-cols-2"><label className="text-xs">التذكير بالدقائق<input type="number" min="0" max="10080" value={reminder} onChange={(event) => setReminder(event.target.value)} className="mt-1 w-full rounded-xl border p-2.5 dark:border-slate-700 dark:bg-slate-800" /></label><label className="text-xs">الركيزة<select value={pillarId} onChange={(event) => setPillarId(event.target.value)} className="mt-1 w-full rounded-xl border p-2.5 dark:border-slate-700 dark:bg-slate-800"><option value="">بدون</option>{pillars.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}</select></label><label className="text-xs">المشروع<select value={projectId} onChange={(event) => setProjectId(event.target.value)} className="mt-1 w-full rounded-xl border p-2.5 dark:border-slate-700 dark:bg-slate-800"><option value="">بدون</option>{projects.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}</select></label><label className="text-xs">المهمة<select value={taskId} onChange={(event) => setTaskId(event.target.value)} className="mt-1 w-full rounded-xl border p-2.5 dark:border-slate-700 dark:bg-slate-800"><option value="">بدون</option>{tasks.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}</select></label></div>
-      <button className="w-full rounded-xl bg-[#174235] py-3 text-sm font-bold text-white">حفظ الموعد</button></form></div>}
+      {formError && <p role="alert" className="rounded-xl bg-rose-50 p-3 text-xs font-bold text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">{formError}</p>}
+      <button type="submit" className="w-full rounded-xl bg-[#174235] py-3 text-sm font-bold text-white">حفظ الموعد</button></form></div>}
   </div>;
 }
 

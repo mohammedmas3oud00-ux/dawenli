@@ -113,6 +113,8 @@ export const HierarchicalApp: React.FC = () => {
   // Modals state
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [isVoiceAiModalOpen, setIsVoiceAiModalOpen] = useState(false);
+  const [isGeminiModalOpen, setIsGeminiModalOpen] = useState(false);
+  const [geminiKeyDraft, setGeminiKeyDraft] = useState('');
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
@@ -233,21 +235,26 @@ export const HierarchicalApp: React.FC = () => {
       alert('ميزات Gemini متاحة للحسابات المسجلة فقط.');
       return false;
     }
-    const alreadyConfigured = await refreshCredential().catch(() => aiConfigured);
-    const entered = window.prompt(alreadyConfigured
-      ? 'أدخل مفتاح Gemini جديدًا لاستبدال المفتاح المحفوظ، أو اترك الحقل فارغًا للاحتفاظ بالحالي.'
-      : 'أدخل مفتاح Gemini. سيُشفّر ويُحفظ لخزينة حسابك ولا يظهر كاملًا مرة أخرى.');
-    if (entered === null) return alreadyConfigured;
-    if (!entered.trim()) {
-      return alreadyConfigured;
+    await refreshCredential().catch(() => false);
+    setGeminiKeyDraft('');
+    setIsGeminiModalOpen(true);
+    return false;
+  };
+
+  const handleSaveGeminiKey = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const value = geminiKeyDraft.trim();
+    if (value.length < 16) {
+      setToasts((previous) => [...previous, { id: createId(), type: 'error', title: 'مفتاح Gemini غير صالح', description: 'ألصق مفتاح Gemini كاملًا ثم حاول مرة أخرى.' }]);
+      return;
     }
     try {
-      await saveCredential(entered);
+      await saveCredential(value);
+      setIsGeminiModalOpen(false);
+      setGeminiKeyDraft('');
       setToasts((previous) => [...previous, { id: createId(), type: 'success', title: 'تم حفظ Gemini بأمان', description: 'المفتاح مشفّر ومربوط بحسابك فقط.' }]);
-      return true;
     } catch (error) {
-      setToasts((previous) => [...previous, { id: createId(), type: 'error', title: 'تعذر حفظ مفتاح Gemini', description: error instanceof Error ? error.message : 'حاول مرة أخرى.' }]);
-      return false;
+      setToasts((previous) => [...previous, { id: createId(), type: 'error', title: 'تعذر حفظ مفتاح Gemini', description: error instanceof Error ? error.message : 'تحقق من اتصال الحساب ثم حاول مرة أخرى.' }]);
     }
   };
 
@@ -1510,6 +1517,15 @@ export const HierarchicalApp: React.FC = () => {
         projects={projects}
         defaultDueDate={newTaskDueDate}
       />
+
+      {isGeminiModalOpen && <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/70 p-4" dir="rtl">
+        <form onSubmit={handleSaveGeminiKey} className="w-full max-w-lg space-y-4 rounded-2xl bg-white p-5 shadow-2xl dark:bg-slate-900">
+          <div className="flex items-center justify-between"><div><h2 className="font-bold text-slate-900 dark:text-white">إعداد مفتاح Gemini</h2><p className="mt-1 text-xs text-slate-500">المفتاح يُرسل إلى خادم Dawenli ويُحفظ مشفرًا لحسابك فقط.</p></div><button type="button" onClick={() => setIsGeminiModalOpen(false)} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">×</button></div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">Gemini API Key<input autoFocus type="password" value={geminiKeyDraft} onChange={(event) => setGeminiKeyDraft(event.target.value)} placeholder="AIza..." className="mt-2 w-full rounded-xl border border-slate-300 bg-slate-50 p-3 font-mono text-sm outline-none focus:border-emerald-600 dark:border-slate-700 dark:bg-slate-800" /></label>
+          <p className="text-xs text-slate-500">يمكنك إنشاء المفتاح من Google AI Studio. لا تضعه في الكود أو في ملف عام.</p>
+          <div className="flex justify-end gap-2"><button type="button" onClick={() => setIsGeminiModalOpen(false)} className="rounded-xl border px-4 py-2 text-sm dark:border-slate-700">إلغاء</button><button type="submit" className="rounded-xl bg-[#174235] px-5 py-2 text-sm font-bold text-white">حفظ المفتاح</button></div>
+        </form>
+      </div>}
 
       {/* Voice & Gemini AI Intelligent Capture & Decomposition Modal */}
       <VoiceAiCaptureModal

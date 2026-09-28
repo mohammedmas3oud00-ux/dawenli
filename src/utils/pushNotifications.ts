@@ -18,11 +18,15 @@ export async function subscribeToPush(prayerTimes: Record<string, string> = {}, 
   }
   const permission = await Notification.requestPermission();
   if (permission !== 'granted') throw new Error('لم يتم منح إذن الإشعارات.');
-  const keyResponse = await fetch('/api/push/public-key');
-  const keyBody = await keyResponse.json() as { data?: { publicKey?: string }; error?: { message?: string } };
-  if (!keyResponse.ok || !keyBody.data?.publicKey) throw new Error(keyBody.error?.message || 'إشعارات الخلفية غير مهيأة.');
+  const keyResponse = await fetch('/api/push/public-key', { headers: { Accept: 'application/json' } });
+  const keyBody = await keyResponse.json().catch(() => null) as { data?: { publicKey?: string }; error?: { message?: string } } | null;
+  if (!keyResponse.ok || !keyBody?.data?.publicKey) throw new Error(keyBody?.error?.message || 'إشعارات الخلفية غير مهيأة.');
+  const applicationServerKey = urlBase64ToUint8Array(keyBody.data.publicKey);
+  if (applicationServerKey.byteLength !== 65) throw new Error('مفتاح إشعارات الخلفية غير صالح. أعد المحاولة بعد تحديث الصفحة.');
   const registration = await navigator.serviceWorker.ready;
-  const subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(keyBody.data.publicKey) as unknown as BufferSource });
+  const previousSubscription = await registration.pushManager.getSubscription();
+  if (previousSubscription) await previousSubscription.unsubscribe();
+  const subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: applicationServerKey as unknown as BufferSource });
   const payload: Record<string, unknown> = { subscription, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone };
   for (const key of ['prayerEnabled', 'taskEnabled', 'worshipEnabled', 'adhkarEnabled', 'quranEnabled', 'qiyamEnabled', 'sleepEnabled', 'streakEnabled', 'calendarEnabled'] as const) {
     if (typeof options[key] === 'boolean') payload[key] = options[key];
