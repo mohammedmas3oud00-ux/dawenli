@@ -191,6 +191,10 @@ declare
     'custom_field_definitions','pillars'
   ];
 begin
+  -- Bound lock waits and full-snapshot writes so one stale tab cannot exhaust PostgREST.
+  set local lock_timeout = '5s';
+  set local statement_timeout = '30s';
+
   if caller_id is null then
     raise exception using errcode = '42501', message = 'Authentication required';
   end if;
