@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { changeWorshipSettings, configuredProgression, targetStreak } from './ibadat';
 import type { WorshipDefinition, WorshipLog } from '../types/hierarchical';
-import { hijriDate, isEditableWorshipDate, isWorshipScheduled, isWorshipComplete, progressionSuggestion, updateWorshipLog, worshipInsights, worshipStreak, worshipSummary } from './ibadat';
+import { hijriDate, isEditableWorshipDate, isWorshipScheduled, isWorshipComplete, progressionSuggestion, updateWorshipLog, worshipInsights, worshipStreak, worshipSummary, worshipProgress } from './ibadat';
 
 const definition = (id: string): WorshipDefinition => ({ id, pillar_id: 'pillar', title: id, category: 'salah', tracking_type: 'multi_option', frequency: 'daily', is_active: true, sort_order: 0, created_at: '2026-09-01T00:00:00Z' });
 const log = (worship_id: string, date: string): WorshipLog => ({ id: `${worship_id}-${date}`, worship_id, date, is_completed: true, created_at: `${date}T00:00:00Z` });
@@ -26,7 +26,7 @@ describe('ibadat calculations', () => {
     const d: WorshipDefinition = { ...definition('quran'), category: 'quran_wird', tracking_type: 'pages', target_pages: 5, progression_days: 30 };
     const path = { id: 'p', worship_id: d.id, title: '', stages: [], current_stage_index: 0, stage_start_date: '2026-09-01', consecutive_days: 100, auto_promote: false, created_at: '2026-09-01' };
     expect(configuredProgression(path, d).stages[0]).toMatchObject({ target_value: 5, days_required: 30 });
-    expect(configuredProgression(path, d).stages[1].target_value).toBe(10);
+    expect(configuredProgression(path, d).stages[1].target_value).toBe(7.5);
     const logs = [24, 25, 26].map((day) => ({ ...log('quran', `2026-09-${day}`), pages_read: day === 25 ? 1 : 5 }));
     expect(targetStreak(d, logs, path.stage_start_date, '2026-09-27')).toBe(1);
   });
@@ -55,8 +55,16 @@ describe('ibadat calculations', () => {
     const quran: WorshipDefinition = { ...definition('quran'), category: 'quran_wird', tracking_type: 'pages', target_pages: 1 };
     expect(isWorshipComplete(quran, { ...log('quran', '2026-09-27'), pages_read: 1 })).toBe(false);
     expect(isWorshipComplete(quran, { ...log('quran', '2026-09-27'), pages_read: 5 })).toBe(true);
-    expect(configuredProgression({ id: 'p', worship_id: 'quran', title: '', stages: [], current_stage_index: 0, stage_start_date: '2026-09-27', consecutive_days: 0, auto_promote: false, created_at: '2026-09-27' }, quran).stages[0].target_value).toBe(5);
+    expect(configuredProgression({ id: 'p', worship_id: 'quran', title: '', stages: [], current_stage_index: 0, stage_start_date: '2026-09-27', consecutive_days: 0, auto_promote: false, created_at: '2026-09-27' }, quran).stages[0].target_value).toBe(2.5);
   });
+  it('counts partial rakaat progress without marking the worship complete', () => {
+    const sunnah: WorshipDefinition = { ...definition('sunnah'), category: 'sunnah_rawatib', tracking_type: 'counter', target_count: 4 };
+    const partial = { ...log('sunnah', '2026-09-27'), count: 2, is_completed: false };
+    expect(isWorshipComplete(sunnah, partial)).toBe(false);
+    expect(worshipProgress(sunnah, partial)).toBe(0.5);
+    expect(worshipSummary([sunnah], [partial], '2026-09-27')).toMatchObject({ completed: 0, partial: 1, rate: 50 });
+  });
+
   it('preserves yesterday streak while today is unfinished', () => {
     expect(worshipStreak([definition('fajr')], [log('fajr', '2026-09-26')], '2026-09-27')).toBe(1);
   });

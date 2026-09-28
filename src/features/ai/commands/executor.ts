@@ -103,7 +103,24 @@ export function applyAiCommandActions(snapshot: AppDataSnapshot, actions: AiComm
       case 'habit': { const pillarId = resolveId(next.pillars, action, created, 'الركيزة'); next.habits.push({ id, pillar_id: pillarId, title: text(action.title, 'عادة جديدة'), description: action.description || '', frequency: (action.frequency as Habit['frequency']) || 'daily', target_days_per_week: 7, custom_days: [], time_of_day: 'anytime', current_streak: 0, longest_streak: 0, completed_dates: [], is_active: true, created_at: createdAt }); break; }
       case 'ibadat': { const pillarId = resolveId(next.pillars, action, created, 'الركيزة'); next.worshipDefinitions.push({ id, pillar_id: pillarId, title: text(action.title, 'عبادة جديدة'), category: (action.category as WorshipDefinition['category']) || 'custom_dua', tracking_type: (action.trackingType as WorshipDefinition['tracking_type']) || 'checkbox', frequency: (action.frequency as WorshipDefinition['frequency']) || 'daily', target_count: action.targetCount, target_pages: action.targetPages, is_active: true, sort_order: next.worshipDefinitions.length, created_at: createdAt }); break; }
       case 'inbox': next.inboxItems.push({ id, title: text(action.title, 'التقاط جديد'), content: action.content || action.description || '', source_type: 'idea', status: 'inbox', created_at: createdAt }); break;
-      case 'journal': { const parentId = action.parentId && (created.get(action.parentId) || action.parentId); const entry: JournalEntry = { id, title: text(action.title, 'يومياتي'), content: action.content || action.description || action.title || '', entry_date: action.date || toLocalDateKey(), mood: action.mood || null, tags: action.tags || [], pillar_id: next.pillars.some((item) => item.id === parentId) ? parentId : null, project_id: next.projects.some((item) => item.id === parentId) ? parentId : null, audio_path: null, created_at: createdAt }; next.journals.push(entry); createdJournalIds.push(id); break; }
+      case 'journal': {
+        const parentId = action.parentId && (created.get(action.parentId) || action.parentId);
+        const entryDate = action.date || toLocalDateKey();
+        const existing = next.journals.find((item) => item.entry_date === entryDate);
+        if (existing) {
+          const incoming = action.content || action.description || action.title || '';
+          existing.content = [existing.content.trim(), incoming.trim()].filter(Boolean).join('\n\n');
+          existing.tags = [...new Set([...(existing.tags || []), ...(action.tags || [])])];
+          existing.mood = action.mood ?? existing.mood;
+          existing.updated_at = createdAt;
+          created.set(action.actionId, existing.id);
+          createdJournalIds.push(existing.id);
+        } else {
+          const entry: JournalEntry = { id, title: text(action.title, 'يومياتي'), content: action.content || action.description || action.title || '', entry_date: entryDate, mood: action.mood || null, tags: action.tags || [], pillar_id: next.pillars.some((item) => item.id === parentId) ? parentId : null, project_id: next.projects.some((item) => item.id === parentId) ? parentId : null, audio_path: null, created_at: createdAt };
+          next.journals.push(entry); createdJournalIds.push(id);
+        }
+        break;
+      }
       case 'calendar_event': { if (!action.startAt || Number.isNaN(Date.parse(action.startAt))) throw new Error('الموعد يحتاج تاريخ بداية واضحًا.'); const endAt = action.endAt || new Date(Date.parse(action.startAt) + 3600000).toISOString(); if (Date.parse(endAt) <= Date.parse(action.startAt)) throw new Error('نهاية الموعد يجب أن تكون بعد بدايته.'); const event: CalendarEvent = { id, title: text(action.title, 'موعد جديد'), description: action.description || '', start_at: action.startAt, end_at: endAt, all_day: action.allDay || false, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Africa/Cairo', recurrence: { frequency: action.recurrenceFrequency || 'none', interval: action.recurrenceInterval || 1, days_of_week: action.recurrenceDays || [], until: action.recurrenceUntil || null }, reminder_minutes: action.reminderMinutes ?? 15, task_id: action.parentId && next.tasks.some((item) => item.id === action.parentId) ? action.parentId : null, project_id: action.parentId && next.projects.some((item) => item.id === action.parentId) ? action.parentId : null, pillar_id: action.parentId && next.pillars.some((item) => item.id === action.parentId) ? action.parentId : null, is_cancelled: false, created_at: createdAt }; next.calendarEvents.push(event); break; }
     }
   }

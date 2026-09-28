@@ -1,4 +1,4 @@
-import React, { lazy, useState, useEffect } from 'react';
+import React, { lazy, useState, useEffect, useRef } from 'react';
 import { DailyOverview } from './DailyOverview';
 import { changeWorshipSettings, configuredProgression, targetStreak } from '../../utils/ibadat';
 import { 
@@ -26,6 +26,7 @@ import {
   CalendarEvent
 } from '../../types/hierarchical';
 import { recalculateAllHierarchicalProgress } from '../../utils/hierarchicalStore';
+import { QURAN_QUARTER_PAGES } from '../../utils/ibadat';
 
 import { Breadcrumbs } from './Breadcrumbs';
 import { Sidebar } from './Sidebar';
@@ -59,7 +60,7 @@ const VoiceAiCaptureModal = lazy(() => import('./VoiceAiCaptureModal').then((mod
 import { AuthModal } from './AuthModal';
 import { InstallAppButton } from './InstallAppButton';
 import { ToastContainer, ToastMessage } from './ToastNotification';
-import { Plus, Menu, Mic, Sparkles, Sun, Moon, User, LogIn, LogOut, KeyRound, Trash2 } from 'lucide-react';
+import { Plus, Menu, Mic, Sparkles, Sun, Moon, User, LogIn, LogOut, KeyRound, Trash2, ArrowRight } from 'lucide-react';
 import { setTaskStatus, toggleTaskStatus, upsertTask } from '../../features/tasks/utils/taskActions';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import { useAppStore } from '../../app/store/appStore';
@@ -109,6 +110,28 @@ export const HierarchicalApp: React.FC = () => {
     selectedPillarId, setSelectedPillarId, selectedVisionId, setSelectedVisionId, selectedGoalId, setSelectedGoalId,
     selectedProjectId, setSelectedProjectId,
   } = useDashboardNavigation();
+  const previousTabRef = useRef(currentTab);
+  const skipNextHistoryPushRef = useRef(false);
+
+  useEffect(() => {
+    if (!window.history.state?.dawenliNavigation) window.history.replaceState({ dawenliNavigation: true, tab: currentTab }, '', window.location.href);
+    const handlePopState = (event: PopStateEvent) => {
+      skipNextHistoryPushRef.current = true;
+      setCurrentTab((event.state?.dawenliNavigation && event.state.tab) || 'hierarchy');
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [currentTab, setCurrentTab]);
+
+  useEffect(() => {
+    if (previousTabRef.current === currentTab) return;
+    if (skipNextHistoryPushRef.current) {
+      skipNextHistoryPushRef.current = false;
+    } else {
+      window.history.pushState({ dawenliNavigation: true, tab: currentTab }, '', window.location.href);
+    }
+    previousTabRef.current = currentTab;
+  }, [currentTab]);
 
   // Modals state
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
@@ -326,9 +349,16 @@ export const HierarchicalApp: React.FC = () => {
 
   const handleSaveJournal = (input: Partial<JournalEntry>) => {
     const now = new Date().toISOString();
+    const entryDate = input.entry_date || toLocalDateKey();
     setJournals((current) => {
-      const existing = input.id ? current.find((entry) => entry.id === input.id) : undefined;
-      const entry: JournalEntry = { id: input.id || createId(), title: input.title || 'يومياتي', content: input.content || '', entry_date: input.entry_date || toLocalDateKey(), mood: input.mood || null, tags: input.tags || [], pillar_id: input.pillar_id || null, project_id: input.project_id || null, audio_path: input.audio_path ?? existing?.audio_path ?? null, created_at: existing?.created_at || now, updated_at: now };
+      const existing = input.id ? current.find((entry) => entry.id === input.id) : current.find((entry) => entry.entry_date === entryDate);
+      if (existing && !input.id) {
+        const newContent = (input.content || '').trim();
+        const mergedContent = [existing.content.trim(), newContent].filter(Boolean).join('\n\n');
+        const mergedTags = [...new Set([...(existing.tags || []), ...(input.tags || [])])];
+        return current.map((item) => item.id === existing.id ? { ...item, content: mergedContent, mood: input.mood ?? item.mood, tags: mergedTags, pillar_id: input.pillar_id ?? item.pillar_id, project_id: input.project_id ?? item.project_id, audio_path: input.audio_path ?? item.audio_path, updated_at: now } : item);
+      }
+      const entry: JournalEntry = { id: input.id || createId(), title: input.title || 'يومياتي', content: input.content || '', entry_date: entryDate, mood: input.mood || null, tags: input.tags || [], pillar_id: input.pillar_id || null, project_id: input.project_id || null, audio_path: input.audio_path ?? existing?.audio_path ?? null, created_at: existing?.created_at || now, updated_at: now };
       return existing ? current.map((item) => item.id === entry.id ? entry : item) : [...current, entry];
     });
   };
@@ -781,8 +811,8 @@ export const HierarchicalApp: React.FC = () => {
       ...(['الفجر', 'الظهر', 'العصر', 'المغرب', 'العشاء'] as const).map((title, index) => ({ category: 'salah' as const, title, tracking_type: 'multi_option' as const, frequency: 'daily' as const, time_of_day: ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'][index] as WorshipDefinition['time_of_day'] })),
       { category: 'adhkar', title: 'أذكار الصباح', tracking_type: 'checkbox', frequency: 'daily', time_of_day: 'morning' },
       { category: 'adhkar', title: 'أذكار المساء', tracking_type: 'checkbox', frequency: 'daily', time_of_day: 'evening' },
-      // ربع الجزء ≈ 5 صفحات في مصحف المدينة؛ الزيادة تتم عبر مسار اقتراحي.
-      { category: 'quran_wird', title: 'ورد القرآن (ربع يوميًا)', tracking_type: 'pages', frequency: 'daily', target_pages: 5 },
+      // الجزء = حزبان، والحزب = 4 أرباع؛ الربع ≈ 2.5 صفحة في مصحف المدينة.
+      { category: 'quran_wird', title: 'ورد القرآن (ربع حزب يوميًا)', tracking_type: 'pages', frequency: 'daily', target_pages: QURAN_QUARTER_PAGES },
       { category: 'qiyam', title: 'قيام الليل', tracking_type: 'multi_option', frequency: 'daily', time_of_day: 'night' },
       { category: 'fasting', title: 'صيام التطوع (الاثنين والخميس)', tracking_type: 'multi_option', frequency: 'custom', scheduled_days: [1, 4] },
       { category: 'sunnah_rawatib', title: 'سنة الفجر — قبل الصلاة', time_of_day: 'fajr', tracking_type: 'counter', frequency: 'daily', target_count: 2 },
@@ -799,7 +829,7 @@ export const HierarchicalApp: React.FC = () => {
     } as WorshipDefinition));
     const definitions = [...worshipDefinitions, ...additions].map((definition) => {
       if (!categories.includes(definition.category) || progressionPaths.some((p) => p.worship_id === definition.id)) return definition;
-      if (definition.category === 'quran_wird') return { ...definition, target_pages: 5 };
+      if (definition.category === 'quran_wird') return { ...definition, target_pages: QURAN_QUARTER_PAGES };
       if (definition.category === 'fasting') return { ...definition, scheduled_days: [1, 4] };
       return definition;
     });
@@ -810,12 +840,12 @@ export const HierarchicalApp: React.FC = () => {
     setWorshipDefinitions(definitions);
     const progression: ProgressionPath[] = [];
     if (qiyam) progression.push({ id: createId(), worship_id: qiyam.id, title: 'مسار قيام الليل', stages: [{ index: 0, title: 'البداية', description: 'ركعتان بعد العشاء', target_value: 2, days_required: 7 }, { index: 1, title: 'التثبيت', description: 'أربع ركعات بعد العشاء', target_value: 4, days_required: 10 }, { index: 2, title: 'الثلث الأخير', description: 'أربع إلى ثمان ركعات قبل الفجر', target_value: 4, days_required: 14 }], current_stage_index: 0, stage_start_date: toLocalDateKey(), consecutive_days: 0, auto_promote: false, created_at: now });
-    if (quran) progression.push({ id: createId(), worship_id: quran.id, title: 'مسار ورد القرآن', stages: [{ index: 0, title: 'ربع يوميًا', description: '5 صفحات يوميًا', target_value: 5, days_required: 7 }, { index: 1, title: 'نصف جزء', description: '10 صفحات يوميًا', target_value: 10, days_required: 14 }, { index: 2, title: 'جزء يوميًا', description: '20 صفحة يوميًا', target_value: 20, days_required: 21 }], current_stage_index: 0, stage_start_date: toLocalDateKey(), consecutive_days: 0, auto_promote: false, created_at: now });
+    if (quran) progression.push({ id: createId(), worship_id: quran.id, title: 'مسار ورد القرآن', stages: [{ index: 0, title: 'ربع حزب يوميًا', description: 'ربع واحد من الحزب يوميًا', target_value: QURAN_QUARTER_PAGES, days_required: 7 }, { index: 1, title: 'نصف حزب', description: 'ربعان من الحزب يوميًا', target_value: QURAN_QUARTER_PAGES * 2, days_required: 14 }, { index: 2, title: 'حزب يوميًا', description: 'أربعة أرباع حزب يوميًا', target_value: QURAN_QUARTER_PAGES * 4, days_required: 21 }], current_stage_index: 0, stage_start_date: toLocalDateKey(), consecutive_days: 0, auto_promote: false, created_at: now });
     const fasting = definitions.find((definition) => definition.category === 'fasting');
     if (fasting) progression.push({ id: createId(), worship_id: fasting.id, title: 'مسار صيام التطوع', stages: [{ index: 0, title: 'الاثنين والخميس', description: 'ابدأ بيومي الاثنين والخميس', target_value: 2, days_required: 14 }, { index: 1, title: 'الأيام البيض', description: 'أضف 13 و14 و15 من الشهر الهجري', target_value: 5, days_required: 21 }, { index: 2, title: 'توسع اختياري', description: 'اختر صيامًا إضافيًا يناسبك', target_value: 6, days_required: 30 }], current_stage_index: 0, stage_start_date: toLocalDateKey(), consecutive_days: 0, auto_promote: false, created_at: now });
     setProgressionPaths((previous) => [...previous, ...progression.filter((path) => !previous.some((p) => p.worship_id === path.worship_id))]);
     if (qiyam && !sleepSchedules.length) setSleepSchedules([{ id: createId(), pillar_id: pillar.id, ultimate_bedtime: '21:30', ultimate_waketime: '04:00', current_bedtime: '23:00', current_waketime: '05:30', adjustment_minutes: 15, adjustment_frequency_days: 7, is_active: true, created_at: now }]);
-    if (quran && !quranKhatmas.length) setQuranKhatmas([{ id: createId(), worship_id: quran.id, khatma_number: 1, start_date: toLocalDateKey(), current_page: 1, current_juz: 1, daily_target_pages: quran.target_pages || 5, is_completed: false, created_at: now }]);
+    if (quran && !quranKhatmas.length) setQuranKhatmas([{ id: createId(), worship_id: quran.id, khatma_number: 1, start_date: toLocalDateKey(), current_page: 1, current_juz: 1, daily_target_pages: quran.target_pages || QURAN_QUARTER_PAGES, is_completed: false, created_at: now }]);
     if (hifz && !quranHifzTrackers.length) setQuranHifzTrackers([{ id: createId(), worship_id: hifz.id, pillar_id: pillar.id, surahs: [], total_memorized_pages: 0, daily_review_pages: 1, created_at: now }]);
     setToasts((previous) => [...previous, { id: createId(), type: 'success', title: 'تم تفعيل منظومة العبادات', description: 'أُنشئت ركيزة «العلاقة مع الله» وربطت بالعبادات المختارة.' }]);
   };
@@ -994,6 +1024,12 @@ export const HierarchicalApp: React.FC = () => {
             
             {/* Left section: mobile hamburger & breadcrumbs */}
             <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+              {currentTab !== 'hierarchy' && <button
+                onClick={() => { if (window.history.length > 1) window.history.back(); else setCurrentTab('hierarchy'); }}
+                className="p-2 text-[#65736b] dark:text-slate-400 hover:text-[#1a2420] dark:hover:text-slate-100 rounded-xl hover:bg-[#f2efe8] dark:hover:bg-slate-800 cursor-pointer shrink-0"
+                title="رجوع"
+                aria-label="رجوع"
+              ><ArrowRight className="w-5 h-5" /></button>}
               <button
                 onClick={() => setIsMobileSidebarOpen(true)}
                 className="md:hidden p-2 text-[#65736b] dark:text-slate-400 hover:text-[#1a2420] dark:hover:text-slate-100 rounded-xl hover:bg-[#f2efe8] dark:hover:bg-slate-800 cursor-pointer shrink-0"

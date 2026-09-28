@@ -18,14 +18,14 @@ describe('worship preference controls', () => {
     expect(screen.getByLabelText('مدة التدرج بالأيام')).toHaveValue(30);
     expect(save).not.toHaveBeenCalled();
     fireEvent.click(screen.getByText('تطبيق الإعدادات'));
-    expect(save).toHaveBeenCalledWith('w', { target_pages: 5, progression_days: 30 });
+    expect(save).toHaveBeenCalledWith('w', { target_pages: 2.5, progression_days: 30 });
   });
   it('converts chosen quarter juz units and uses the custom duration', () => {
     const save = setup();
     fireEvent.change(screen.getByLabelText('هدف ورد'), { target: { value: '3' } });
     fireEvent.change(screen.getByLabelText('مدة التدرج بالأيام'), { target: { value: '21' } });
     fireEvent.click(screen.getByText('تطبيق الإعدادات'));
-    expect(save).toHaveBeenCalledWith('w', { target_pages: 15, progression_days: 21 });
+    expect(save).toHaveBeenCalledWith('w', { target_pages: 7.5, progression_days: 21 });
   });
   it('can choose white days alone, both schedules, or neither', () => {
     const save = setup({ category: 'fasting', scheduled_days: [1, 4] });

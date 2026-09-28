@@ -227,12 +227,14 @@ export const HabitsTabView: React.FC<HabitsTabViewProps> = ({
       </div>
 
       {/* 2. Habits Weekly Matrix Table */}
-      <div className="bg-white dark:bg-slate-900 border border-[#e8e4db] dark:border-slate-800 rounded-2xl overflow-hidden shadow-2xs">
+      <div className="bg-white dark:bg-slate-900 border border-[#e8e4db] dark:border-slate-800 rounded-2xl overflow-x-auto shadow-2xs">
         
+        {/* Responsive weekly matrix: rows stack on narrow screens instead of overflowing. */}
+        <div className="min-w-0 sm:min-w-[520px]">
         {/* Table Header */}
-        <div className="bg-[#faf9f6] dark:bg-slate-800/80 border-b border-[#e8e4db] dark:border-slate-800 px-4 py-3 flex items-center justify-between text-xs font-medium text-[#6e7b74] dark:text-slate-400">
-          <div className="w-1/2 sm:w-2/5">العادة والركيزة</div>
-          <div className="flex items-center gap-1.5 sm:gap-3 text-center">
+        <div className="bg-[#faf9f6] dark:bg-slate-800/80 border-b border-[#e8e4db] dark:border-slate-800 px-3 sm:px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-medium text-[#6e7b74] dark:text-slate-400">
+          <div className="w-full sm:w-2/5">العادة والركيزة</div>
+          <div className="flex w-full items-center justify-between gap-1.5 sm:w-auto sm:justify-start sm:gap-3 text-center">
             {weekDays.map((d) => (
               <div 
                 key={d.isoDate} 
@@ -260,10 +262,10 @@ export const HabitsTabView: React.FC<HabitsTabViewProps> = ({
               return (
                 <div 
                   key={habit.id}
-                  className="px-4 py-3.5 hover:bg-[#faf9f6] dark:hover:bg-slate-800/60 transition-colors flex items-center justify-between gap-3 group"
+                  className="px-3 sm:px-4 py-3.5 hover:bg-[#faf9f6] dark:hover:bg-slate-800/60 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3 group"
                 >
                   {/* Left: Habit Info */}
-                  <div className="w-1/2 sm:w-2/5 min-w-0">
+                  <div className="w-full sm:w-2/5 min-w-0">
                     <div className="flex items-center gap-2">
                       <h3 className="text-xs sm:text-sm font-medium text-[#1a2420] dark:text-slate-100 truncate">
                         {habit.title}
@@ -284,7 +286,7 @@ export const HabitsTabView: React.FC<HabitsTabViewProps> = ({
                   </div>
 
                   {/* Center: 7-Day Tactile Checkbox Matrix */}
-                  <div className="flex items-center gap-1.5 sm:gap-3">
+                  <div className="flex w-full items-center justify-between gap-1.5 sm:w-auto sm:justify-start sm:gap-3">
                     {weekDays.map((d) => {
                       const isCompleted = habit.completed_dates.includes(d.isoDate);
                       return (
@@ -311,7 +313,7 @@ export const HabitsTabView: React.FC<HabitsTabViewProps> = ({
                   </div>
 
                   {/* Right: Streak & Actions */}
-                  <div className="flex items-center justify-end gap-2 w-auto sm:w-20 shrink-0">
+                  <div className="flex w-full items-center justify-end gap-2 sm:w-20 shrink-0">
                     <div className="flex items-center gap-1 text-xs font-mono tabular-nums font-semibold text-[#1a2420] dark:text-slate-200">
                       <Flame className={`w-3.5 h-3.5 ${habit.current_streak > 0 ? 'text-amber-500 fill-amber-500' : 'text-[#c7c2b6] dark:text-slate-600'}`} />
                       <span>{habit.current_streak}</span>
@@ -339,6 +341,7 @@ export const HabitsTabView: React.FC<HabitsTabViewProps> = ({
             })}
           </div>
         )}
+        </div>
       </div>
 
       {/* Habit Create/Edit Modal */}

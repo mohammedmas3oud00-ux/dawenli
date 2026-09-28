@@ -2,6 +2,11 @@ import type { ProgressionPath, WorshipDefinition, WorshipLog } from '../types/hi
 import { parseLocalDateKey, shiftLocalDateKey, toLocalDateKey } from './date';
 
 export type HijriDate = { day: number; month: number; year: number; label: string };
+export const QURAN_JUZ_PAGES = 20;
+export const QURAN_HIZB_COUNT_PER_JUZ = 2;
+export const QURAN_QUARTERS_PER_HIZB = 4;
+export const QURAN_QUARTERS_PER_JUZ = QURAN_HIZB_COUNT_PER_JUZ * QURAN_QUARTERS_PER_HIZB;
+export const QURAN_QUARTER_PAGES = QURAN_JUZ_PAGES / QURAN_QUARTERS_PER_JUZ;
 export function hijriDate(date = new Date()): HijriDate {
   const parts = new Intl.DateTimeFormat('en-u-ca-islamic', { day: 'numeric', month: 'numeric', year: 'numeric' }).formatToParts(date);
   const value = (type: string) => Number(parts.find((part) => part.type === type)?.value || 0);
@@ -64,11 +69,21 @@ export function isWorshipScheduled(definition: WorshipDefinition, date = toLocal
   return (item.scheduled_days ?? []).includes(local.getDay());
 }
 
+export function worshipProgress(definition: WorshipDefinition, log: WorshipLog | undefined): number {
+  if (!log) return 0;
+  const item = worshipDefinitionAt(definition, log.date);
+  if (log.is_completed) return 1;
+  if (item.tracking_type === 'pages') return Math.min(1, Math.max(0, (log.pages_read ?? 0) / Math.max(1, item.target_pages || 1)));
+  if (item.category === 'qiyam') return Math.min(1, Math.max(0, (log.rakaat_count ?? 0) / Math.max(1, item.target_count || 2)));
+  if (item.tracking_type === 'counter') return Math.min(1, Math.max(0, (log.count ?? 0) / Math.max(1, item.target_count || 1)));
+  return log.is_completed ? 1 : 0;
+}
+
 export function isWorshipComplete(definition: WorshipDefinition, log: WorshipLog | undefined): boolean {
   if (!log?.is_completed) return false;
   const item = worshipDefinitionAt(definition, log.date);
   if (item.tracking_type === 'pages') {
-    const minimumPages = item.category === 'quran_wird' ? 5 : 1;
+    const minimumPages = item.category === 'quran_wird' ? QURAN_QUARTER_PAGES : 1;
     return (log.pages_read ?? 0) >= Math.max(minimumPages, item.target_pages || minimumPages);
   }
   if (item.category === 'qiyam') return (log.rakaat_count ?? 0) >= (item.target_count || 2);
@@ -78,8 +93,10 @@ export function isWorshipComplete(definition: WorshipDefinition, log: WorshipLog
 
 export function worshipSummary(definitions: WorshipDefinition[], logs: WorshipLog[], date = toLocalDateKey()) {
   const active = definitions.filter((item) => isWorshipScheduled(item, date));
+  const progress = active.reduce((sum, item) => sum + worshipProgress(item, logs.find((log) => log.worship_id === item.id && log.date === date)), 0);
   const completed = active.filter((item) => isWorshipComplete(item, logs.find((log) => log.worship_id === item.id && log.date === date))).length;
-  return { total: active.length, completed, rate: active.length ? Math.round((completed / active.length) * 100) : 0 };
+  const partial = active.filter((item) => { const value = worshipProgress(item, logs.find((log) => log.worship_id === item.id && log.date === date)); return value > 0 && value < 1; }).length;
+  return { total: active.length, completed, partial, progress, rate: active.length ? Math.round((progress / active.length) * 100) : 0 };
 }
 
 export function worshipStreak(definitions: WorshipDefinition[], logs: WorshipLog[], today = toLocalDateKey()) {
@@ -129,10 +146,10 @@ export function targetStreak(definition: WorshipDefinition, logs: WorshipLog[], 
 export function configuredProgression(path: ProgressionPath, definition: WorshipDefinition): ProgressionPath {
   if (!['quran_wird', 'qiyam'].includes(definition.category)) return path;
   const quran = definition.category === 'quran_wird';
-  const target = quran ? Math.max(5, definition.target_pages || 5) : definition.target_count || 2;
+  const target = quran ? Math.max(QURAN_QUARTER_PAGES, definition.target_pages || QURAN_QUARTER_PAGES) : definition.target_count || 2;
   const duration = definition.progression_days || 30;
-  const label = (value: number) => quran ? `${value / 5} أرباع جزء يوميًا` : `${value} ركعات`;
-  const increment = quran ? 5 : 2;
+  const label = (value: number) => quran ? `${value / QURAN_QUARTER_PAGES} أرباع حزب يوميًا` : `${value} ركعات`;
+  const increment = quran ? QURAN_QUARTER_PAGES : 2;
   const stages = [...path.stages];
   stages[path.current_stage_index] = { index: path.current_stage_index, title: label(target), description: `استمرار ${duration} يومًا مقررًا قبل اقتراح الزيادة`, target_value: target, days_required: duration };
   stages[path.current_stage_index + 1] = { index: path.current_stage_index + 1, title: label(target + increment), description: 'زيادة اختيارية فقط', target_value: target + increment, days_required: duration };
@@ -145,7 +162,7 @@ export function worshipInsights(definitions: WorshipDefinition[], logs: WorshipL
   const insights: string[] = [];
   if (!todaySummary.total) return ['فعّل ما يناسبك من العبادات لبدء المتابعة.'];
   if (todaySummary.completed === todaySummary.total) insights.push('أتممت عباداتك المفعلة اليوم — بارك الله في ثباتك.');
-  else insights.push(`يتبقى ${todaySummary.total - todaySummary.completed} من العبادات المفعلة اليوم.`);
+  else insights.push(`يتبقى ${todaySummary.total - todaySummary.completed} من العبادات المفعلة اليوم.${todaySummary.partial ? ` ويوجد ${todaySummary.partial} قيد الإنجاز الجزئي.` : ''}`);
   const evening = definitions.find((item) => item.category === 'adhkar' && item.time_of_day === 'evening');
   const missedEvenings = evening ? [1, 2, 3].filter((offset) => !logs.some((log) => log.worship_id === evening.id && log.date === shiftLocalDateKey(today, -offset) && log.is_completed)).length : 0;
   if (missedEvenings >= 2) insights.push('لاحظنا تكرار تفويت أذكار المساء؛ يمكنك تفعيل تذكير هادئ لها.');

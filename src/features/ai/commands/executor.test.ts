@@ -25,6 +25,16 @@ describe('AI command executor', () => {
     expect(result.snapshot.calendarEvents[0].recurrence.frequency).toBe('weekly');
   });
 
+  it('merges journal captures into one entry per contextual date', () => {
+    const snapshot = hierarchy();
+    snapshot.journals = [{ id: 'journal-1', title: 'يومياتي', content: 'بداية اليوم', entry_date: '2026-09-28', tags: ['صباح'], created_at: '2026-09-28' }];
+    const result = applyAiCommandActions(snapshot, [{ actionId: 'journal-2', operation: 'create', entityType: 'journal', title: 'ملاحظة صوتية', content: 'حدث جديد', date: '2026-09-28', tags: ['صوت'], reason: 'إضافة إلى يومية اليوم' }]);
+    expect(result.snapshot.journals).toHaveLength(1);
+    expect(result.snapshot.journals[0].content).toContain('بداية اليوم\n\nحدث جديد');
+    expect(result.snapshot.journals[0].tags).toEqual(['صباح', 'صوت']);
+    expect(result.createdJournalIds).toEqual(['journal-1']);
+  });
+
   it('cascades a confirmed project deletion and clears dependent references', () => {
     const snapshot = hierarchy();
     snapshot.calendarEvents = [{ id: 'event-1', title: 'موعد', description: '', start_at: '2026-09-29T14:00:00.000Z', end_at: '2026-09-29T15:00:00.000Z', all_day: false, timezone: 'Africa/Cairo', recurrence: { frequency: 'none', interval: 1 }, reminder_minutes: 15, task_id: 'task-1', project_id: 'project-1', pillar_id: 'pillar-1', is_cancelled: false, created_at: '2026-01-01' }];

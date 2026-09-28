@@ -46,6 +46,8 @@ export const emptySnapshot = (): AppDataSnapshot => ({
 });
 
 const GUEST_KEY = 'dawenli_guest_snapshot_v3';
+const PENDING_SYNC_PREFIX = 'dawenli_pending_sync_';
+const pendingSyncKey = (userId: string) => `${PENDING_SYNC_PREFIX}${userId}`;
 
 export class GuestLocalRepository implements DataRepository {
   async load(): Promise<AppDataSnapshot> {
@@ -109,20 +111,32 @@ export class SupabaseRepository implements DataRepository {
         ...fromDatabaseRow(row),
         entityType: row.entity_type,
       })) as CustomFieldDefinition[];
+      const pendingRaw = typeof localStorage !== 'undefined' ? localStorage.getItem(pendingSyncKey(this.userId)) : null;
+      if (pendingRaw) {
+        try { return normalizeSnapshot(JSON.parse(pendingRaw)); } catch { localStorage.removeItem(pendingSyncKey(this.userId)); }
+      }
       return normalizeSnapshot(snapshot);
     } catch (error) {
+      const pendingRaw = typeof localStorage !== 'undefined' ? localStorage.getItem(pendingSyncKey(this.userId)) : null;
+      if (pendingRaw) {
+        try { return normalizeSnapshot(JSON.parse(pendingRaw)); } catch { localStorage.removeItem(pendingSyncKey(this.userId)); }
+      }
       throw mapRepositoryError(error, 'تعذر تحميل بيانات الحساب من Supabase.');
     }
   }
 
   async save(snapshot: AppDataSnapshot): Promise<void> {
+    const normalizedSnapshot = normalizeSnapshot(snapshot);
     try {
-      const normalizedSnapshot = normalizeSnapshot(snapshot);
       const payload = normalizeSnapshotForDatabase(normalizedSnapshot, this.userId);
       const { error } = await this.client.rpc('dawenli_save_snapshot', { p_snapshot: payload });
       if (error) throw error;
+      if (typeof localStorage !== 'undefined') localStorage.removeItem(pendingSyncKey(this.userId));
     } catch (error) {
-      throw mapRepositoryError(error, 'فشلت المزامنة. لم يُسجّل نجاح محلي بديل.');
+      try {
+        if (typeof localStorage !== 'undefined') localStorage.setItem(pendingSyncKey(this.userId), JSON.stringify(normalizedSnapshot));
+      } catch { /* Keep the cloud error if browser storage is unavailable. */ }
+      throw mapRepositoryError(error, 'تعذرت المزامنة السحابية؛ تم حفظ نسخة محلية مؤقتة وسيُعاد المحاولة تلقائيًا.');
     }
   }
 
@@ -130,6 +144,7 @@ export class SupabaseRepository implements DataRepository {
     try {
       const { error } = await this.client.rpc('dawenli_clear_snapshot');
       if (error) throw error;
+      if (typeof localStorage !== 'undefined') localStorage.removeItem(pendingSyncKey(this.userId));
     } catch (error) {
       throw mapRepositoryError(error, 'تعذر حذف بيانات الحساب.');
     }
@@ -218,7 +233,7 @@ function toDatabaseRow(row: Record<string, unknown>, userId: string, table?: str
       normalized.start_date = row.start_date || String(row.created_at || now).slice(0, 10);
       normalized.current_page = row.current_page ?? 1;
       normalized.current_juz = row.current_juz ?? 1;
-      normalized.daily_target_pages = row.daily_target_pages ?? 1;
+      normalized.daily_target_pages = row.daily_target_pages ?? 2.5;
       normalized.is_completed = row.is_completed ?? false;
       break;
     case 'quran_hifz_trackers':
@@ -299,7 +314,7 @@ export function normalizeSnapshot(value: Partial<AppDataSnapshot>): AppDataSnaps
     worshipDefinitions: Array.isArray(value.worshipDefinitions) ? value.worshipDefinitions.map((definition) => ({ ...definition, frequency: definition.frequency ?? 'daily', scheduled_days: definition.scheduled_days ?? [], scheduled_hijri_days: definition.scheduled_hijri_days ?? [], settings_history: definition.settings_history ?? [], is_active: definition.is_active ?? true, sort_order: definition.sort_order ?? 0 })) : [],
     worshipLogs: Array.isArray(value.worshipLogs) ? value.worshipLogs.map((log) => ({ ...log, is_completed: log.is_completed ?? false, congregation: (log.congregation as unknown) === '' ? null : log.congregation })) : [],
     progressionPaths: Array.isArray(value.progressionPaths) ? value.progressionPaths.map((path) => ({ ...path, stages: path.stages ?? [], current_stage_index: path.current_stage_index ?? 0, consecutive_days: path.consecutive_days ?? 0, auto_promote: path.auto_promote ?? false })) : [],
-    quranKhatmas: Array.isArray(value.quranKhatmas) ? value.quranKhatmas.map((khatma) => ({ ...khatma, is_completed: khatma.is_completed ?? false })) : [],
+    quranKhatmas: Array.isArray(value.quranKhatmas) ? value.quranKhatmas.map((khatma) => ({ ...khatma, daily_target_pages: khatma.daily_target_pages ?? 2.5, is_completed: khatma.is_completed ?? false })) : [],
     quranHifzTrackers: Array.isArray(value.quranHifzTrackers) ? value.quranHifzTrackers.map((tracker) => ({ ...tracker, surahs: tracker.surahs ?? [], total_memorized_pages: tracker.total_memorized_pages ?? 0, daily_review_pages: tracker.daily_review_pages ?? 0 })) : [],
     sleepSchedules: Array.isArray(value.sleepSchedules) ? value.sleepSchedules.map((schedule) => ({ ...schedule, adjustment_minutes: schedule.adjustment_minutes ?? 15, adjustment_frequency_days: schedule.adjustment_frequency_days ?? 7, is_active: schedule.is_active ?? true })) : [],
     journals: Array.isArray(value.journals) ? value.journals.map((entry) => ({ ...entry, content: entry.content || '', entry_date: entry.entry_date || String(entry.created_at || new Date().toISOString()).slice(0, 10), tags: entry.tags ?? [], audio_path: entry.audio_path ?? null })) : [],
