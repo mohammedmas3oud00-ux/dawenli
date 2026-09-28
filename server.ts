@@ -343,12 +343,19 @@ function googleRecurrenceToLocal(rules: string[] | undefined) {
   const rule = rules?.find((value) => value.startsWith('RRULE:'))?.replace(/^RRULE:/, '');
   if (!rule) return { frequency: 'none', interval: 1, days_of_week: [], until: null };
   const values = Object.fromEntries(rule.split(';').map((part) => part.split('=')));
+  const parseUntil = (value?: string) => {
+    if (!value) return null;
+    const match = value.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/);
+    if (match) return new Date(`${match[1]}-${match[2]}-${match[3]}T${match[4]}:${match[5]}:${match[6]}Z`).toISOString();
+    const parsed = Date.parse(value);
+    return Number.isNaN(parsed) ? null : new Date(parsed).toISOString();
+  };
   const frequency = values.FREQ?.toLowerCase();
   return {
     frequency: ['daily', 'weekly', 'monthly'].includes(frequency) ? frequency : 'none',
     interval: Math.max(1, Number(values.INTERVAL) || 1),
-    days_of_week: values.BYDAY ? values.BYDAY.split(',').map((day: string) => googleWeekdayToNumber.get(day.replace(/^[+-]?\\d+/, ''))).filter((day: number | undefined): day is number => day !== undefined) : [],
-    until: values.UNTIL ? new Date(values.UNTIL.replace(/Z$/, 'Z')).toISOString() : null,
+    days_of_week: values.BYDAY ? values.BYDAY.split(',').map((day: string) => googleWeekdayToNumber.get(day.replace(/^[+-]?\d+/, ''))).filter((day: number | undefined): day is number => day !== undefined) : [],
+    until: parseUntil(values.UNTIL),
   };
 }
 
@@ -356,7 +363,7 @@ function localRecurrenceToGoogle(recurrence: any): string[] | undefined {
   if (!recurrence || recurrence.frequency === 'none') return undefined;
   const parts = [`FREQ=${String(recurrence.frequency).toUpperCase()}`, `INTERVAL=${Math.max(1, Number(recurrence.interval) || 1)}`];
   if (recurrence.frequency === 'weekly' && Array.isArray(recurrence.days_of_week) && recurrence.days_of_week.length) parts.push(`BYDAY=${recurrence.days_of_week.map((day: number) => googleWeekdays[day]).join(',')}`);
-  if (recurrence.until) parts.push(`UNTIL=${new Date(recurrence.until).toISOString().replace(/[-:]/g, '').replace(/\\.\\d{3}/, '')}`);
+  if (recurrence.until) parts.push(`UNTIL=${new Date(recurrence.until).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')}`);
   return [`RRULE:${parts.join(';')}`];
 }
 

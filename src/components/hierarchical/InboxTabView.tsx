@@ -4,7 +4,8 @@ import {
   InboxSourceType, 
   Project, 
   ValueGoal, 
-  Pillar 
+  Pillar,
+  CalendarEvent
 } from '../../types/hierarchical';
 import { 
   Inbox, 
@@ -26,7 +27,8 @@ import {
   MicOff,
   RefreshCw,
   FolderPlus,
-  ArrowRight
+  ArrowRight,
+  CalendarDays
 } from 'lucide-react';
 import { deduplicateArabicSpeech, analyzeInboxItemWithAi, AiInboxAnalysisResult } from '../../utils/speechRecognition';
 
@@ -41,6 +43,7 @@ interface InboxTabViewProps {
   onCreateProjectDraft: (inboxItem: InboxItem, goalId: string) => void;
   onConvertToVault: (inboxItem: InboxItem, pillarId: string) => void;
   onConvertToHabit: (inboxItem: InboxItem, pillarId: string) => void;
+  onConvertToCalendar: (inboxItem: InboxItem, startAt: string, endAt: string) => void;
   onOpenVoiceAi?: () => void;
 }
 
@@ -55,6 +58,7 @@ export const InboxTabView: React.FC<InboxTabViewProps> = ({
   onCreateProjectDraft,
   onConvertToVault,
   onConvertToHabit,
+  onConvertToCalendar,
   onOpenVoiceAi,
 }) => {
   const [quickTitle, setQuickTitle] = useState('');
@@ -134,7 +138,10 @@ export const InboxTabView: React.FC<InboxTabViewProps> = ({
 
   // Convert Modal state
   const [convertingItem, setConvertingItem] = useState<InboxItem | null>(null);
-  const [convertTargetType, setConvertTargetType] = useState<'task' | 'vault' | 'habit'>('task');
+  const [convertTargetType, setConvertTargetType] = useState<'task' | 'vault' | 'habit' | 'calendar'>('task');
+  const [calendarDate, setCalendarDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [calendarStartTime, setCalendarStartTime] = useState('09:00');
+  const [calendarEndTime, setCalendarEndTime] = useState('10:00');
   const [selectedProjectId, setSelectedProjectId] = useState<string>(projects[0]?.id || '');
   const [selectedPillarId, setSelectedPillarId] = useState<string>(pillars[0]?.id || '');
 
@@ -174,6 +181,11 @@ export const InboxTabView: React.FC<InboxTabViewProps> = ({
       onConvertToVault(convertingItem, selectedPillarId || pillars[0]?.id);
     } else if (convertTargetType === 'habit') {
       onConvertToHabit(convertingItem, selectedPillarId || pillars[0]?.id);
+    } else if (convertTargetType === 'calendar') {
+      const startAt = new Date(`${calendarDate}T${calendarStartTime}:00`).toISOString();
+      const endAt = new Date(`${calendarDate}T${calendarEndTime}:00`).toISOString();
+      if (endAt <= startAt) return;
+      onConvertToCalendar(convertingItem, startAt, endAt);
     }
     setConvertingItem(null);
   };
@@ -503,6 +515,18 @@ export const InboxTabView: React.FC<InboxTabViewProps> = ({
                             <Repeat className="w-3 h-3" />
                             <span>عادة</span>
                           </button>
+                          <button
+                            onClick={() => {
+                              setConvertingItem(item);
+                              setConvertTargetType('calendar');
+                              setCalendarDate(new Date().toISOString().slice(0, 10));
+                            }}
+                            className="px-2.5 py-1 text-xs font-medium text-violet-700 dark:text-violet-300 hover:bg-white dark:hover:bg-slate-700 rounded-md transition-all cursor-pointer flex items-center gap-1"
+                            title="تحويل إلى موعد"
+                          >
+                            <CalendarDays className="w-3 h-3" />
+                            <span>موعد</span>
+                          </button>
                         </div>
                       </>
                     )}
@@ -586,7 +610,7 @@ export const InboxTabView: React.FC<InboxTabViewProps> = ({
             <div className="space-y-3">
               <div>
                 <label className="block font-medium text-[#35403a] dark:text-slate-300 mb-1.5">المسار المستهدف:</label>
-                <div className="grid grid-cols-3 gap-1.5">
+                <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
                   <button
                     type="button"
                     onClick={() => setConvertTargetType('task')}
@@ -620,10 +644,19 @@ export const InboxTabView: React.FC<InboxTabViewProps> = ({
                   >
                     🔁 عادة بركيزة
                   </button>
-                </div>
+                <button type="button" onClick={() => setConvertTargetType('calendar')} className={`py-2 px-2 rounded-xl text-xs font-medium text-center border cursor-pointer transition-all ${convertTargetType === 'calendar' ? 'bg-violet-700 text-white border-violet-700' : 'bg-white dark:bg-slate-800 text-[#4a554f] dark:text-slate-300 border-[#d8d4cc] dark:border-slate-700 hover:bg-[#faf9f6]'}`}>📅 موعد</button>
               </div>
+            </div>
 
-              {convertTargetType === 'task' && (
+            {convertTargetType === 'calendar' && (
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                <label className="font-medium">التاريخ<input type="date" value={calendarDate} onChange={(event) => setCalendarDate(event.target.value)} className="mt-1 w-full rounded-xl border p-2 dark:border-slate-700 dark:bg-slate-800" /></label>
+                <label className="font-medium">من<input type="time" value={calendarStartTime} onChange={(event) => setCalendarStartTime(event.target.value)} className="mt-1 w-full rounded-xl border p-2 dark:border-slate-700 dark:bg-slate-800" /></label>
+                <label className="font-medium">إلى<input type="time" value={calendarEndTime} onChange={(event) => setCalendarEndTime(event.target.value)} className="mt-1 w-full rounded-xl border p-2 dark:border-slate-700 dark:bg-slate-800" /></label>
+              </div>
+            )}
+
+            {convertTargetType === 'task' && (
                 <div>
                   <label className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">المشروع التنفيذي الحاضن:</label>
                   <select

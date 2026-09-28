@@ -176,7 +176,7 @@ export interface InboxItem {
   url?: string;
   status: InboxStatus;
   created_at: string;
-  converted_to?: 'task' | 'project' | 'goal' | 'habit' | 'vault' | null;
+  converted_to?: 'task' | 'project' | 'goal' | 'habit' | 'vault' | 'calendar_event' | null;
   converted_entity_id?: string | null;
 }
 

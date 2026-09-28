@@ -626,6 +626,14 @@ export const HierarchicalApp: React.FC = () => {
     setInboxItems(updatedInbox);
   };
 
+  const handleConvertInboxToCalendar = (item: InboxItem, startAt: string, endAt: string) => {
+    const now = new Date().toISOString();
+    const event: CalendarEvent = { id: createId(), title: item.title, description: item.content || (item.url ? `الرابط المرجعي: ${item.url}` : ''), start_at: startAt, end_at: endAt, all_day: false, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Africa/Cairo', recurrence: { frequency: 'none', interval: 1 }, reminder_minutes: 15, task_id: null, project_id: null, pillar_id: null, is_cancelled: false, created_at: now, updated_at: now };
+    setCalendarEvents((current) => [event, ...current]);
+    setInboxItems((current) => current.map((entry) => entry.id === item.id ? { ...entry, status: 'processed' as const, converted_to: 'calendar_event' as const, converted_entity_id: event.id } : entry));
+    setToasts((previous) => [...previous, { id: createId(), type: 'success', title: 'تم تحويل العنصر إلى موعد', description: 'ستجده الآن في تبويب التقويم.' }]);
+  };
+
   const handleConvertInboxToVault = (item: InboxItem, targetPillarId: string) => {
     const newVault: VaultItem = {
       id: createId(),
@@ -1396,6 +1404,7 @@ export const HierarchicalApp: React.FC = () => {
                 onCreateProjectDraft={handleCreateProjectDraft}
                 onConvertToVault={handleConvertInboxToVault}
                 onConvertToHabit={handleConvertInboxToHabit}
+                 onConvertToCalendar={handleConvertInboxToCalendar}
                 onOpenVoiceAi={handleOpenVoiceAi}
               />
             )}
