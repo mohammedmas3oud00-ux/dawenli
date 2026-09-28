@@ -27,6 +27,14 @@ test.describe('Dawenli published platform', () => {
       .toContain('/sw.js');
   });
 
+  test('shows Auth validation feedback before any network request', async ({ page }) => {
+    await page.goto('/');
+    await page.getByLabel('البريد الإلكتروني').fill('test@example.com');
+    await page.getByLabel('كلمة المرور').fill('123');
+    await page.getByRole('button', { name: 'تسجيل الدخول', exact: true }).last().click();
+    await expect(page.getByRole('alert')).toContainText('كلمة المرور يجب');
+  });
+
   test('allows a new guest to reach the empty عبادات setup without seed data', async ({ page }) => {
     await page.goto('/');
     const guest = page.getByText('المتابعة كضيف محلي');
