@@ -7,7 +7,7 @@
 - `src/components/hierarchical/HierarchicalApp.tsx` is the current UI composition root. It contains user-owned uncommitted navigation changes that must be preserved.
 - `src/app/store/useAppDataPersistence.ts` loads and persists complete `AppDataSnapshot` values through `src/data/repository.ts`.
 - `server.ts` is the Express API implementation used by local/standalone deployment and imported by Vercel entrypoints under `api/`.
-- `supabase/migrations/` is the canonical database schema history. Existing migrations are immutable; fixes are added as later idempotent migrations. `202610020001_supabase_integrity_and_snapshot_cas.sql` is applied to the configured Supabase project and provides CAS, OAuth/sync state, distributed AI quota, and ownership hardening.
+- `supabase/migrations/` is the canonical database schema history. Existing migrations are immutable; fixes are added as later idempotent migrations. `supabase/config.toml` runs the stack locally through Docker; `202610020001_supabase_integrity_and_snapshot_cas.sql` provides CAS and ownership hardening; the `2026100300*` migrations enable push extensions and keep database lint clean.
 
 ## Data boundaries
 
@@ -22,7 +22,7 @@
 - `server.ts`: validate push endpoints/timezones, bind and consume OAuth state, protect dispatch isolation, and use shared Vercel behavior.
 - `api/push/dispatch.ts`, `api/push/subscription.ts`, `api/push/public-key.ts`: delegate to the canonical Express implementation.
 - A new Supabase migration: revoke unsafe helper RPC execution, add server-only OAuth/sync state, repair ownership constraints, and introduce snapshot revision support.
-- API and security contract tests under `src/` and Supabase tests. `supabase/tests/security_integrity.sql` is plain SQL and `npm run test:supabase:security` executes it against the configured project.
+- API and security contract tests under `src/` and Supabase tests. `npm run test:supabase:security:local` executes the plain SQL suites locally; `npm run test:supabase` additionally verifies Auth, cross-user RLS isolation, anonymous RPC denial, CAS conflicts, and snapshot round trips.
 - `src/shared/services/pushSecurity.ts` centralizes endpoint, key, and timezone validation; Vercel push entrypoints delegate to `server.ts`.
 
 ## P1 affected files

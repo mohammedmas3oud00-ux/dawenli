@@ -195,6 +195,8 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
               </button>
             )}
             <button
+              type="button"
+              aria-label="إغلاق النافذة"
               onClick={onClose}
               className="p-1.5 rounded-lg text-[#85918a] hover:text-[#1a2420] dark:hover:text-slate-100 hover:bg-[#f5f4ef] dark:hover:bg-slate-800"
             >
@@ -291,22 +293,21 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
           {activeType === 'inbox' && (
             <div className="space-y-3">
               <div>
-                <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">ما الذي يدور في ذهنك الآن؟ (فكرة / مهمة / مرجع) *</label>
-                <input
+                <label htmlFor="quick-add-field-1" className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">ما الذي يدور في ذهنك الآن؟ (فكرة / مهمة / مرجع) *</label>
+                <input id="quick-add-field-1" aria-label="ما الذي يدور في ذهنك الآن؟ (فكرة / مهمة / مرجع) *"
                   type="text"
                   required
                   placeholder="مثال: فكرة إضافة مؤشر إنتاجية، تجديد الاشتراك، مقال ملهم..."
                   value={inboxTitle}
                   onChange={(e) => setInboxTitle(e.target.value)}
                   className="w-full px-3 py-2 border border-[#d8d4cc] dark:border-slate-700 rounded-xl focus:border-[#174235] dark:focus:border-emerald-500 bg-[#faf8f5] dark:bg-slate-800 text-[#1a2420] dark:text-slate-100 outline-hidden font-semibold"
-                  autoFocus
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">تصنيف الإيداع السريع</label>
-                  <CustomSelect
+                  <span className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">تصنيف الإيداع السريع</span>
+                  <CustomSelect title="تصنيف الإيداع السريع"
                     value={inboxType}
                     onChange={(val) => setInboxType(val as any)}
                     options={[
@@ -323,8 +324,8 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">رابط إن وُجد (اختياري)</label>
-                  <input
+                  <label htmlFor="quick-add-field-2" className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">رابط إن وُجد (اختياري)</label>
+                  <input id="quick-add-field-2" aria-label="رابط إن وُجد (اختياري)"
                     type="url"
                     placeholder="https://..."
                     value={inboxUrl}
@@ -335,8 +336,8 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
               </div>
 
               <div>
-                <label className="block font-semibold text-[#57645d] dark:text-slate-300 mb-1">سياق أو ملاحظات إضافية (اختياري)</label>
-                <textarea
+                <label htmlFor="quick-add-field-3" className="block font-semibold text-[#57645d] dark:text-slate-300 mb-1">سياق أو ملاحظات إضافية (اختياري)</label>
+                <textarea id="quick-add-field-3" aria-label="سياق أو ملاحظات إضافية (اختياري)"
                   rows={2}
                   placeholder="أي تفاصيل ترغب بتذكرها لاحقاً عند فرز الصندوق..."
                   value={inboxContent}
@@ -351,21 +352,20 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
           {activeType === 'task' && (
             <div className="space-y-3">
               <div>
-                <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">عنوان المهمة *</label>
-                <input
+                <label htmlFor="quick-add-field-4" className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">عنوان المهمة *</label>
+                <input id="quick-add-field-4" aria-label="عنوان المهمة *"
                   type="text"
                   required
                   placeholder="مثال: قراءة الفصل الأول من كتاب العادات الذرية"
                   value={taskTitle}
                   onChange={(e) => setTaskTitle(e.target.value)}
                   className="w-full px-3 py-2 border border-[#d8d4cc] rounded-xl focus:border-[#174235] focus:ring-1 focus:ring-[#174235] bg-[#faf8f5] text-[#1a2420] outline-hidden"
-                  autoFocus
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">المشروع التابع له *</label>
-                <CustomSelect
+                <span className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">المشروع التابع له *</span>
+                <CustomSelect title="المشروع التابع له *"
                   value={taskProjectId}
                   onChange={(val) => setTaskProjectId(val)}
                   options={projects.map((proj) => ({ value: proj.id, label: proj.title }))}
@@ -377,8 +377,8 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">الأولوية</label>
-                  <CustomSelect
+                  <span className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">الأولوية</span>
+                  <CustomSelect title="الأولوية"
                     value={taskPriority}
                     onChange={(val) => setTaskPriority(val as any)}
                     options={[
@@ -393,8 +393,8 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">تاريخ الاستحقاق</label>
-                  <input
+                  <label htmlFor="quick-add-field-5" className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">تاريخ الاستحقاق</label>
+                  <input id="quick-add-field-5" aria-label="تاريخ الاستحقاق"
                     type="date"
                     value={taskDueDate}
                     onChange={(e) => setTaskDueDate(e.target.value)}
@@ -409,21 +409,20 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
           {activeType === 'project' && (
             <div className="space-y-3">
               <div>
-                <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">اسم المشروع *</label>
-                <input
+                <label htmlFor="quick-add-field-6" className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">اسم المشروع *</label>
+                <input id="quick-add-field-6" aria-label="اسم المشروع *"
                   type="text"
                   required
                   placeholder="مثال: إكمال مجالس كتاب العادات الذرية"
                   value={projectTitle}
                   onChange={(e) => setProjectTitle(e.target.value)}
                   className="w-full px-3 py-2 border border-[#d8d4cc] dark:border-slate-700 rounded-xl focus:border-[#174235] dark:focus:border-emerald-500 bg-[#faf8f5] dark:bg-slate-800 text-[#1a2420] dark:text-slate-100 outline-hidden"
-                  autoFocus
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">الهدف الاستراتيجي التابع له *</label>
-                <CustomSelect
+                <span className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">الهدف الاستراتيجي التابع له *</span>
+                <CustomSelect title="الهدف الاستراتيجي التابع له *"
                   value={projectGoalId}
                   onChange={(val) => setProjectGoalId(val)}
                   options={goals.map((g) => ({ value: g.id, label: g.title }))}
@@ -434,8 +433,8 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
               </div>
 
               <div>
-                <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">تاريخ الانتهاء المتوقع</label>
-                <input
+                <label htmlFor="quick-add-field-7" className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">تاريخ الانتهاء المتوقع</label>
+                <input id="quick-add-field-7" aria-label="تاريخ الانتهاء المتوقع"
                   type="date"
                   value={projectDueDate}
                   onChange={(e) => setProjectDueDate(e.target.value)}
@@ -449,21 +448,20 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
           {activeType === 'goal' && (
             <div className="space-y-3">
               <div>
-                <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">عنوان هدف القيمة *</label>
-                <input
+                <label htmlFor="quick-add-field-8" className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">عنوان هدف القيمة *</label>
+                <input id="quick-add-field-8" aria-label="عنوان هدف القيمة *"
                   type="text"
                   required
                   placeholder="مثال: الوصول إلى 100,000 جنيه صافي ربح شهري"
                   value={goalTitle}
                   onChange={(e) => setGoalTitle(e.target.value)}
                   className="w-full px-3 py-2 border border-[#d8d4cc] dark:border-slate-700 rounded-xl focus:border-[#174235] dark:focus:border-emerald-500 bg-[#faf8f5] dark:bg-slate-800 text-[#1a2420] dark:text-slate-100 outline-hidden"
-                  autoFocus
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">الرؤية التابع لها</label>
-                <CustomSelect
+                <span className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">الرؤية التابع لها</span>
+                <CustomSelect title="الرؤية التابع لها"
                   value={goalVisionId}
                   onChange={(val) => setGoalVisionId(val)}
                   options={[
@@ -478,8 +476,8 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
 
               {!goalVisionId && (
                 <div>
-                  <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">الركيزة التابع لها *</label>
-                  <CustomSelect
+                  <span className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">الركيزة التابع لها *</span>
+                  <CustomSelect title="الركيزة التابع لها *"
                     value={goalPillarId}
                     onChange={(val) => setGoalPillarId(val)}
                     options={pillars.map((p) => ({ value: p.id, label: `${p.title} (${p.pillar_group})` }))}
@@ -491,8 +489,8 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
               )}
 
               <div>
-                <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">تاريخ الاستحقاق المستهدف</label>
-                <input
+                <label htmlFor="quick-add-field-9" className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">تاريخ الاستحقاق المستهدف</label>
+                <input id="quick-add-field-9" aria-label="تاريخ الاستحقاق المستهدف"
                   type="date"
                   value={goalTargetDate}
                   onChange={(e) => setGoalTargetDate(e.target.value)}
@@ -506,21 +504,20 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
           {activeType === 'vision' && (
             <div className="space-y-3">
               <div>
-                <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">عنوان الرؤية المستقبلية *</label>
-                <input
+                <label htmlFor="quick-add-field-10" className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">عنوان الرؤية المستقبلية *</label>
+                <input id="quick-add-field-10" aria-label="عنوان الرؤية المستقبلية *"
                   type="text"
                   required
                   placeholder="مثال: بناء استقلال مالي راسخ ومشاريع رقمية رابحة"
                   value={visionTitle}
                   onChange={(e) => setVisionTitle(e.target.value)}
                   className="w-full px-3 py-2 border border-[#d8d4cc] dark:border-slate-700 rounded-xl focus:border-[#174235] dark:focus:border-emerald-500 bg-[#faf8f5] dark:bg-slate-800 text-[#1a2420] dark:text-slate-100 outline-hidden"
-                  autoFocus
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">الركيزة التابعة لها *</label>
-                <CustomSelect
+                <span className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">الركيزة التابعة لها *</span>
+                <CustomSelect title="الركيزة التابعة لها *"
                   value={visionPillarId}
                   onChange={(val) => setVisionPillarId(val)}
                   options={pillars.map((p) => ({ value: p.id, label: `${p.title} (${p.pillar_group})` }))}
@@ -531,8 +528,8 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
               </div>
 
               <div>
-                <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">الأفق الزمني للرؤية</label>
-                <input
+                <label htmlFor="quick-add-field-11" className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">الأفق الزمني للرؤية</label>
+                <input id="quick-add-field-11" aria-label="الأفق الزمني للرؤية"
                   type="text"
                   value={visionTimeframe}
                   onChange={(e) => setVisionTimeframe(e.target.value)}
@@ -542,8 +539,8 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
               </div>
 
               <div>
-                <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">بيان الرؤية والأفق المنشود</label>
-                <textarea
+                <label htmlFor="quick-add-field-12" className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">بيان الرؤية والأفق المنشود</label>
+                <textarea id="quick-add-field-12" aria-label="بيان الرؤية والأفق المنشود"
                   rows={2}
                   value={visionStatement}
                   onChange={(e) => setVisionStatement(e.target.value)}
@@ -558,21 +555,20 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
           {activeType === 'pillar' && (
             <div className="space-y-3">
               <div>
-                <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">اسم الركيزة الأساسية *</label>
-                <input
+                <label htmlFor="quick-add-field-13" className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">اسم الركيزة الأساسية *</label>
+                <input id="quick-add-field-13" aria-label="اسم الركيزة الأساسية *"
                   type="text"
                   required
                   placeholder="مثال: العلاقة مع الله، بناء الذات، الصحة"
                   value={pillarTitle}
                   onChange={(e) => setPillarTitle(e.target.value)}
                   className="w-full px-3 py-2 border border-[#d8d4cc] dark:border-slate-700 rounded-xl focus:border-[#174235] dark:focus:border-emerald-500 bg-[#faf8f5] dark:bg-slate-800 text-[#1a2420] dark:text-slate-100 outline-hidden"
-                  autoFocus
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">المجموعة التصنيفية</label>
-                <input
+                <label htmlFor="quick-add-field-14" className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">المجموعة التصنيفية</label>
+                <input id="quick-add-field-14" aria-label="المجموعة التصنيفية"
                   type="text"
                   placeholder="مثال: Growth, Vitality, Impact, Wealth"
                   value={pillarGroup}
@@ -582,8 +578,8 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
               </div>
 
               <div>
-                <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">الغاية الكبرى *</label>
-                <textarea
+                <label htmlFor="quick-add-field-15" className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">الغاية الكبرى *</label>
+                <textarea id="quick-add-field-15" aria-label="الغاية الكبرى *"
                   rows={2}
                   required
                   placeholder="البيان التوجيهي والمقصد الأسمى لهذه الركيزة..."
@@ -594,8 +590,8 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
               </div>
 
               <div>
-                <label className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">ترتيب الأولوية</label>
-                <input
+                <label htmlFor="quick-add-field-16" className="block font-bold text-[#3d4842] dark:text-slate-300 mb-1">ترتيب الأولوية</label>
+                <input id="quick-add-field-16" aria-label="ترتيب الأولوية"
                   type="number"
                   min={1}
                   max={20}

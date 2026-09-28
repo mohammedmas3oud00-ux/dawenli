@@ -161,11 +161,14 @@ export const VisionDetailView: React.FC<VisionDetailViewProps> = ({
                 </div>
 
                 <div>
-                  <h3
-                    onClick={() => onSelectGoal(goal.id)}
-                    className="font-bold text-sm text-[#1a2420] dark:text-slate-100 group-hover:text-[#174235] dark:group-hover:text-emerald-400 transition-colors cursor-pointer"
-                  >
-                    {goal.title}
+                  <h3>
+                    <button
+                      type="button"
+                      onClick={() => onSelectGoal(goal.id)}
+                      className="font-bold text-sm text-right text-[#1a2420] dark:text-slate-100 group-hover:text-[#174235] dark:group-hover:text-emerald-400 transition-colors cursor-pointer"
+                    >
+                      {goal.title}
+                    </button>
                   </h3>
                   {goal.description && (
                     <p className="text-xs text-[#636e67] dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">

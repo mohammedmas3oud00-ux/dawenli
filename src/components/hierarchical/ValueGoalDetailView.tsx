@@ -174,11 +174,14 @@ export const ValueGoalDetailView: React.FC<ValueGoalDetailViewProps> = ({
                   </div>
 
                   <div>
-                    <h3
-                      onClick={() => onSelectProject(proj.id)}
-                      className="font-bold text-sm text-[#1a2420] dark:text-slate-100 group-hover:text-[#174235] dark:group-hover:text-emerald-400 transition-colors cursor-pointer"
-                    >
-                      {proj.title}
+                    <h3>
+                      <button
+                        type="button"
+                        onClick={() => onSelectProject(proj.id)}
+                        className="font-bold text-sm text-right text-[#1a2420] dark:text-slate-100 group-hover:text-[#174235] dark:group-hover:text-emerald-400 transition-colors cursor-pointer"
+                      >
+                        {proj.title}
+                      </button>
                     </h3>
                     {proj.description && (
                       <p className="text-xs text-[#636e67] dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">

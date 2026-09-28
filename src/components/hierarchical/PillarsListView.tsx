@@ -168,11 +168,14 @@ export const PillarsListView: React.FC<PillarsListViewProps> = ({
 
               {/* Title & Description */}
               <div>
-                <h3
-                  onClick={() => onSelectPillar(pillar.id)}
-                  className="font-black text-base text-[#1a2420] dark:text-slate-100 group-hover:text-[#174235] dark:group-hover:text-emerald-400 transition-colors cursor-pointer flex items-center gap-2"
-                >
-                  <span>{pillar.title}</span>
+                <h3>
+                  <button
+                    type="button"
+                    onClick={() => onSelectPillar(pillar.id)}
+                    className="font-black text-base text-right text-[#1a2420] dark:text-slate-100 group-hover:text-[#174235] dark:group-hover:text-emerald-400 transition-colors cursor-pointer flex items-center gap-2"
+                  >
+                    <span>{pillar.title}</span>
+                  </button>
                 </h3>
                 {pillar.description && (
                   <p className="text-xs text-[#636e67] dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">

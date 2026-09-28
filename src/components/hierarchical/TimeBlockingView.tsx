@@ -1,20 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
-  Calendar, 
   Clock, 
   Plus, 
-  CheckCircle2, 
   Play, 
   Trash2, 
   ChevronRight, 
   ChevronLeft, 
-  Zap, 
-  Layers, 
   Folder, 
-  Sparkles, 
   X, 
   Edit3,
-  Coffee,
   Check,
   LayoutTemplate
 } from 'lucide-react';
@@ -99,7 +93,6 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
   tasks,
   projects,
   goals,
-  pillars,
   timeBlocks,
   onSaveTimeBlock,
   onSaveTimeBlocks,
@@ -374,6 +367,7 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
             {/* Date Input */}
             <input
               type="date"
+              aria-label="تاريخ الجدول"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
               className="px-3 py-1.5 bg-[#faf8f4] dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-xs font-bold text-[#1a2420] dark:text-slate-100 outline-hidden cursor-pointer"
@@ -646,6 +640,7 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
             {/* Search filter */}
             <input
               type="text"
+              aria-label="البحث في المهام غير المجدولة"
               value={taskSearch}
               onChange={(e) => setTaskSearch(e.target.value)}
               placeholder="ابحث في المهام المتاحة..."
@@ -726,10 +721,12 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
               
               {/* Title */}
               <div>
-                <label className="block text-xs font-bold text-[#35433b] dark:text-slate-300 mb-1">
+                <label htmlFor="time-block-title" className="block text-xs font-bold text-[#35433b] dark:text-slate-300 mb-1">
                   عنوان الكتلة الزمنية: *
                 </label>
                 <input
+                  id="time-block-title"
+                  aria-label="عنوان الكتلة الزمنية"
                   type="text"
                   value={formTitle}
                   onChange={(e) => setFormTitle(e.target.value)}
@@ -742,10 +739,12 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
               {/* Time Range */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-[#35433b] dark:text-slate-300 mb-1">
+                  <label htmlFor="time-block-start" className="block text-xs font-bold text-[#35433b] dark:text-slate-300 mb-1">
                     وقت البدء: *
                   </label>
                   <input
+                    id="time-block-start"
+                    aria-label="وقت البدء"
                     type="time"
                     value={formStartTime}
                     onChange={(e) => setFormStartTime(e.target.value)}
@@ -754,10 +753,12 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-[#35433b] dark:text-slate-300 mb-1">
+                  <label htmlFor="time-block-end" className="block text-xs font-bold text-[#35433b] dark:text-slate-300 mb-1">
                     وقت الانتهاء: *
                   </label>
                   <input
+                    id="time-block-end"
+                    aria-label="وقت الانتهاء"
                     type="time"
                     value={formEndTime}
                     onChange={(e) => setFormEndTime(e.target.value)}
@@ -769,10 +770,11 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
 
               {/* Category */}
               <div>
-                <label className="block text-xs font-bold text-[#35433b] dark:text-slate-300 mb-1">
+                <div className="block text-xs font-bold text-[#35433b] dark:text-slate-300 mb-1">
                   تصنيف النشاط:
-                </label>
+                </div>
                 <CustomSelect
+                  title="تصنيف النشاط"
                   value={formCategory}
                   onChange={(val) => setFormCategory(val as TimeBlockCategory)}
                   options={[
@@ -792,10 +794,11 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
 
               {/* Link to Task */}
               <div>
-                <label className="block text-xs font-bold text-[#35433b] dark:text-slate-300 mb-1">
+                <div className="block text-xs font-bold text-[#35433b] dark:text-slate-300 mb-1">
                   ربط بمهمة محددة (اختياري):
-                </label>
+                </div>
                 <CustomSelect
+                  title="ربط بمهمة محددة (اختياري)"
                   value={formTaskId}
                   onChange={(val) => {
                     setFormTaskId(val);
@@ -816,10 +819,12 @@ export const TimeBlockingView: React.FC<TimeBlockingViewProps> = ({
 
               {/* Notes */}
               <div>
-                <label className="block text-xs font-bold text-[#35433b] dark:text-slate-300 mb-1">
+                <label htmlFor="time-block-notes" className="block text-xs font-bold text-[#35433b] dark:text-slate-300 mb-1">
                   ملاحظات أو مخرجات مستهدفة:
                 </label>
                 <textarea
+                  id="time-block-notes"
+                  aria-label="ملاحظات أو مخرجات مستهدفة"
                   value={formNotes}
                   onChange={(e) => setFormNotes(e.target.value)}
                   rows={2}

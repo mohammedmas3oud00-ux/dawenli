@@ -32,18 +32,18 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
       setState(user ? { status: 'authenticated', user } : { status: 'signedOut', user: null });
     });
     return () => { active = false; unsubscribe(); };
-  }, [service]);
+  }, [service, setState]);
 
   const adoptUser = useCallback((user: { id?: string; email: string; isGuest?: boolean }) => {
     setState(user.isGuest
       ? { status: 'guest', user: { id: user.id, email: user.email, isGuest: true } }
       : { status: 'authenticated', user: { id: user.id || '', email: user.email, isGuest: false } });
-  }, []);
+  }, [setState]);
 
   const signOut = useCallback(async () => {
     await service.signOut();
     setState({ status: 'signedOut', user: null });
-  }, [service]);
+  }, [service, setState]);
 
   const value = useMemo<AuthContextValue>(() => ({ status: state.status, user: state.user, adoptUser, signOut }), [state, adoptUser, signOut]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

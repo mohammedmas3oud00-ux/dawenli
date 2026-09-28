@@ -4,8 +4,7 @@ import {
   InboxSourceType, 
   Project, 
   ValueGoal, 
-  Pillar,
-  CalendarEvent
+  Pillar
 } from '../../types/hierarchical';
 import { 
   Inbox, 
@@ -26,7 +25,6 @@ import {
   Mic,
   MicOff,
   RefreshCw,
-  FolderPlus,
   ArrowRight,
   CalendarDays
 } from 'lucide-react';
@@ -327,6 +325,7 @@ export const InboxTabView: React.FC<InboxTabViewProps> = ({
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 min-w-0">
             <input
               ref={inputRef}
+              aria-label="عنوان عنصر صندوق الوارد"
               type="text"
               required
               value={quickTitle}
@@ -396,6 +395,7 @@ export const InboxTabView: React.FC<InboxTabViewProps> = ({
           {showAdvancedInputs && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
               <input
+                aria-label="تفاصيل عنصر صندوق الوارد"
                 type="text"
                 value={quickContent}
                 onChange={(e) => setQuickContent(e.target.value)}
@@ -403,6 +403,7 @@ export const InboxTabView: React.FC<InboxTabViewProps> = ({
                 className="bg-white dark:bg-slate-900 border border-[#d8d4cc] dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs text-[#1a2420] dark:text-slate-100 outline-hidden focus:border-[#174235]"
               />
               <input
+                aria-label="رابط عنصر صندوق الوارد"
                 type="url"
                 value={quickUrl}
                 onChange={(e) => setQuickUrl(e.target.value)}
@@ -640,7 +641,7 @@ export const InboxTabView: React.FC<InboxTabViewProps> = ({
 
             <div className="space-y-3">
               <div>
-                <label className="block font-medium text-[#35403a] dark:text-slate-300 mb-1.5">المسار المستهدف:</label>
+                <div className="block font-medium text-[#35403a] dark:text-slate-300 mb-1.5">المسار المستهدف:</div>
                 <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
                   <button
                     type="button"
@@ -684,16 +685,17 @@ export const InboxTabView: React.FC<InboxTabViewProps> = ({
 
             {convertTargetType === 'calendar' && (
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                <label className="font-medium">التاريخ<input type="date" value={calendarDate} onChange={(event) => setCalendarDate(event.target.value)} className="mt-1 w-full rounded-xl border p-2 dark:border-slate-700 dark:bg-slate-800" /></label>
-                <label className="font-medium">من<input type="time" value={calendarStartTime} onChange={(event) => setCalendarStartTime(event.target.value)} className="mt-1 w-full rounded-xl border p-2 dark:border-slate-700 dark:bg-slate-800" /></label>
-                <label className="font-medium">إلى<input type="time" value={calendarEndTime} onChange={(event) => setCalendarEndTime(event.target.value)} className="mt-1 w-full rounded-xl border p-2 dark:border-slate-700 dark:bg-slate-800" /></label>
+                <label className="font-medium">التاريخ<input aria-label="تاريخ الموعد" type="date" value={calendarDate} onChange={(event) => setCalendarDate(event.target.value)} className="mt-1 w-full rounded-xl border p-2 dark:border-slate-700 dark:bg-slate-800" /></label>
+                <label className="font-medium">من<input aria-label="وقت بداية الموعد" type="time" value={calendarStartTime} onChange={(event) => setCalendarStartTime(event.target.value)} className="mt-1 w-full rounded-xl border p-2 dark:border-slate-700 dark:bg-slate-800" /></label>
+                <label className="font-medium">إلى<input aria-label="وقت نهاية الموعد" type="time" value={calendarEndTime} onChange={(event) => setCalendarEndTime(event.target.value)} className="mt-1 w-full rounded-xl border p-2 dark:border-slate-700 dark:bg-slate-800" /></label>
               </div>
             )}
 
             {convertTargetType === 'task' && (
                 <div>
-                  <label className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">المشروع التنفيذي الحاضن:</label>
+                  <label htmlFor="inbox-target-project" className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">المشروع التنفيذي الحاضن:</label>
                   <select
+                    id="inbox-target-project"
                     value={selectedProjectId}
                     onChange={(e) => setSelectedProjectId(e.target.value)}
                     className="w-full rounded-xl py-2 px-3 border border-[#d8d4cc] dark:border-slate-700 bg-white dark:bg-slate-800 text-[#1a2420] dark:text-slate-100 outline-hidden font-medium"
@@ -707,8 +709,9 @@ export const InboxTabView: React.FC<InboxTabViewProps> = ({
 
               {(convertTargetType === 'vault' || convertTargetType === 'habit') && (
                 <div>
-                  <label className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">الركيزة المرتبطة:</label>
+                  <label htmlFor="inbox-target-pillar" className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">الركيزة المرتبطة:</label>
                   <select
+                    id="inbox-target-pillar"
                     value={selectedPillarId}
                     onChange={(e) => setSelectedPillarId(e.target.value)}
                     className="w-full rounded-xl py-2 px-3 border border-[#d8d4cc] dark:border-slate-700 bg-white dark:bg-slate-800 text-[#1a2420] dark:text-slate-100 outline-hidden font-medium"

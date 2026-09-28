@@ -243,6 +243,7 @@ export const VaultsTabView: React.FC<VaultsTabViewProps> = ({
               <Search className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-[#85928a] dark:text-slate-400" />
               <input
                 type="text"
+                aria-label="بحث في الخزائن"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="بحث في الخزائن..."
@@ -445,8 +446,10 @@ export const VaultsTabView: React.FC<VaultsTabViewProps> = ({
 
             <form onSubmit={handleSubmitForm} className="p-4 overflow-y-auto space-y-3 flex-1">
               <div>
-                <label className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">العنوان:</label>
+                <label htmlFor="vault-title" className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">العنوان:</label>
                 <input
+                  id="vault-title"
+                  aria-label="العنوان"
                   type="text"
                   required
                   value={formTitle}
@@ -458,8 +461,9 @@ export const VaultsTabView: React.FC<VaultsTabViewProps> = ({
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">النوع:</label>
+                  <div className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">النوع:</div>
                   <CustomSelect<VaultType>
+                    title="النوع"
                     value={formType}
                     onChange={(val) => setFormType(val)}
                     options={[
@@ -475,8 +479,9 @@ export const VaultsTabView: React.FC<VaultsTabViewProps> = ({
                 </div>
 
                 <div>
-                  <label className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">الركيزة المرتبطة:</label>
+                  <div className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">الركيزة المرتبطة:</div>
                   <CustomSelect
+                    title="الركيزة المرتبطة"
                     value={formPillarId}
                     onChange={(val) => setFormPillarId(val)}
                     options={pillars.map((p) => ({ value: p.id, label: p.title }))}
@@ -489,8 +494,10 @@ export const VaultsTabView: React.FC<VaultsTabViewProps> = ({
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">المؤلف أو المصدر:</label>
+                  <label htmlFor="vault-author" className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">المؤلف أو المصدر:</label>
                   <input
+                    id="vault-author"
+                    aria-label="المؤلف أو المصدر"
                     type="text"
                     value={formAuthor}
                     onChange={(e) => setFormAuthor(e.target.value)}
@@ -500,8 +507,9 @@ export const VaultsTabView: React.FC<VaultsTabViewProps> = ({
                 </div>
 
                 <div>
-                  <label className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">مشروع مرتبط (اختياري):</label>
+                  <div className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">مشروع مرتبط (اختياري):</div>
                   <CustomSelect
+                    title="مشروع مرتبط (اختياري)"
                     value={formProjectId}
                     onChange={(val) => setFormProjectId(val)}
                     options={[
@@ -516,8 +524,10 @@ export const VaultsTabView: React.FC<VaultsTabViewProps> = ({
               </div>
 
               <div>
-                <label className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">الرابط المرجعي (اختياري):</label>
+                <label htmlFor="vault-url" className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">الرابط المرجعي (اختياري):</label>
                 <input
+                  id="vault-url"
+                  aria-label="الرابط المرجعي"
                   type="url"
                   value={formUrl}
                   onChange={(e) => setFormUrl(e.target.value)}
@@ -527,8 +537,10 @@ export const VaultsTabView: React.FC<VaultsTabViewProps> = ({
               </div>
 
               <div>
-                <label className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">الملخص السريع:</label>
+                <label htmlFor="vault-summary" className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">الملخص السريع:</label>
                 <textarea
+                  id="vault-summary"
+                  aria-label="الملخص السريع"
                   rows={2}
                   value={formSummary}
                   onChange={(e) => setFormSummary(e.target.value)}
@@ -538,8 +550,10 @@ export const VaultsTabView: React.FC<VaultsTabViewProps> = ({
               </div>
 
               <div>
-                <label className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">المحتوى التفصيلي والملاحظات:</label>
+                <label htmlFor="vault-content" className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">المحتوى التفصيلي والملاحظات:</label>
                 <textarea
+                  id="vault-content"
+                  aria-label="المحتوى التفصيلي والملاحظات"
                   rows={4}
                   value={formContent}
                   onChange={(e) => setFormContent(e.target.value)}
@@ -550,8 +564,10 @@ export const VaultsTabView: React.FC<VaultsTabViewProps> = ({
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">الوسوم (مفصولة بفاصلة):</label>
+                  <label htmlFor="vault-tags" className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">الوسوم (مفصولة بفاصلة):</label>
                   <input
+                    id="vault-tags"
+                    aria-label="الوسوم"
                     type="text"
                     value={formTagsStr}
                     onChange={(e) => setFormTagsStr(e.target.value)}
@@ -561,8 +577,9 @@ export const VaultsTabView: React.FC<VaultsTabViewProps> = ({
                 </div>
 
                 <div>
-                  <label className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">التقييم:</label>
+                  <div className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">التقييم:</div>
                   <CustomSelect<number>
+                    title="التقييم"
                     value={formRating}
                     onChange={(val) => setFormRating(val)}
                     options={[

@@ -6,11 +6,12 @@
 
 يتطلب المشروع Node.js `22.14.x` وnpm `10+`. يمكن لمستخدمي nvm تشغيل `nvm use` لقراءة الإصدار من `.nvmrc`.
 
-1. انسخ `.env.example` إلى `.env` واضبط عنوان Supabase ومفتاح `anon`.
-2. ثبّت الحزم تثبيتًا قابلًا للتكرار: `npm ci`.
-3. طبّق migrations الموجودة في `supabase/migrations` على مشروع Supabase بالترتيب، بما فيها `202610020001_supabase_integrity_and_snapshot_cas.sql` قبل تشغيل النسخة الجديدة.
-4. للتطوير: `npm run dev`.
-5. لمحاكاة الإنتاج كاملة: `npm run build` ثم `npm start`.
+1. ثبّت الحزم تثبيتًا قابلًا للتكرار: `npm ci`.
+2. شغّل Docker Desktop ثم `npx supabase start`؛ يعمل Studio على `http://127.0.0.1:54323` وMailpit على `http://127.0.0.1:54324`.
+3. استخدم `npx supabase status -o env` لقراءة مفاتيح البيئة المحلية، وضعها في `.env.local` و`.env` كما هو موضح في `.env.example`؛ لا تحفظ ملفات البيئة في Git.
+4. لإعادة بناء قاعدة البيانات المحلية من جميع migrations شغّل `npx supabase db reset`.
+5. للتطوير: `npm run dev`. ولمحاكاة الإنتاج كاملة: `npm run build` ثم `npm start`.
+6. لإيقاف الخدمات مع الاحتفاظ بالبيانات المحلية شغّل `npx supabase stop`.
 
 يسجّل التطبيق Service Worker في وضع الإنتاج فقط؛ لذلك اختبر PWA بعد `npm run build` و`npm start` وليس عبر خادم التطوير.
 
@@ -24,11 +25,14 @@
 - `npm audit --omit=dev --audit-level=high`: تدقيق اعتماديات الإنتاج.
 - `npm run format:check`: يتحقق من Prettier للملفات الجديدة والمهيأة ضمن البوابة التدريجية، بدون إعادة تنسيق الملفات القديمة.
 - `npm run format:check:all`: فحص Prettier الكامل للمستودع، ويعرض تنسيق legacy المتبقي.
-- `npm run test:supabase:security`: يشغّل فحوصات SQL الأمنية plain SQL عبر Supabase Management API.
+- `npm run test:supabase`: ينشئ مستخدمين مؤقتين ويتحقق محليًا أو سحابيًا من Auth وعزل RLS ورفض anonymous RPC وCAS والمزامنة، ثم يحذفهما.
+- `npm run test:supabase:security:local`: يشغّل فحوصات RLS وRPC وملكية العلاقات على قاعدة Supabase المحلية.
+- `npm run test:supabase:lint`: يفشل عند وجود أي warning أو error في دوال أو schema قاعدة البيانات المحلية.
+- `npm run test:supabase:security`: يشغّل الفحوصات نفسها على مشروع سحابي عبر Supabase Management API.
 
 يشغّل `npm run test:e2e` بناءً وخادمًا محليين تلقائيًا على `http://127.0.0.1:3000` ويستخدم Chromium المدار بواسطة Playwright. لاختبار نسخة منشورة صراحةً، اضبط `PLAYWRIGHT_BASE_URL` ثم شغّل `npm run test:e2e:production`؛ القيمة الافتراضية لذلك الأمر فقط هي `https://dawenli-green.vercel.app`.
 
-يتطلب `npm run test:supabase` كلًا من `VITE_SUPABASE_URL` و`SUPABASE_ACCESS_TOKEN`، ولا ينبغي حفظ management token في المستودع.
+محليًا يحتاج `npm run test:supabase` إلى `SUPABASE_URL` و`SUPABASE_ANON_KEY` و`SUPABASE_SERVICE_ROLE_KEY`. سحابيًا يمكنه جلب المفاتيح باستخدام `SUPABASE_ACCESS_TOKEN` عند عدم ضبطها مباشرة. لا تحفظ أي token أو secret في المستودع.
 
 ## الأسرار والتخزين
 

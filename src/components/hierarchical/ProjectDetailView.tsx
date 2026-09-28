@@ -206,16 +206,17 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
 
                     <div className="space-y-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span
+                        <button
+                          type="button"
                           onClick={() => onToggleTaskStatus(task.id)}
-                          className={`text-xs font-bold transition-all cursor-pointer ${
+                          className={`text-xs text-right font-bold transition-all cursor-pointer ${
                             isDone 
                               ? 'line-through text-[#99a39c] dark:text-slate-500' 
                               : 'text-[#1a2420] dark:text-slate-100 hover:text-[#174235] dark:hover:text-emerald-400'
                           }`}
                         >
                           {task.title}
-                        </span>
+                        </button>
 
                         <span
                           className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase ${

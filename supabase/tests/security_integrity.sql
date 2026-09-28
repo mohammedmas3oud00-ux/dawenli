@@ -14,6 +14,22 @@ with checks(name, passed) as (
       'public.ai_rate_limits'::regclass
     ) and not relrowsecurity
   )
+  union all select 'every public user-owned table has RLS enabled', not exists (
+    select 1
+    from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public'
+      and c.relkind = 'r'
+      and not c.relrowsecurity
+      and exists (
+        select 1 from information_schema.columns x
+        where x.table_schema = 'public' and x.table_name = c.relname and x.column_name = 'user_id'
+      )
+  )
+  union all select 'anonymous role has no direct grants on public tables', not exists (
+    select 1 from information_schema.role_table_grants
+    where grantee = 'anon' and table_schema = 'public'
+  )
   union all select 'browser roles have no direct grants on server-only state', not exists (
     select 1 from information_schema.role_table_grants
     where grantee in ('anon', 'authenticated')

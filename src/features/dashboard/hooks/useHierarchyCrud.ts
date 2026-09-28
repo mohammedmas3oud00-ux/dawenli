@@ -23,11 +23,11 @@ interface HierarchyCrudDependencies {
 
 export function useHierarchyCrud(deps: HierarchyCrudDependencies) {
   const {
-    pillars, visions, goals, projects, tasks, habits, vaults, timeBlocks, focusSessions,
+    pillars, visions, goals, projects, tasks,
     selectedPillarId, selectedVisionId, selectedGoalId, selectedProjectId,
     currentPillar, currentVision, currentGoal, currentProject,
     editingPillar, editingVision, editingGoal, editingProject, editingTask,
-    setPillars, setVisions, setGoals, setProjects, setTasks, setHabits, setVaults, setTimeBlocks, setFocusSessions,
+    setHabits, setVaults, setTimeBlocks, setFocusSessions,
     setEditingPillar, setEditingVision, setEditingGoal, setEditingProject, setEditingTask,
     setSelectedPillarId, setSelectedVisionId, setSelectedGoalId, setSelectedProjectId, setActiveFocusTask, setCurrentTab, cleanupDeletedRelationships, applyStateUpdate,
   } = deps;

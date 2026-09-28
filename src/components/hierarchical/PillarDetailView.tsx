@@ -174,11 +174,14 @@ export const PillarDetailView: React.FC<PillarDetailViewProps> = ({
                 </div>
 
                 <div>
-                  <h3
-                    onClick={() => onSelectVision(vision.id)}
-                    className="font-bold text-sm text-[#1a2420] dark:text-slate-100 group-hover:text-[#174235] dark:group-hover:text-emerald-400 transition-colors cursor-pointer"
-                  >
-                    {vision.title}
+                  <h3>
+                    <button
+                      type="button"
+                      onClick={() => onSelectVision(vision.id)}
+                      className="font-bold text-sm text-right text-[#1a2420] dark:text-slate-100 group-hover:text-[#174235] dark:group-hover:text-emerald-400 transition-colors cursor-pointer"
+                    >
+                      {vision.title}
+                    </button>
                   </h3>
                   {vision.description && (
                     <p className="text-xs text-[#636e67] dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">

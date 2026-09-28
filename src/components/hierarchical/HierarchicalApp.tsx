@@ -1,5 +1,4 @@
 import React, { lazy, useState, useEffect, useRef } from 'react';
-import { DailyOverview } from './DailyOverview';
 import { changeWorshipSettings, configuredProgression, targetStreak } from '../../utils/ibadat';
 import { 
   Pillar, 
@@ -13,14 +12,10 @@ import {
   InboxItem,
   Habit,
   VaultItem,
-  FocusSessionRecord,
   TimeBlock,
-  CustomFieldDefinition,
   WorshipDefinition,
   WorshipLog,
   ProgressionPath,
-  QuranKhatma,
-  QuranHifzTracker,
   SleepSchedule,
   JournalEntry,
   CalendarEvent
@@ -30,6 +25,7 @@ import { QURAN_QUARTER_PAGES } from '../../utils/ibadat';
 
 import { Breadcrumbs } from './Breadcrumbs';
 import { Sidebar } from './Sidebar';
+const DailyOverview = lazy(() => import('./DailyOverview').then((module) => ({ default: module.DailyOverview })));
 const PillarsListView = lazy(() => import('./PillarsListView').then((module) => ({ default: module.PillarsListView })));
 const PillarDetailView = lazy(() => import('./PillarDetailView').then((module) => ({ default: module.PillarDetailView })));
 const VisionDetailView = lazy(() => import('./VisionDetailView').then((module) => ({ default: module.VisionDetailView })));
@@ -60,8 +56,7 @@ const VoiceAiCaptureModal = lazy(() => import('./VoiceAiCaptureModal').then((mod
 import { AuthModal } from './AuthModal';
 import { InstallAppButton } from './InstallAppButton';
 import { ToastContainer, ToastMessage } from './ToastNotification';
-import { Plus, Menu, Mic, Sparkles, Sun, Moon, User, LogIn, LogOut, KeyRound, Trash2, ArrowRight } from 'lucide-react';
-import { setTaskStatus, toggleTaskStatus, upsertTask } from '../../features/tasks/utils/taskActions';
+import { Plus, Menu, Mic, Sparkles, Sun, Moon, KeyRound, Trash2, ArrowRight } from 'lucide-react';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import { useAppStore } from '../../app/store/appStore';
 import { useTaskStore } from '../../features/tasks/store/taskStore';
@@ -70,7 +65,7 @@ import { useDashboardNavigation } from '../../features/dashboard/hooks/useDashbo
 import { useInboxStore } from '../../features/inbox/store/inboxStore';
 import { useVaultStore } from '../../features/vaults/store/vaultStore';
 import { useIbadatStore } from '../../features/ibadat/store/ibadatStore';
-import { useAppDataPersistence, emptyAppSnapshot } from '../../app/store/useAppDataPersistence';
+import { useAppDataPersistence } from '../../app/store/useAppDataPersistence';
 import { createSnapshotBackup, normalizeSnapshot } from '../../data/repository';
 import { remapSnapshotIds } from '../../data/legacyMigration';
 import { createId } from '../../utils/id';
@@ -156,7 +151,7 @@ export const HierarchicalApp: React.FC = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
-  const { dataReady, loadError, retryLoad, clearData, saveSnapshot, applySnapshot, snapshot } = useAppDataPersistence({
+  const { dataReady, loadError, retryLoad, saveSnapshot, applySnapshot, snapshot } = useAppDataPersistence({
     user: currentUser,
     authStatus,
     onLoadError: (error) => setToasts((previous) => [...previous, {
@@ -217,7 +212,7 @@ export const HierarchicalApp: React.FC = () => {
     void sync();
     const timer = window.setInterval(() => void sync(), 5 * 60 * 1000);
     return () => { active = false; window.clearInterval(timer); };
-  }, [googleCalendarConnected]);
+  }, [googleCalendarConnected, setCalendarEvents]);
 
   useEffect(() => {
     const result = new URLSearchParams(window.location.search).get('google');
@@ -971,18 +966,6 @@ export const HierarchicalApp: React.FC = () => {
     setIsProjectModalOpen(true);
   };
 
-  const handleResetData = async () => {
-    if (confirm('هل تريد حذف بيانات هذا الحساب فقط؟ لا يمكن التراجع عن ذلك.')) {
-      await clearData();
-      applySnapshot(emptyAppSnapshot());
-      setSelectedPillarId(null);
-      setSelectedVisionId(null);
-      setSelectedGoalId(null);
-      setSelectedProjectId(null);
-      setCurrentTab('hierarchy');
-    }
-  };
-
   const handleExportData = () => createSnapshotBackup({
     schemaVersion: 5, pillars, visions, goals, projects, tasks, reviews,
     inboxItems, habits, vaults, focusSessions, timeBlocks, customFieldDefinitions,
@@ -1683,7 +1666,7 @@ export const HierarchicalApp: React.FC = () => {
       {isGeminiModalOpen && <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/70 p-4" dir="rtl">
         <form onSubmit={handleSaveGeminiKey} className="w-full max-w-lg space-y-4 rounded-2xl bg-white p-5 shadow-2xl dark:bg-slate-900">
           <div className="flex items-center justify-between"><div><h2 className="font-bold text-slate-900 dark:text-white">إعداد مفتاح Gemini</h2><p className="mt-1 text-xs text-slate-500">المفتاح يُرسل إلى خادم Dawenli ويُحفظ مشفرًا لحسابك فقط.</p></div><button type="button" onClick={() => setIsGeminiModalOpen(false)} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">×</button></div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">Gemini API Key<input autoFocus type="password" value={geminiKeyDraft} onChange={(event) => setGeminiKeyDraft(event.target.value)} placeholder="AIza..." className="mt-2 w-full rounded-xl border border-slate-300 bg-slate-50 p-3 font-mono text-sm outline-none focus:border-emerald-600 dark:border-slate-700 dark:bg-slate-800" /></label>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">Gemini API Key<input aria-label="Gemini API Key" type="password" value={geminiKeyDraft} onChange={(event) => setGeminiKeyDraft(event.target.value)} placeholder="AIza..." className="mt-2 w-full rounded-xl border border-slate-300 bg-slate-50 p-3 font-mono text-sm outline-none focus:border-emerald-600 dark:border-slate-700 dark:bg-slate-800" /></label>
           <p className="text-xs text-slate-500">يمكنك إنشاء المفتاح من Google AI Studio. لا تضعه في الكود أو في ملف عام.</p>
           <div className="flex justify-end gap-2"><button type="button" onClick={() => setIsGeminiModalOpen(false)} className="rounded-xl border px-4 py-2 text-sm dark:border-slate-700">إلغاء</button><button type="submit" className="rounded-xl bg-[#174235] px-5 py-2 text-sm font-bold text-white">حفظ المفتاح</button></div>
         </form>

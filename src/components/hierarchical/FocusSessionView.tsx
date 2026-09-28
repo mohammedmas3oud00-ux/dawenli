@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   Play, 
   Pause, 
@@ -83,9 +83,31 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
 
   const activeTasksList = tasks.filter(t => t.status !== 'done');
 
+  const logCurrentSession = useCallback((durationSecs: number, sessionType: FocusMode) => {
+    if (durationSecs < 60 || sessionSavedRef.current) return;
+
+    if (!sessionIdRef.current) sessionIdRef.current = createId();
+    sessionSavedRef.current = true;
+    const record: FocusSessionRecord = {
+      id: sessionIdRef.current,
+      task_id: selectedTaskId || null,
+      task_title: activeTask?.title,
+      project_title: activeProject?.title,
+      pillar_title: activePillar?.title,
+      duration_seconds: durationSecs,
+      mode: sessionType,
+      completed_at: new Date().toISOString(),
+      date: toLocalDateKey(),
+      distractions_count: distractionsCount,
+      notes: customIntention || activeTask?.title || 'جلسة تركيز حر',
+    };
+
+    onSaveSession(record);
+  }, [activePillar?.title, activeProject?.title, activeTask?.title, customIntention, distractionsCount, onSaveSession, selectedTaskId]);
+
   // If initialTask changes from outside, adopt it
   useEffect(() => {
-    if (initialTask && initialTask.id !== selectedTaskId) {
+    if (initialTask) {
       setSelectedTaskId(initialTask.id);
     }
   }, [initialTask]);
@@ -151,29 +173,7 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isActive, secondsRemaining, flowSeconds, isInBreak, breakSecondsRemaining, mode, pomodoroPhase, soundEnabled]);
-
-  const logCurrentSession = (durationSecs: number, sessionType: FocusMode) => {
-    if (durationSecs < 60 || sessionSavedRef.current) return;
-
-    if (!sessionIdRef.current) sessionIdRef.current = createId();
-    sessionSavedRef.current = true;
-    const record: FocusSessionRecord = {
-      id: sessionIdRef.current,
-      task_id: selectedTaskId || null,
-      task_title: activeTask?.title,
-      project_title: activeProject?.title,
-      pillar_title: activePillar?.title,
-      duration_seconds: durationSecs,
-      mode: sessionType,
-      completed_at: new Date().toISOString(),
-      date: toLocalDateKey(),
-      distractions_count: distractionsCount,
-      notes: customIntention || activeTask?.title || 'جلسة تركيز حر',
-    };
-
-    onSaveSession(record);
-  };
+  }, [isActive, secondsRemaining, flowSeconds, isInBreak, breakSecondsRemaining, mode, pomodoroPhase, soundEnabled, logCurrentSession, workDurationMinutes]);
 
   const handleToggleTimer = () => {
     if (!isActive) {
@@ -362,12 +362,13 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
         
         {/* Task Selection Section */}
         <div className="max-w-xl mx-auto space-y-3 relative z-10">
-          <label className="block text-xs font-bold text-[#55645b] dark:text-slate-400 text-right">
+          <label htmlFor="focus-task" className="block text-xs font-bold text-[#55645b] dark:text-slate-400 text-right">
             المهمة المراد التركيز عليها الآن:
           </label>
 
           <div className="relative">
             <select
+              id="focus-task"
               value={selectedTaskId}
               onChange={(e) => {
                 setSelectedTaskId(e.target.value);
@@ -387,6 +388,7 @@ export const FocusSessionView: React.FC<FocusSessionViewProps> = ({
           {!selectedTaskId && (
             <input
               type="text"
+              aria-label="نية التركيز للجلسة"
               value={customIntention}
               onChange={(e) => setCustomIntention(e.target.value)}
               placeholder="اكتب نية التركيز لجلسة اليوم (مثلاً: إنهاء مراجعة الكود، قراءة 20 صفحة)..."

@@ -15,8 +15,7 @@ import {
   Clock, 
   CheckCircle2, 
   AlertCircle, 
-  Hourglass,
-  ArrowRight
+  Hourglass
 } from 'lucide-react';
 import { Project, ValueGoal, Task, CustomFieldDefinition } from '../../types/hierarchical';
 import { ProgressBar } from './ProgressBar';
@@ -48,7 +47,6 @@ export const ProjectsTabView: React.FC<ProjectsTabViewProps> = ({
   onEditProject,
   onDeleteProject,
   onUpdateStatus,
-  onUpdateCustomFields,
   customFields,
   onCustomFieldsChange,
 }) => {
@@ -58,16 +56,6 @@ export const ProjectsTabView: React.FC<ProjectsTabViewProps> = ({
 
   // Custom Fields
   const [isFieldsModalOpen, setIsFieldsModalOpen] = useState(false);
-
-  const handleCustomFieldChange = (projectId: string, fieldId: string, value: any) => {
-    const proj = projects.find((p) => p.id === projectId);
-    if (!proj) return;
-    const existing = proj.custom_fields || {};
-    const updated = { ...existing, [fieldId]: value };
-    if (onUpdateCustomFields) {
-      onUpdateCustomFields(projectId, updated);
-    }
-  };
 
   const handleStatusChangeInternal = (projectId: string, newStatus: Project['status']) => {
     if (onUpdateStatus) {
@@ -247,11 +235,14 @@ export const ProjectsTabView: React.FC<ProjectsTabViewProps> = ({
                         )}
                       </div>
 
-                      <h3
-                        onClick={() => onSelectProject(proj.id, proj.goal_id)}
-                        className="font-bold text-sm text-[#1a2420] dark:text-slate-100 hover:text-[#174235] dark:hover:text-emerald-400 cursor-pointer transition-colors"
-                      >
-                        {proj.title}
+                      <h3>
+                        <button
+                          type="button"
+                          onClick={() => onSelectProject(proj.id, proj.goal_id)}
+                          className="font-bold text-sm text-right text-[#1a2420] dark:text-slate-100 hover:text-[#174235] dark:hover:text-emerald-400 cursor-pointer transition-colors"
+                        >
+                          {proj.title}
+                        </button>
                       </h3>
 
                       {proj.description && (
@@ -362,11 +353,14 @@ export const ProjectsTabView: React.FC<ProjectsTabViewProps> = ({
                           {proj.status === 'on_hold' && 'معلق'}
                         </span>
 
-                        <h3
-                          onClick={() => onSelectProject(proj.id, proj.goal_id)}
-                          className="font-bold text-xs sm:text-sm text-[#1a2420] dark:text-slate-100 hover:text-[#174235] dark:hover:text-emerald-400 cursor-pointer truncate"
-                        >
-                          {proj.title}
+                        <h3 className="min-w-0">
+                          <button
+                            type="button"
+                            onClick={() => onSelectProject(proj.id, proj.goal_id)}
+                            className="block max-w-full truncate font-bold text-xs sm:text-sm text-right text-[#1a2420] dark:text-slate-100 hover:text-[#174235] dark:hover:text-emerald-400 cursor-pointer"
+                          >
+                            {proj.title}
+                          </button>
                         </h3>
 
                         {parentGoal && (
@@ -492,11 +486,14 @@ export const ProjectsTabView: React.FC<ProjectsTabViewProps> = ({
                                     🎯 {parentGoal.title}
                                   </span>
                                 )}
-                                <h4
-                                  onClick={() => onSelectProject(proj.id, proj.goal_id)}
-                                  className="text-xs font-bold text-[#1a2420] dark:text-slate-100 hover:text-[#174235] dark:hover:text-emerald-400 cursor-pointer transition-colors leading-snug"
-                                >
-                                  {proj.title}
+                                <h4>
+                                  <button
+                                    type="button"
+                                    onClick={() => onSelectProject(proj.id, proj.goal_id)}
+                                    className="text-xs text-right font-bold text-[#1a2420] dark:text-slate-100 hover:text-[#174235] dark:hover:text-emerald-400 cursor-pointer transition-colors leading-snug"
+                                  >
+                                    {proj.title}
+                                  </button>
                                 </h4>
                               </div>
 

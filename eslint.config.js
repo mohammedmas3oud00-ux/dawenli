@@ -34,6 +34,8 @@ export default tseslint.config(
     },
     rules: {
       ...Object.fromEntries(Object.keys(jsxA11y.flatConfigs.recommended.rules).map((rule) => [rule, 'warn'])),
+      // Deprecated duplicate of label-has-associated-control; keeping both reports each defect twice.
+      'jsx-a11y/label-has-for': 'off',
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
     },

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   ReviewFrequency, 
   SystemReview, 
@@ -22,7 +22,6 @@ import {
   Trash2, 
   X, 
   Layers, 
-  Star,
   Activity,
   Lightbulb,
   ArrowRight
@@ -95,6 +94,22 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
     return `${labels[freq]} — ${d}`;
   };
 
+  // Run automated audit on the current system state
+  const runAutoAudit = useCallback((freq: ReviewFrequency, pillarIdFilter: string) => {
+    setIsGeneratingAudit(true);
+    setTimeout(() => {
+      const targetPillar = pillarIdFilter === 'all' ? null : pillarIdFilter;
+      const audit = generateAutomatedAudit(freq, pillars, visions, goals, projects, tasks, targetPillar);
+      setHealthScore(audit.system_health_score);
+      setSmartSummary(audit.smart_summary);
+      setStrengths(audit.strengths);
+      setBottlenecks(audit.bottlenecks);
+      setRecommendations(audit.recommendations);
+      setActionItems(audit.suggested_actions);
+      setIsGeneratingAudit(false);
+    }, 250);
+  }, [goals, pillars, projects, tasks, visions]);
+
   useEffect(() => {
     if (initialReview) {
       setFrequency(initialReview.frequency);
@@ -129,25 +144,9 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
       // Run automatic audit immediately for fresh draft
       runAutoAudit(defaultFrequency, defaultFocusPillarId || 'all');
     }
-  }, [initialReview, isOpen, defaultFrequency, defaultFocusPillarId]);
+  }, [initialReview, isOpen, defaultFrequency, defaultFocusPillarId, runAutoAudit]);
 
   if (!isOpen) return null;
-
-  // Run automated audit on the current system state
-  function runAutoAudit(freq: ReviewFrequency, pillarIdFilter: string) {
-    setIsGeneratingAudit(true);
-    setTimeout(() => {
-      const targetPillar = pillarIdFilter === 'all' ? null : pillarIdFilter;
-      const audit = generateAutomatedAudit(freq, pillars, visions, goals, projects, tasks, targetPillar);
-      setHealthScore(audit.system_health_score);
-      setSmartSummary(audit.smart_summary);
-      setStrengths(audit.strengths);
-      setBottlenecks(audit.bottlenecks);
-      setRecommendations(audit.recommendations);
-      setActionItems(audit.suggested_actions);
-      setIsGeneratingAudit(false);
-    }, 250);
-  }
 
   // Run deep strategic audit using Gemini AI
   async function runGeminiAiAudit() {
@@ -307,8 +306,10 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
           {/* Top Parameters: Title, Date, Focus Pillar, Rating */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 bg-[#fbfbfa] dark:bg-slate-800/80 p-3.5 rounded-xl border border-[#ebe7df] dark:border-slate-700">
             <div className="sm:col-span-2">
-              <label className="block font-bold text-[#35403a] dark:text-slate-300 mb-1">عنوان المراجعة: *</label>
+              <label htmlFor="review-title" className="block font-bold text-[#35403a] dark:text-slate-300 mb-1">عنوان المراجعة: *</label>
               <input
+                id="review-title"
+                aria-label="عنوان المراجعة"
                 type="text"
                 required
                 value={title}
@@ -318,10 +319,12 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
             </div>
 
             <div>
-              <label className="block font-bold text-[#35403a] dark:text-slate-300 mb-1">تاريخ المراجعة:</label>
+              <label htmlFor="review-date" className="block font-bold text-[#35403a] dark:text-slate-300 mb-1">تاريخ المراجعة:</label>
               <div className="flex items-center gap-2 bg-white dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-xl px-3 py-2 text-[#1a2420] dark:text-slate-100 dark:text-slate-100">
                 <Calendar className="w-4 h-4 text-[#8a968f]" />
                 <input
+                  id="review-date"
+                  aria-label="تاريخ المراجعة"
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
@@ -331,8 +334,9 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
             </div>
 
             <div>
-              <label className="block font-bold text-[#35403a] dark:text-slate-300 mb-1">الركيزة محل التركيز:</label>
+              <div className="block font-bold text-[#35403a] dark:text-slate-300 mb-1">الركيزة محل التركيز:</div>
               <CustomSelect
+                title="الركيزة محل التركيز"
                 value={focusPillarId}
                 onChange={(val) => {
                   setFocusPillarId(val);
@@ -413,11 +417,13 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
               
               {/* Question 1: Wins */}
               <div>
-                <label className="block font-bold text-[#1a2420] dark:text-slate-100 mb-1 flex items-center gap-1.5">
+                <label htmlFor="review-wins" className="block font-bold text-[#1a2420] dark:text-slate-100 mb-1 flex items-center gap-1.5">
                   <CheckCircle2 className="w-3.5 h-3.5 text-[#174235]" />
                   <span>أبرز الانتصارات والإنجازات:</span>
                 </label>
                 <textarea
+                  id="review-wins"
+                  aria-label="أبرز الانتصارات والإنجازات"
                   rows={2}
                   value={wins}
                   onChange={(e) => setWins(e.target.value)}
@@ -428,11 +434,13 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
 
               {/* Question 2: Challenges */}
               <div>
-                <label className="block font-bold text-[#1a2420] dark:text-slate-100 mb-1 flex items-center gap-1.5">
+                <label htmlFor="review-challenges" className="block font-bold text-[#1a2420] dark:text-slate-100 mb-1 flex items-center gap-1.5">
                   <AlertTriangle className="w-3.5 h-3.5 text-[#b08726]" />
                   <span>المعوقات والتحديات:</span>
                 </label>
                 <textarea
+                  id="review-challenges"
+                  aria-label="المعوقات والتحديات"
                   rows={2}
                   value={challenges}
                   onChange={(e) => setChallenges(e.target.value)}
@@ -443,11 +451,13 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
 
               {/* Question 3: Lessons Learned */}
               <div>
-                <label className="block font-bold text-[#1a2420] dark:text-slate-100 mb-1 flex items-center gap-1.5">
+                <label htmlFor="review-lessons" className="block font-bold text-[#1a2420] dark:text-slate-100 mb-1 flex items-center gap-1.5">
                   <Lightbulb className="w-3.5 h-3.5 text-[#174235]" />
                   <span>الدروس المستفادة والتحسينات:</span>
                 </label>
                 <textarea
+                  id="review-lessons"
+                  aria-label="الدروس المستفادة والتحسينات"
                   rows={2}
                   value={lessons}
                   onChange={(e) => setLessons(e.target.value)}
@@ -458,11 +468,13 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
 
               {/* Question 4: Next Commitments */}
               <div>
-                <label className="block font-bold text-[#1a2420] dark:text-slate-100 mb-1 flex items-center gap-1.5">
+                <label htmlFor="review-commitments" className="block font-bold text-[#1a2420] dark:text-slate-100 mb-1 flex items-center gap-1.5">
                   <ArrowRight className="w-3.5 h-3.5 text-[#174235]" />
                   <span>التزامات وأولويات الفترة القادمة:</span>
                 </label>
                 <textarea
+                  id="review-commitments"
+                  aria-label="التزامات وأولويات الفترة القادمة"
                   rows={2}
                   value={nextCommitments}
                   onChange={(e) => setNextCommitments(e.target.value)}
@@ -473,10 +485,12 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
 
               {/* General Notes */}
               <div>
-                <label className="block font-semibold text-[#5c6861] mb-1">
+                <label htmlFor="review-notes" className="block font-semibold text-[#5c6861] mb-1">
                   ملاحظات وتأملات ملاحظات حرة:
                 </label>
                 <textarea
+                  id="review-notes"
+                  aria-label="ملاحظات وتأملات حرة"
                   rows={2}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
@@ -612,6 +626,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                 <div className="flex items-center gap-2">
                   <input
                     type="text"
+                    aria-label="إضافة إجراء تنفيذي"
                     placeholder="أضف إجراءً عملياً سريعاً ناتجاً عن هذه المراجعة..."
                     value={newActionTitle}
                     onChange={(e) => setNewActionTitle(e.target.value)}

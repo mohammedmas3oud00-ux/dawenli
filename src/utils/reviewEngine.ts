@@ -256,7 +256,6 @@ export function getInitialSeedReviews(
   projects: Project[],
   tasks: Task[]
 ): SystemReview[] {
-  const frequencies: ReviewFrequency[] = ['daily', 'weekly', 'monthly', 'quarterly', 'yearly'];
   const today = new Date();
   
   const formatDate = (daysAgo: number) => {

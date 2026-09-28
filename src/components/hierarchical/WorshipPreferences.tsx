@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { WorshipDefinition } from '../../types/hierarchical';
-import { QURAN_QUARTER_PAGES, QURAN_QUARTERS_PER_JUZ } from '../../utils/ibadat';
+import { QURAN_QUARTER_PAGES } from '../../utils/ibadat';
 
 export function WorshipPreferences({ definition, onSave }: { definition: WorshipDefinition; onSave: (id: string, patch: Partial<WorshipDefinition>) => void }) {
   const [weekdays, setWeekdays] = useState(definition.scheduled_days ?? [1, 4]);
@@ -14,8 +14,8 @@ export function WorshipPreferences({ definition, onSave }: { definition: Worship
     <div className="mt-3 space-y-3 text-sm">
       {definition.category === 'fasting' ? <>
         <p className="text-slate-600 dark:text-slate-300">لن يدخل الصيام في تقييمك إلا في الأيام المحددة هنا.</p>
-        <label className="flex items-center gap-2"><input type="checkbox" checked={weekdays.includes(1) && weekdays.includes(4)} onChange={(e) => { setWeekdays(e.target.checked ? [1, 4] : []); setSaved(false); }} />الاثنين والخميس</label>
-        <label className="flex items-center gap-2"><input type="checkbox" checked={whiteDays} onChange={(e) => { setWhiteDays(e.target.checked); setSaved(false); }} />الأيام البيض: 13 و14 و15 هجريًا</label>
+        <label className="flex items-center gap-2"><input type="checkbox" aria-label="تفعيل صيام الاثنين والخميس" checked={weekdays.includes(1) && weekdays.includes(4)} onChange={(e) => { setWeekdays(e.target.checked ? [1, 4] : []); setSaved(false); }} />الاثنين والخميس</label>
+        <label className="flex items-center gap-2"><input type="checkbox" aria-label="تفعيل صيام الأيام البيض" checked={whiteDays} onChange={(e) => { setWhiteDays(e.target.checked); setSaved(false); }} />الأيام البيض: 13 و14 و15 هجريًا</label>
         <p className="text-xs text-slate-500">يمكن اختيار الاثنين معًا. التاريخ الهجري محسوب وقد يختلف عن الرؤية المحلية.</p>
       </> : <label className="flex flex-wrap items-center gap-2">{definition.category === 'quran_wird' ? 'الهدف اليومي بأرباع الحزب' : 'هدف قيام الليل بالركعات'}
         <input aria-label={`هدف ${definition.title}`} type="number" min="1" max={definition.category === 'quran_wird' ? 120 : 100} step="1" value={target} onChange={(e) => { setTarget(Number(e.target.value)); setSaved(false); }} className="w-20 rounded-lg border p-2 dark:border-slate-600 dark:bg-slate-900" />

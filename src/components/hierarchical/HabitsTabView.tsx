@@ -354,6 +354,7 @@ export const HabitsTabView: React.FC<HabitsTabViewProps> = ({
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
+                aria-label="إغلاق نافذة العادة"
                 className="text-[#85928a] dark:text-slate-400 hover:text-[#1a2420] dark:hover:text-slate-100 p-1 cursor-pointer"
               >
                 ✕
@@ -362,8 +363,10 @@ export const HabitsTabView: React.FC<HabitsTabViewProps> = ({
 
             <form onSubmit={handleSubmitModal} className="space-y-3">
               <div>
-                <label className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">اسم العادة أو الممارسة:</label>
+                <label htmlFor="habit-title" className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">اسم العادة أو الممارسة:</label>
                 <input
+                  id="habit-title"
+                  aria-label="اسم العادة أو الممارسة"
                   type="text"
                   required
                   value={modalTitle}
@@ -374,7 +377,7 @@ export const HabitsTabView: React.FC<HabitsTabViewProps> = ({
               </div>
 
               <div>
-                <label className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">الركيزة الحاضنة:</label>
+                <span className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">الركيزة الحاضنة:</span>
                 <CustomSelect
                   value={modalPillarId}
                   onChange={(val) => setModalPillarId(val)}
@@ -387,7 +390,7 @@ export const HabitsTabView: React.FC<HabitsTabViewProps> = ({
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">وقت الممارسة:</label>
+                  <span className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">وقت الممارسة:</span>
                   <CustomSelect<HabitTimeOfDay>
                     value={modalTimeOfDay}
                     onChange={(val) => setModalTimeOfDay(val)}
@@ -404,8 +407,10 @@ export const HabitsTabView: React.FC<HabitsTabViewProps> = ({
                 </div>
 
                 <div>
-                  <label className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">أيام الالتزام / الأسبوع:</label>
+                  <label htmlFor="habit-target-days" className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">أيام الالتزام / الأسبوع:</label>
                   <input
+                    id="habit-target-days"
+                    aria-label="أيام الالتزام في الأسبوع"
                     type="number"
                     min={1}
                     max={7}
@@ -417,8 +422,10 @@ export const HabitsTabView: React.FC<HabitsTabViewProps> = ({
               </div>
 
               <div>
-                <label className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">ملاحظة أو نية (اختياري):</label>
+                <label htmlFor="habit-description" className="block font-medium text-[#35403a] dark:text-slate-300 mb-1">ملاحظة أو نية (اختياري):</label>
                 <textarea
+                  id="habit-description"
+                  aria-label="ملاحظة أو نية"
                   rows={2}
                   value={modalDescription}
                   onChange={(e) => setModalDescription(e.target.value)}

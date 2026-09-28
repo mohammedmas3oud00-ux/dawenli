@@ -10,3 +10,4 @@ playwright-report/
 !.env.example
 Token.md
 .vercel
+supabase/.temp/

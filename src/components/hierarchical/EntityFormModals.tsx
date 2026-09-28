@@ -75,13 +75,13 @@ export const PillarModal: React.FC<PillarModalProps> = ({
             </h3>
             <p className="text-[11px] text-[#6d7972] dark:text-slate-400">الركيزة تمثل مجالك الحياتي الأكبر وغايتك الأساسية</p>
           </div>
-          <button onClick={onClose} className="text-[#85918a] dark:text-slate-400 hover:text-[#1a2420] dark:hover:text-slate-100 text-sm p-1">✕</button>
+          <button type="button" onClick={onClose} aria-label="إغلاق النافذة" className="text-[#85918a] dark:text-slate-400 hover:text-[#1a2420] dark:hover:text-slate-100 text-sm p-1">✕</button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           <div>
-            <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">اسم الركيزة: *</label>
-            <input
+            <label htmlFor="entity-form-field-1" className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">اسم الركيزة: *</label>
+            <input id="entity-form-field-1" aria-label="اسم الركيزة: *"
               type="text"
               required
               value={title}
@@ -92,10 +92,10 @@ export const PillarModal: React.FC<PillarModalProps> = ({
           </div>
 
           <div>
-            <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">
+            <label htmlFor="entity-form-field-2" className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">
               الغاية الكبرى للركيزة: *
             </label>
-            <textarea
+            <textarea id="entity-form-field-2" aria-label="الغاية الكبرى للركيزة: *"
               rows={3}
               required
               value={purpose}
@@ -108,8 +108,8 @@ export const PillarModal: React.FC<PillarModalProps> = ({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">المجموعة:</label>
-              <input
+              <label htmlFor="entity-form-field-3" className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">المجموعة:</label>
+              <input id="entity-form-field-3" aria-label="المجموعة:"
                 type="text"
                 value={pillarGroup}
                 onChange={(e) => setPillarGroup(e.target.value)}
@@ -119,8 +119,8 @@ export const PillarModal: React.FC<PillarModalProps> = ({
             </div>
 
             <div>
-              <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">ترتيب الأولوية:</label>
-              <input
+              <label htmlFor="entity-form-field-4" className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">ترتيب الأولوية:</label>
+              <input id="entity-form-field-4" aria-label="ترتيب الأولوية:"
                 type="number"
                 min={1}
                 max={20}
@@ -132,8 +132,8 @@ export const PillarModal: React.FC<PillarModalProps> = ({
           </div>
 
           <div>
-            <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">الوصف المختصر:</label>
-            <input
+            <label htmlFor="entity-form-field-5" className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">الوصف المختصر:</label>
+            <input id="entity-form-field-5" aria-label="الوصف المختصر:"
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -149,6 +149,7 @@ export const PillarModal: React.FC<PillarModalProps> = ({
             </div>
             <input
               type="checkbox"
+              aria-label="عرض في الصفحة الرئيسية"
               checked={showOnHome}
               onChange={(e) => setShowOnHome(e.target.checked)}
               className="w-4 h-4 text-[#174235] rounded cursor-pointer accent-[#174235]"
@@ -248,14 +249,14 @@ export const VisionModal: React.FC<VisionModalProps> = ({
               </p>
             )}
           </div>
-          <button onClick={onClose} className="text-[#85918a] dark:text-slate-400 hover:text-[#1a2420] dark:hover:text-slate-100 text-sm p-1">✕</button>
+          <button type="button" onClick={onClose} aria-label="إغلاق النافذة" className="text-[#85918a] dark:text-slate-400 hover:text-[#1a2420] dark:hover:text-slate-100 text-sm p-1">✕</button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           {pillars && pillars.length > 0 && !pillarTitle && (
             <div>
-              <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">الركيزة التابعة لها: *</label>
-              <CustomSelect
+              <span className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">الركيزة التابعة لها: *</span>
+              <CustomSelect title="الركيزة التابعة لها: *"
                 value={pillarId}
                 onChange={(val) => setPillarId(val)}
                 options={pillars.map((p) => ({
@@ -270,8 +271,8 @@ export const VisionModal: React.FC<VisionModalProps> = ({
           )}
 
           <div>
-            <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">عنوان الرؤية: *</label>
-            <input
+            <label htmlFor="entity-form-field-6" className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">عنوان الرؤية: *</label>
+            <input id="entity-form-field-6" aria-label="عنوان الرؤية: *"
               type="text"
               required
               value={title}
@@ -282,8 +283,8 @@ export const VisionModal: React.FC<VisionModalProps> = ({
           </div>
 
           <div>
-            <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">بيان الرؤية والأفق المستقبلي:</label>
-            <textarea
+            <label htmlFor="entity-form-field-7" className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">بيان الرؤية والأفق المستقبلي:</label>
+            <textarea id="entity-form-field-7" aria-label="بيان الرؤية والأفق المستقبلي:"
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -293,8 +294,8 @@ export const VisionModal: React.FC<VisionModalProps> = ({
           </div>
 
           <div>
-            <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">الأفق الزمني:</label>
-            <input
+            <label htmlFor="entity-form-field-8" className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">الأفق الزمني:</label>
+            <input id="entity-form-field-8" aria-label="الأفق الزمني:"
               type="text"
               value={timeframe}
               onChange={(e) => setTimeframe(e.target.value)}
@@ -344,7 +345,6 @@ export const ValueGoalModal: React.FC<ValueGoalModalProps> = ({
   initialGoal,
   parentTitle,
   visions = [],
-  pillars = [],
 }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -398,13 +398,13 @@ export const ValueGoalModal: React.FC<ValueGoalModalProps> = ({
               </p>
             )}
           </div>
-          <button onClick={onClose} className="text-[#85918a] dark:text-slate-400 hover:text-[#1a2420] dark:hover:text-slate-100 text-sm p-1">✕</button>
+          <button type="button" onClick={onClose} aria-label="إغلاق النافذة" className="text-[#85918a] dark:text-slate-400 hover:text-[#1a2420] dark:hover:text-slate-100 text-sm p-1">✕</button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           <div>
-            <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">عنوان الهدف: *</label>
-            <input
+            <label htmlFor="entity-form-field-9" className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">عنوان الهدف: *</label>
+            <input id="entity-form-field-9" aria-label="عنوان الهدف: *"
               type="text"
               required
               value={title}
@@ -416,8 +416,8 @@ export const ValueGoalModal: React.FC<ValueGoalModalProps> = ({
 
           {visions.length > 0 && (
             <div>
-              <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">الرؤية التابع لها:</label>
-              <CustomSelect
+              <span className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">الرؤية التابع لها:</span>
+              <CustomSelect title="الرؤية التابع لها:"
                 value={visionId}
                 onChange={(val) => setVisionId(val)}
                 options={[
@@ -433,8 +433,8 @@ export const ValueGoalModal: React.FC<ValueGoalModalProps> = ({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">الحالة:</label>
-              <CustomSelect
+              <span className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">الحالة:</span>
+              <CustomSelect title="الحالة:"
                 value={status}
                 onChange={(val) => setStatus(val as any)}
                 options={[
@@ -449,8 +449,8 @@ export const ValueGoalModal: React.FC<ValueGoalModalProps> = ({
             </div>
 
             <div>
-              <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">تاريخ الاستحقاق المستهدف:</label>
-              <input
+              <label htmlFor="entity-form-field-10" className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">تاريخ الاستحقاق المستهدف:</label>
+              <input id="entity-form-field-10" aria-label="تاريخ الاستحقاق المستهدف:"
                 type="date"
                 value={targetDate}
                 onChange={(e) => setTargetDate(e.target.value)}
@@ -460,8 +460,8 @@ export const ValueGoalModal: React.FC<ValueGoalModalProps> = ({
           </div>
 
           <div>
-            <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">تفاصيل إضافية / معايير النجاح:</label>
-            <textarea
+            <label htmlFor="entity-form-field-11" className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">تفاصيل إضافية / معايير النجاح:</label>
+            <textarea id="entity-form-field-11" aria-label="تفاصيل إضافية / معايير النجاح:"
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -570,13 +570,13 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
               </p>
             )}
           </div>
-          <button onClick={onClose} className="text-[#85918a] dark:text-slate-400 hover:text-[#1a2420] dark:hover:text-slate-100 text-sm p-1">✕</button>
+          <button type="button" onClick={onClose} aria-label="إغلاق النافذة" className="text-[#85918a] dark:text-slate-400 hover:text-[#1a2420] dark:hover:text-slate-100 text-sm p-1">✕</button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           <div>
-            <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">عنوان المشروع: *</label>
-            <input
+            <label htmlFor="entity-form-field-12" className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">عنوان المشروع: *</label>
+            <input id="entity-form-field-12" aria-label="عنوان المشروع: *"
               type="text"
               required
               value={title}
@@ -588,8 +588,8 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
 
           {goals.length > 0 && !goalTitle && (
             <div>
-              <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">الهدف التابع له: *</label>
-              <CustomSelect
+              <span className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">الهدف التابع له: *</span>
+              <CustomSelect title="الهدف التابع له: *"
                 value={goalId}
                 onChange={(val) => setGoalId(val)}
                 options={goals.map((g) => ({ value: g.id, label: g.title }))}
@@ -602,8 +602,8 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
 
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">حالة المشروع:</label>
-              <CustomSelect
+              <span className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">حالة المشروع:</span>
+              <CustomSelect title="حالة المشروع:"
                 value={status}
                 onChange={(val) => setStatus(val as any)}
                 options={[
@@ -619,8 +619,8 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
             </div>
 
             <div>
-              <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">تاريخ البدء:</label>
-              <input
+              <label htmlFor="entity-form-field-13" className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">تاريخ البدء:</label>
+              <input id="entity-form-field-13" aria-label="تاريخ البدء:"
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
@@ -629,8 +629,8 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
             </div>
 
             <div>
-              <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">تاريخ التسليم:</label>
-              <input
+              <label htmlFor="entity-form-field-14" className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">تاريخ التسليم:</label>
+              <input id="entity-form-field-14" aria-label="تاريخ التسليم:"
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
@@ -640,8 +640,8 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
           </div>
 
           <div>
-            <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">وصف المشروع:</label>
-            <textarea
+            <label htmlFor="entity-form-field-15" className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">وصف المشروع:</label>
+            <textarea id="entity-form-field-15" aria-label="وصف المشروع:"
               rows={2}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -750,27 +750,26 @@ export const TaskModal: React.FC<TaskModalProps> = ({
               </p>
             )}
           </div>
-          <button onClick={onClose} className="text-[#85918a] dark:text-slate-400 hover:text-[#1a2420] dark:hover:text-slate-100 text-sm p-1">✕</button>
+          <button type="button" onClick={onClose} aria-label="إغلاق النافذة" className="text-[#85918a] dark:text-slate-400 hover:text-[#1a2420] dark:hover:text-slate-100 text-sm p-1">✕</button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           <div>
-            <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">عنوان المهمة: *</label>
-            <input
+            <label htmlFor="entity-form-field-16" className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">عنوان المهمة: *</label>
+            <input id="entity-form-field-16" aria-label="عنوان المهمة: *"
               type="text"
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="اكتب اسم المهمة الواضحة والتنفيذية..."
               className="w-full p-2.5 bg-[#faf8f5] dark:bg-slate-800 border border-[#d8d4cc] dark:border-slate-700 rounded-xl text-[#1a2420] dark:text-slate-100 focus:border-[#174235] dark:focus:border-emerald-500 outline-hidden"
-              autoFocus
             />
           </div>
 
           {projects.length > 0 && !projectTitle && (
             <div>
-              <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">المشروع التابع له: *</label>
-              <CustomSelect
+              <span className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">المشروع التابع له: *</span>
+              <CustomSelect title="المشروع التابع له: *"
                 value={projectId}
                 onChange={(val) => setProjectId(val)}
                 options={projects.map((p) => ({ value: p.id, label: p.title }))}
@@ -783,8 +782,8 @@ export const TaskModal: React.FC<TaskModalProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">الحالة:</label>
-              <CustomSelect
+              <span className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">الحالة:</span>
+              <CustomSelect title="الحالة:"
                 value={status}
                 onChange={(val) => setStatus(val as any)}
                 options={[
@@ -799,8 +798,8 @@ export const TaskModal: React.FC<TaskModalProps> = ({
             </div>
 
             <div>
-              <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">الأولوية:</label>
-              <CustomSelect
+              <span className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">الأولوية:</span>
+              <CustomSelect title="الأولوية:"
                 value={priority}
                 onChange={(val) => setPriority(val as any)}
                 options={[
@@ -815,8 +814,8 @@ export const TaskModal: React.FC<TaskModalProps> = ({
             </div>
 
             <div>
-              <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">تاريخ الاستحقاق:</label>
-              <input
+              <label htmlFor="entity-form-field-17" className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">تاريخ الاستحقاق:</label>
+              <input id="entity-form-field-17" aria-label="تاريخ الاستحقاق:"
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
@@ -826,8 +825,8 @@ export const TaskModal: React.FC<TaskModalProps> = ({
           </div>
 
           <div>
-            <label className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">ملاحظات المهمة:</label>
-            <textarea
+            <label htmlFor="entity-form-field-18" className="font-bold text-[#3a453f] dark:text-slate-300 block mb-1">ملاحظات المهمة:</label>
+            <textarea id="entity-form-field-18" aria-label="ملاحظات المهمة:"
               rows={2}
               value={description}
               onChange={(e) => setDescription(e.target.value)}

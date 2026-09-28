@@ -11,14 +11,12 @@ import {
 } from '../../types/hierarchical';
 import { 
   Activity, 
-  Sparkles, 
   Plus, 
   Calendar, 
   Star, 
   Trash2, 
   Edit2, 
   CheckCircle2, 
-  AlertTriangle, 
   ArrowRight, 
   CheckSquare, 
   ChevronDown,

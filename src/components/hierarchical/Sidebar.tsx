@@ -9,7 +9,6 @@ import {
   X, 
   Moon, 
   Sun,
-  User, 
   Activity,
   Inbox,
   Repeat,
@@ -180,7 +179,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <>
       {/* Mobile Backdrop */}
       {isOpenMobile && (
-        <div
+        <button
+          type="button"
+          aria-label="إغلاق القائمة الجانبية"
           onClick={onCloseMobile}
           className="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-2xs md:hidden"
         />

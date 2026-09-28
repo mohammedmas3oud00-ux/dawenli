@@ -10,15 +10,11 @@ import { shouldRefreshPrayerTimes } from './prayerTimesRefresh';
 import { 
   Bell, 
   BellOff, 
-  Clock, 
   MapPin, 
   Sun, 
   Moon, 
   Sunrise, 
   Sunset, 
-  Sparkles,
-  Volume2,
-  CheckCircle2,
   RefreshCw
 } from 'lucide-react';
 
@@ -45,7 +41,6 @@ const formatPrayerTime = (time: string) => {
 export const PrayerTimesCard: React.FC<PrayerTimesCardProps> = ({
   onAdhanNotify,
   className = '',
-  isCompact = false,
 }) => {
   const [data, setData] = useState<PrayerTimesData | null>(null);
   const [loading, setLoading] = useState(true);

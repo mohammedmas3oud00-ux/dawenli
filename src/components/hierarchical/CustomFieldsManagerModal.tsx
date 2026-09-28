@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, Plus, Trash2, X, Sliders, Type, Hash, ListFilter, Calendar, CheckSquare } from 'lucide-react';
+import { Plus, Trash2, X, Sliders, Type, Hash, ListFilter, Calendar, CheckSquare } from 'lucide-react';
 import { CustomFieldDefinition, CustomFieldType } from '../../types/hierarchical';
 import { CustomSelect } from './CustomSelect';
 import { createId } from '../../utils/id';
@@ -110,6 +110,7 @@ export const CustomFieldsManagerModal: React.FC<CustomFieldsManagerModalProps> =
           </div>
           <button
             onClick={onClose}
+            aria-label="إغلاق إدارة الحقول المخصصة"
             className="text-[#85918a] dark:text-slate-400 hover:text-[#1a2420] dark:hover:text-slate-100 text-sm p-1 rounded-lg hover:bg-[#f2efe9] dark:hover:bg-slate-800 cursor-pointer"
           >
             <X className="w-4 h-4" />
@@ -160,6 +161,7 @@ export const CustomFieldsManagerModal: React.FC<CustomFieldsManagerModalProps> =
                       onClick={() => handleDelete(field.id)}
                       className="p-1.5 text-rose-500 hover:text-rose-700 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/60 rounded-lg transition-colors cursor-pointer"
                       title="حذف الخاصية"
+                      aria-label={`حذف الخاصية ${field.name}`}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -175,10 +177,12 @@ export const CustomFieldsManagerModal: React.FC<CustomFieldsManagerModalProps> =
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] font-bold text-[#4a5850] dark:text-slate-300 mb-1">
+                <label htmlFor="custom-field-name" className="block text-[11px] font-bold text-[#4a5850] dark:text-slate-300 mb-1">
                   اسم الخاصية: *
                 </label>
                 <input
+                  id="custom-field-name"
+                  aria-label="اسم الخاصية"
                   type="text"
                   required
                   value={name}
@@ -189,9 +193,9 @@ export const CustomFieldsManagerModal: React.FC<CustomFieldsManagerModalProps> =
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-[#4a5850] dark:text-slate-300 mb-1">
+                <span className="block text-[11px] font-bold text-[#4a5850] dark:text-slate-300 mb-1">
                   نوع الخاصية:
-                </label>
+                </span>
                 <CustomSelect
                   value={type}
                   onChange={(val) => setType(val as CustomFieldType)}
@@ -210,10 +214,12 @@ export const CustomFieldsManagerModal: React.FC<CustomFieldsManagerModalProps> =
 
             {type === 'select' && (
               <div>
-                <label className="block text-[11px] font-bold text-[#4a5850] dark:text-slate-300 mb-1">
+                <label htmlFor="custom-field-options" className="block text-[11px] font-bold text-[#4a5850] dark:text-slate-300 mb-1">
                   خيارات القائمة (افصل بينها بفواصل):
                 </label>
                 <input
+                  id="custom-field-options"
+                  aria-label="خيارات القائمة"
                   type="text"
                   value={optionsStr}
                   onChange={(e) => setOptionsStr(e.target.value)}

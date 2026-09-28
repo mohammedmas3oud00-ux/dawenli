@@ -51,12 +51,12 @@ function safeParseJson(text: string): any {
   }
   try {
     return JSON.parse(cleaned.trim());
-  } catch (e) {
+  } catch {
     const match = cleaned.match(/(\{[\s\S]*\}|\[[\s\S]*\])/);
     if (match) {
       try {
         return JSON.parse(match[0]);
-      } catch (err) {}
+      } catch {}
     }
     return null;
   }
@@ -905,7 +905,7 @@ ${preCleanedText}
     }));
 
     return res.json({ ok: true, data: { ...parsed, modelUsed } });
-  } catch (error: any) {
+  } catch {
     console.error('Error in analyze handler');
     return apiError(res, 502, 'UPSTREAM_ERROR', 'فشل تحليل النص بالذكاء الاصطناعي.');
   }
@@ -1030,7 +1030,7 @@ app.post('/api/ai/transcribe', async (req, res) => {
     }
 
     return res.json({ ok: true, data: { transcription: sanitizeSpeechText(transcribed) } });
-  } catch (error: any) {
+  } catch {
     console.error('Error in /api/ai/transcribe');
     return apiError(res, 502, 'UPSTREAM_ERROR', 'فشل تفريغ الصوت بالذكاء الاصطناعي.');
   }
@@ -1100,7 +1100,7 @@ app.post('/api/ai/decompose-project', async (req, res) => {
     }));
 
     return res.json({ ok: true, data: { tasks, modelUsed } });
-  } catch (error: any) {
+  } catch {
     console.error('Error in /api/ai/decompose-project');
     return apiError(res, 502, 'UPSTREAM_ERROR', 'فشل تفكيك المشروع.');
   }
@@ -1179,7 +1179,7 @@ ${JSON.stringify(systemMetrics || {}, null, 2)}
     }
 
     return res.json({ ok: true, data: { ...data, modelUsed } });
-  } catch (error: any) {
+  } catch {
     console.error('Error in /api/ai/smart-review');
     return apiError(res, 502, 'UPSTREAM_ERROR', 'فشل التحليل الذكي للمراجعة.');
   }
@@ -1295,7 +1295,7 @@ app.post('/api/ai/analyze-inbox', async (req, res) => {
     parsed.energyLevel = normalizeEnergy(parsed.energyLevel);
 
     return res.json({ ok: true, data: { ...parsed, modelUsed } });
-  } catch (error: any) {
+  } catch {
     console.error('Error in /api/ai/analyze-inbox');
     return apiError(res, 502, 'UPSTREAM_ERROR', 'فشل تحليل عنصر صندوق الوارد بالذكاء الاصطناعي.');
   }
@@ -1361,7 +1361,7 @@ app.get('/api/prayer-times', async (req, res) => {
     prayerTimesCache.set(cacheKey, { expiresAt: Date.now() + 5 * 60_000, data: cleanTimings });
 
     return res.json({ ok: true, data: cleanTimings });
-  } catch (error: any) {
+  } catch {
     console.warn('Failed to fetch accurate prayer times');
     return apiError(res, 502, 'UPSTREAM_ERROR', 'تعذر جلب مواقيت الصلاة الدقيقة. فعّل الموقع أو حاول لاحقًا.');
   }
@@ -1380,7 +1380,7 @@ app.post('/api/ai/worship-insight', async (req, res) => {
     const data = safeParseJson(response.text);
     if (!data?.summary || !Array.isArray(data.suggestions)) throw new Error('Invalid worship insight');
     return res.json({ ok: true, data: { summary: String(data.summary), suggestions: data.suggestions.slice(0, 3).map(String), modelUsed } });
-  } catch (error) {
+  } catch {
     console.error('Error in /api/ai/worship-insight');
     return apiError(res, 502, 'UPSTREAM_ERROR', 'فشل تحليل الالتزام بالذكاء الاصطناعي.');
   }

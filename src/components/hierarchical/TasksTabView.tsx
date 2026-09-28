@@ -15,10 +15,8 @@ import {
   ChevronRight, 
   ChevronLeft,
   Sliders,
-  ArrowRight,
   Circle,
-  Clock,
-  Sparkles
+  Clock
 } from 'lucide-react';
 import { Task, Project, CustomFieldDefinition } from '../../types/hierarchical';
 import { CustomSelect } from './CustomSelect';
@@ -316,14 +314,15 @@ export const TasksTabView: React.FC<TasksTabViewProps> = ({
 
                     <div className="space-y-1.5 min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2 text-xs">
-                        <span
+                        <button
+                          type="button"
                           onClick={() => onToggleStatus(task.id)}
-                          className={`font-medium transition-all cursor-pointer ${
+                          className={`font-medium text-right transition-all cursor-pointer ${
                             isDone ? 'line-through text-[#99a39c] dark:text-slate-500' : 'text-[#1a2420] dark:text-slate-100'
                           }`}
                         >
                           {task.title}
-                        </span>
+                        </button>
 
                         {/* Priority tag */}
                         {task.priority === 'high' && (
@@ -471,7 +470,6 @@ export const TasksTabView: React.FC<TasksTabViewProps> = ({
                         customFields={customFields}
                         onEditTask={onEditTask}
                         onDeleteTask={onDeleteTask}
-                        onStartFocus={onStartFocus}
                         onMoveStatus={(nextStatus) => handleStatusChangeInternal(task.id, nextStatus)}
                         onCustomFieldChange={(fieldId, val) => handleCustomFieldChange(task.id, fieldId, val)}
                       />
@@ -511,7 +509,6 @@ export const TasksTabView: React.FC<TasksTabViewProps> = ({
                         customFields={customFields}
                         onEditTask={onEditTask}
                         onDeleteTask={onDeleteTask}
-                        onStartFocus={onStartFocus}
                         onMoveStatus={(nextStatus) => handleStatusChangeInternal(task.id, nextStatus)}
                         onCustomFieldChange={(fieldId, val) => handleCustomFieldChange(task.id, fieldId, val)}
                       />
@@ -551,7 +548,6 @@ export const TasksTabView: React.FC<TasksTabViewProps> = ({
                         customFields={customFields}
                         onEditTask={onEditTask}
                         onDeleteTask={onDeleteTask}
-                        onStartFocus={onStartFocus}
                         onMoveStatus={(nextStatus) => handleStatusChangeInternal(task.id, nextStatus)}
                         onCustomFieldChange={(fieldId, val) => handleCustomFieldChange(task.id, fieldId, val)}
                       />
@@ -659,10 +655,11 @@ export const TasksTabView: React.FC<TasksTabViewProps> = ({
                     {dayTasks.map((t) => {
                       const isTaskDone = t.status === 'done';
                       return (
-                        <div
+                        <button
+                          type="button"
                           key={t.id}
                           onClick={() => onEditTask(t)}
-                          className={`p-1 rounded-md text-[10px] leading-tight cursor-pointer truncate border transition-all ${
+                          className={`block w-full p-1 rounded-md text-right text-[10px] leading-tight cursor-pointer truncate border transition-all ${
                             isTaskDone
                               ? 'line-through text-[#909e95] dark:text-slate-500 bg-[#f4f2ee] dark:bg-slate-800/50 border-[#dfdbd2] dark:border-slate-700'
                               : t.priority === 'high'
@@ -672,7 +669,7 @@ export const TasksTabView: React.FC<TasksTabViewProps> = ({
                           title={t.title}
                         >
                           {t.title}
-                        </div>
+                        </button>
                       );
                     })}
                   </div>
@@ -704,7 +701,6 @@ interface KanbanCardProps {
   customFields: CustomFieldDefinition[];
   onEditTask: (task: Task) => void;
   onDeleteTask: (taskId: string) => void;
-  onStartFocus?: (task: Task) => void;
   onMoveStatus: (nextStatus: Task['status']) => void;
   onCustomFieldChange: (fieldId: string, val: any) => void;
 }
@@ -715,7 +711,6 @@ const KanbanCard: React.FC<KanbanCardProps> = ({
   customFields,
   onEditTask,
   onDeleteTask,
-  onStartFocus,
   onMoveStatus,
   onCustomFieldChange,
 }) => {
@@ -724,15 +719,18 @@ const KanbanCard: React.FC<KanbanCardProps> = ({
   return (
     <div className="p-3 bg-white dark:bg-slate-800 border border-[#e5e1d7] dark:border-slate-700 rounded-xl shadow-2xs hover:shadow-xs transition-all space-y-2 group">
       <div className="flex items-start justify-between gap-2">
-        <h4
-          onClick={() => onEditTask(task)}
-          className={`text-xs font-semibold leading-snug cursor-pointer transition-colors ${
-            isDone
-              ? 'line-through text-[#909e96] dark:text-slate-500'
-              : 'text-[#1a2420] dark:text-slate-100 hover:text-[#174235] dark:hover:text-emerald-400'
-          }`}
-        >
-          {task.title}
+        <h4>
+          <button
+            type="button"
+            onClick={() => onEditTask(task)}
+            className={`text-xs text-right font-semibold leading-snug cursor-pointer transition-colors ${
+              isDone
+                ? 'line-through text-[#909e96] dark:text-slate-500'
+                : 'text-[#1a2420] dark:text-slate-100 hover:text-[#174235] dark:hover:text-emerald-400'
+            }`}
+          >
+            {task.title}
+          </button>
         </h4>
 
         {/* Priority Dot */}

@@ -2,7 +2,6 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type {
   AppDataSnapshot,
   CustomFieldDefinition,
-  FocusSessionRecord,
   InboxItem,
 } from '../types/hierarchical';
 
