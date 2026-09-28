@@ -48,7 +48,7 @@ try {
     projects: [{ id: projectId, goal_id: goalId, title: 'Sync project', description: '', status: 'in_progress', progress: 0, start_date: date, due_date: null, custom_fields: {}, created_at: now }],
     tasks: [{ id: taskId, project_id: projectId, title: 'Sync task', description: '', status: 'todo', priority: 'medium', due_date: null, completed_at: null, custom_fields: {}, created_at: now }],
     habits: [{ id: habitId, pillar_id: pillarId, title: 'Sync habit', description: '', frequency: 'daily', target_days_per_week: 7, custom_days: [], time_of_day: 'morning', current_streak: 2, longest_streak: 5, completed_dates: [date], is_active: true, created_at: now }],
-    inboxItems: [{ id: randomUUID(), title: 'Sync inbox', content: '', source_type: 'idea', status: 'inbox', converted_to: null, converted_entity_id: null, created_at: now }],
+    inboxItems: [{ id: randomUUID(), title: 'Sync inbox', content: '', source_type: 'idea', status: 'processed', converted_to: 'calendar_event', converted_entity_id: eventId, created_at: now }],
     vaults: [{ id: randomUUID(), pillar_id: pillarId, project_id: null, title: 'Sync vault', vault_type: 'notes', summary: '', content: '', tags: [], status: 'active', created_at: now }],
     worshipDefinitions: [{ id: worshipId, pillar_id: pillarId, vision_id: null, goal_id: null, title: 'Sync worship', category: 'custom_dua', tracking_type: 'checkbox', frequency: 'daily', scheduled_days: [], scheduled_hijri_days: [], settings_history: [], is_active: true, sort_order: 0, created_at: now }],
     worshipLogs: [{ id: logId, worship_id: worshipId, date, is_completed: true, count: null, amount: null, pages_read: null, performance: null, congregation: null, sunnah_completed: null, rakaat_count: null, performed_at_time: null, fasting_type: null, notes: null, completed_at: now, created_at: now }],
@@ -59,6 +59,7 @@ try {
   await repository.save(snapshot);
   const loaded = await repository.load();
   if (loaded.projects.length !== 1 || loaded.tasks.length !== 1 || loaded.inboxItems.length !== 1 || loaded.vaults.length !== 1) throw new Error('Core collections did not round-trip');
+   if (loaded.inboxItems[0]?.converted_to !== 'calendar_event' || loaded.inboxItems[0]?.converted_entity_id !== eventId) throw new Error('Inbox calendar conversion did not round-trip');
   if (loaded.habits[0]?.longest_streak !== 5 || loaded.habits[0]?.completed_dates?.[0] !== date) throw new Error('Habit data did not round-trip');
   if (loaded.worshipDefinitions.length !== 1 || loaded.worshipLogs[0]?.is_completed !== true) throw new Error('Ibadat data did not round-trip');
    if (loaded.journals[0]?.content !== 'Round-trip text' || loaded.calendarEvents[0]?.recurrence?.frequency !== 'weekly') throw new Error('Journal or calendar data did not round-trip');
