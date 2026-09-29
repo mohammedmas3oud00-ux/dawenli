@@ -26,6 +26,15 @@ function Consumer() {
   );
 }
 
+async function renderProvider() {
+  render(
+    <AuthProvider>
+      <Consumer />
+    </AuthProvider>,
+  );
+  await waitFor(() => expect(screen.getByTestId('auth-state')).toHaveTextContent('signedOut:none'));
+}
+
 describe('AuthProvider', () => {
   beforeEach(() => {
     cleanup();
@@ -36,13 +45,18 @@ describe('AuthProvider', () => {
   });
 
   it('initializes signed-out state when there is no session', async () => {
+    await renderProvider();
+    expect(service.getSessionUser).toHaveBeenCalledOnce();
+  });
+
+  it('recovers to signed-out when the session lookup fails', async () => {
+    service.getSessionUser.mockRejectedValue(new Error('network'));
     render(
       <AuthProvider>
         <Consumer />
       </AuthProvider>,
     );
     await waitFor(() => expect(screen.getByTestId('auth-state')).toHaveTextContent('signedOut:none'));
-    expect(service.getSessionUser).toHaveBeenCalledOnce();
   });
 
   it('normalizes auth state changes into the shared context', async () => {
@@ -51,13 +65,49 @@ describe('AuthProvider', () => {
       callback = next;
       return () => undefined;
     });
+    await renderProvider();
+    callback?.({ id: 'user-1', email: 'user@example.com' });
+    await waitFor(() => expect(screen.getByTestId('auth-state')).toHaveTextContent('authenticated:user@example.com'));
+  });
+
+  it('signs out and clears the shared auth state', async () => {
+    let adopt: ((user: { id?: string; email: string; isGuest?: boolean }) => void) | undefined;
+    let signOut: (() => Promise<void>) | undefined;
+    function Controls() {
+      const auth = useAuth();
+      adopt = auth.adoptUser;
+      signOut = auth.signOut;
+      return null;
+    }
     render(
       <AuthProvider>
+        <Controls />
         <Consumer />
       </AuthProvider>,
     );
+    await waitFor(() => expect(service.getSessionUser).toHaveBeenCalledOnce());
+    adopt?.({ email: 'guest@example.com', isGuest: true });
+    await waitFor(() => expect(screen.getByTestId('auth-state')).toHaveTextContent('guest:guest@example.com'));
+    await signOut?.();
     await waitFor(() => expect(screen.getByTestId('auth-state')).toHaveTextContent('signedOut:none'));
-    callback?.({ id: 'user-1', email: 'user@example.com' });
+    expect(service.signOut).toHaveBeenCalledOnce();
+  });
+
+  it('adopts an authenticated user with a generated id', async () => {
+    let adopt: ((user: { id?: string; email: string; isGuest?: boolean }) => void) | undefined;
+    function Controls() {
+      const auth = useAuth();
+      adopt = auth.adoptUser;
+      return null;
+    }
+    render(
+      <AuthProvider>
+        <Controls />
+        <Consumer />
+      </AuthProvider>,
+    );
+    await waitFor(() => expect(service.getSessionUser).toHaveBeenCalledOnce());
+    adopt?.({ email: 'user@example.com' });
     await waitFor(() => expect(screen.getByTestId('auth-state')).toHaveTextContent('authenticated:user@example.com'));
   });
 });
