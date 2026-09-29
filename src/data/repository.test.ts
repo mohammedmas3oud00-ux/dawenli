@@ -100,4 +100,132 @@ describe('repository snapshot normalization', () => {
     expect(path.stage_start_date).toBeTruthy();
     expect(sleep.ultimate_bedtime).toBe('22:00');
   });
+
+  it('stamps user ids and drops schema metadata from database rows', () => {
+    const payload = normalizeSnapshotForDatabase(
+      normalizeSnapshot({
+        ...emptySnapshot(),
+        tasks: [{ id: 'task-1', updated_at: '2026-01-01T00:00:00Z' } as never],
+        customFieldDefinitions: [{ id: 'field-1', entityType: 'tasks' } as never],
+      }),
+      'user-9',
+    );
+    const task = (payload.tasks as Array<Record<string, unknown>>)[0];
+    expect(task.user_id).toBe('user-9');
+    expect('schemaVersion' in task).toBe(false);
+    expect((payload.custom_field_definitions as Array<Record<string, unknown>>)[0].entity_type).toBe('tasks');
+  });
+
+  it('normalizes vaults, quran trackers, journals, and calendar events for the database', () => {
+    const payload = normalizeSnapshotForDatabase(
+      normalizeSnapshot({ ...emptySnapshot(), vaults: [{ id: 'vault-1' } as never] }),
+      'user-1',
+    );
+    expect((payload.vault_items as Array<Record<string, unknown>>)[0].vault_type).toBe('notes');
+  });
+
+  function chainableFrom(result: { data: unknown; error: unknown }) {
+    return vi.fn(() => ({
+      select: () => ({
+        eq: () => Promise.resolve(result),
+      }),
+    }));
+  }
+
+  it('retries once on a revision change and then reports the conflict', async () => {
+    localStorage.clear();
+    const rpc = vi
+      .fn()
+      .mockResolvedValueOnce({ data: 1, error: null })
+      .mockResolvedValueOnce({ data: 2, error: null })
+      .mockResolvedValueOnce({ data: 2, error: null })
+      .mockResolvedValueOnce({ data: 3, error: null });
+    const repository = new SupabaseRepository(
+      { from: chainableFrom({ data: [], error: null }), rpc } as never,
+      'user-1',
+    );
+    await expect(repository.load()).rejects.toMatchObject({ code: 'conflict' });
+    expect(rpc).toHaveBeenCalledTimes(4);
+  });
+
+  it('falls back to pending sync storage when the cloud load fails', async () => {
+    localStorage.clear();
+    localStorage.setItem(
+      'dawenli_pending_sync_user-1',
+      JSON.stringify(normalizeSnapshot({ ...emptySnapshot(), tasks: [{ id: 'pending' } as never] })),
+    );
+    const repository = new SupabaseRepository(
+      {
+        from: chainableFrom({ data: null, error: { message: 'network failure' } }),
+        rpc: vi.fn().mockResolvedValue({ data: 1, error: null }),
+      } as never,
+      'user-1',
+    );
+    await expect(repository.load()).resolves.toMatchObject({ tasks: [{ id: 'pending' }] });
+  });
+
+  it('removes corrupt pending sync payloads instead of trusting them', async () => {
+    localStorage.clear();
+    localStorage.setItem('dawenli_pending_sync_user-1', '{corrupt');
+    const repository = new SupabaseRepository(
+      {
+        from: chainableFrom({ data: [], error: null }),
+        rpc: vi.fn().mockResolvedValue({ data: 1, error: null }),
+      } as never,
+      'user-1',
+    );
+    await expect(repository.load()).resolves.toMatchObject({ tasks: [] });
+    expect(localStorage.getItem('dawenli_pending_sync_user-1')).toBeNull();
+  });
+
+  it('keeps a pending sync copy when a non-conflict save fails', async () => {
+    localStorage.clear();
+    const rpc = vi
+      .fn()
+      .mockResolvedValueOnce({ data: 3, error: null })
+      .mockResolvedValueOnce({ data: null, error: { message: 'fetch failed' } });
+    const repository = new SupabaseRepository({ rpc } as never, 'user-1');
+    await expect(repository.save(emptySnapshot())).rejects.toMatchObject({ code: 'network' });
+    expect(localStorage.getItem('dawenli_pending_sync_user-1')).not.toBeNull();
+  });
+
+  it('clears the cloud snapshot and pending storage together', async () => {
+    localStorage.clear();
+    localStorage.setItem('dawenli_pending_sync_user-1', '{}');
+    const rpc = vi.fn().mockResolvedValue({ data: 5, error: null });
+    const repository = new SupabaseRepository({ rpc } as never, 'user-1');
+    await expect(repository.clear()).resolves.toBeUndefined();
+    expect(rpc).toHaveBeenCalledWith('dawenli_clear_snapshot');
+    expect(localStorage.getItem('dawenli_pending_sync_user-1')).toBeNull();
+  });
+
+  it('rejects an invalid snapshot revision from the server', async () => {
+    localStorage.clear();
+    const rpc = vi.fn().mockResolvedValue({ data: 'NaN', error: null });
+    const repository = new SupabaseRepository({ rpc } as never, 'user-1');
+    await expect(repository.load()).rejects.toThrow('إصدار المزامنة السحابية غير صالح.');
+  });
+
+  it('maps unauthorized, validation, and duplicate database errors', async () => {
+    localStorage.clear();
+    const unauthorized = new SupabaseRepository(
+      {
+        rpc: vi.fn().mockResolvedValue({ data: null, error: { code: '42501', message: 'permission denied' } }),
+      } as never,
+      'user-1',
+    );
+    await expect(unauthorized.save(emptySnapshot())).rejects.toMatchObject({ code: 'unauthorized' });
+
+    const duplicate = new SupabaseRepository(
+      { rpc: vi.fn().mockResolvedValue({ data: null, error: { code: '23505', message: 'duplicate key' } }) } as never,
+      'user-1',
+    );
+    await expect(duplicate.save(emptySnapshot())).rejects.toMatchObject({ code: 'conflict' });
+
+    const invalid = new SupabaseRepository(
+      { rpc: vi.fn().mockResolvedValue({ data: null, error: { code: '22P02', message: 'bad input' } }) } as never,
+      'user-1',
+    );
+    await expect(invalid.save(emptySnapshot())).rejects.toMatchObject({ code: 'validation' });
+  });
 });

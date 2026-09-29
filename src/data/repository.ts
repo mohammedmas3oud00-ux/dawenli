@@ -331,6 +331,7 @@ function fromDatabaseRow(row: Record<string, unknown>): Record<string, unknown> 
 }
 
 function mapRepositoryError(error: unknown, fallback: string): RepositoryError {
+  if (error instanceof RepositoryError) return error;
   const typed = error as { message?: string; code?: string; details?: string } | null;
   const message = typed?.message || (error instanceof Error ? error.message : fallback);
   const errorCode = String(typed?.code || '').toLowerCase();
