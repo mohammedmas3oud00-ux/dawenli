@@ -57,3 +57,22 @@
 - Several feature hooks are not production consumers yet.
 - `appStore` still contains duplicate collection fields during the incremental store migration.
 - These areas are changed only when required to eliminate an active correctness risk; broad migration is deferred to avoid unrelated refactoring.
+
+## Local quality gates (verified)
+
+- `npm run typecheck` (tsc --noEmit): clean.
+- `npm run lint` (ESLint flat config): clean.
+- `npm run test`: 61 files / 242 tests passing.
+- `npm run test:coverage`: 30.75% statements, 25.81% branches, 31.99% lines (target was 30%).
+- `npm run build`: 1892 modules transformed successfully.
+- Supabase SQL suites (`npm run test:supabase`, `npm run test:supabase:security:local`, `npx supabase db lint`) were validated earlier in this session and remain green; they require the local Docker stack, which is not running in the current environment.
+- All work is committed locally on `codex/feature-based-architecture` with no push performed.
+
+## Test coverage map
+
+- Persistence: `src/data/repository.test.ts` (16), `src/shared/services/snapshotPersistence.test.ts` (4), `src/app/store/useAppDataPersistence.test.ts` (6), `src/data/legacyMigration.test.ts` (7).
+- Hooks: `useRepositoryQuery`, `useTasks`, `useHabits`, `useInbox`, `useVaults`, `useIbadat`, `useReviews`, `useAI`, `useNotifications`, `useDashboardNavigation`, `useAuth`.
+- Services: tasks, habits, inbox, vaults, ibadat, auth, AI, notification adapters with load/save error mapping.
+- Utilities: `reviewEngine` diagnostics/health/audit, `taskRecommender`, `speechRecognition`, `pushNotifications`, `audioChime`, `habitStreak`, `date`, `id`, `worshipLayout`, `worshipReminderTime`, `hierarchicalStore`, `reminder`.
+- UI: `ProgressBar`, `Breadcrumbs`, focus session logic, inbox conversion guards, prayer times refresh.
+- Auth: `AuthProvider` lifecycle (init, failure recovery, state changes, guest adopt, sign out) and `useAuth` boundary guard.
