@@ -45,13 +45,15 @@ describe('app store snapshot contract', () => {
 
   it('accepts direct arrays and functional updaters for every collection', () => {
     for (const setter of collectionSetters) {
-      useAppStore.getState()[setter]([{ id: `${setter}-direct` } as never]);
-      useAppStore.getState()[setter]((current) => [...current, { id: `${setter}-fn` } as never]);
+      const collection = useAppStore.getState()[setter] as (value: unknown) => void;
+      collection([{ id: `${setter}-direct` }]);
+      collection((current: unknown[]) => [...current, { id: `${setter}-fn` }]);
     }
     const snapshot = snapshotFromState(useAppStore.getState());
+    const snapshotRecord = snapshot as unknown as Record<string, Array<{ id: string }>>;
     for (const setter of collectionSetters) {
       const key = setter.replace(/^set/, '').replace(/^./, (char) => char.toLowerCase());
-      expect(snapshot[key]).toEqual([{ id: `${setter}-direct` }, { id: `${setter}-fn` }]);
+      expect(snapshotRecord[key].map((item) => item.id)).toEqual([`${setter}-direct`, `${setter}-fn`]);
     }
   });
 

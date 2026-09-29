@@ -29,8 +29,8 @@ describe('useHabits', () => {
     expect(created.id).toBe('habit-1');
     await waitFor(() => expect(result.current.habits.map((habit) => habit.id)).toEqual(['habit-1', 'seed']));
 
-    await act(async () => result.current.checkIn({ id: 'habit-1', title: 'قراءة', streak: 5 } as never));
-    await waitFor(() => expect(result.current.habits[0].streak).toBe(5));
+    await act(async () => result.current.checkIn({ id: 'habit-1', title: 'قراءة', longest_streak: 5 } as never));
+    await waitFor(() => expect(result.current.habits[0].longest_streak).toBe(5));
 
     await act(async () => result.current.remove('habit-1'));
     await waitFor(() => expect(result.current.habits.map((habit) => habit.id)).toEqual(['seed']));

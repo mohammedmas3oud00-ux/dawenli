@@ -2,12 +2,19 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { playFocusSound, stopAdhanSound } from './audioChime';
 
 function makeAudioContextSpy() {
-  const nodes: Array<{ osc: Record<string, unknown>; gain: Record<string, unknown> }> = [];
+  interface OscSpy {
+    type: string;
+    frequency: { setValueAtTime: ReturnType<typeof vi.fn> };
+    connect: ReturnType<typeof vi.fn>;
+    start: ReturnType<typeof vi.fn>;
+    stop: ReturnType<typeof vi.fn>;
+  }
+  const nodes: OscSpy[] = [];
   const ctx = {
     currentTime: 100,
     destination: {},
     createOscillator: () => {
-      const osc = {
+      const osc: OscSpy = {
         type: '',
         frequency: { setValueAtTime: vi.fn() },
         connect: vi.fn(),
@@ -22,7 +29,7 @@ function makeAudioContextSpy() {
         },
         connect: vi.fn(),
       };
-      nodes.push({ osc, gain });
+      nodes.push(osc);
       return { ...osc, connect: vi.fn(() => gain) };
     },
     createGain: () => {
@@ -58,17 +65,17 @@ describe('audio chime', () => {
     vi.stubGlobal('AudioContext', AudioContextClass);
     playFocusSound('complete');
     expect(nodes).toHaveLength(3);
-    expect(nodes[0].osc.frequency.setValueAtTime).toHaveBeenCalledWith(432, 100);
+    expect(nodes[0].frequency.setValueAtTime).toHaveBeenCalledWith(432, 100);
   });
 
   it('plays distinct tones for start and break cues', () => {
     const { AudioContextClass, nodes } = makeAudioContextSpy();
     vi.stubGlobal('AudioContext', AudioContextClass);
     playFocusSound('start');
-    expect(nodes.map((node) => node.osc.frequency.setValueAtTime.mock.calls[0][0])).toEqual([528, 792]);
+    expect(nodes.map((node) => node.frequency.setValueAtTime.mock.calls[0][0])).toEqual([528, 792]);
     nodes.length = 0;
     playFocusSound('break');
-    expect(nodes.map((node) => node.osc.frequency.setValueAtTime.mock.calls[0][0])).toEqual([659.25, 523.25]);
+    expect(nodes.map((node) => node.frequency.setValueAtTime.mock.calls[0][0])).toEqual([659.25, 523.25]);
   });
 
   it('plays the adhan audio file and falls back when blocked', async () => {
@@ -82,7 +89,7 @@ describe('audio chime', () => {
     expect(audio.play).toHaveBeenCalledOnce();
     await Promise.resolve();
     await Promise.resolve();
-    expect(nodes.some((node) => node.osc.frequency.setValueAtTime.mock.calls[0][0] === 330)).toBe(true);
+    expect(nodes.some((node) => node.frequency.setValueAtTime.mock.calls[0][0] === 330)).toBe(true);
     expect(debug).toHaveBeenCalled();
 
     stopAdhanSound();

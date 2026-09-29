@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { emptySnapshot } from '../../../data/repository';
-import type { DataRepository } from '../../../data/repository';
+import { emptySnapshot, type DataRepository } from '../../../data/repository';
+import type { AppDataSnapshot } from '../../../types/hierarchical';
 import { createVaultsService } from './vaultsService';
 
 describe('vaults service adapter', () => {
@@ -27,7 +27,7 @@ describe('vaults service adapter', () => {
 
   it('lists vaults and maps load failures', async () => {
     const service = createVaultsService({
-      load: async () => ({ vaults: [{ id: 'vault-1' }] }),
+      load: async () => ({ ...emptySnapshot(), vaults: [{ id: 'vault-1' }] }) as AppDataSnapshot,
       save: vi.fn(),
       clear: vi.fn(),
     });

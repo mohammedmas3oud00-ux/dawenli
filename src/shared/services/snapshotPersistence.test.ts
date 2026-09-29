@@ -38,12 +38,12 @@ describe('snapshot persistence queue', () => {
     });
     const repository: DataRepository = { load: vi.fn(), save, clear: vi.fn() };
     const queue = createSnapshotSaveQueue();
-    const first = enqueueSnapshotSave(queue, repository, { ...emptySnapshot(), schemaVersion: 5 });
+    const first = enqueueSnapshotSave(queue, repository, emptySnapshot());
     invalidateSnapshotSaveQueue(queue);
-    const second = enqueueSnapshotSave(queue, repository, { ...emptySnapshot(), schemaVersion: 6 });
+    const second = enqueueSnapshotSave(queue, repository, { ...emptySnapshot(), pillars: [{ id: 'late' } as never] });
     await Promise.all([first, second]);
     expect(saves).toHaveLength(1);
-    expect(saves[0]).toMatchObject({ schemaVersion: 6 });
+    expect(saves[0]).toMatchObject({ pillars: [{ id: 'late' }] });
   });
 
   it('runs queued saves sequentially in arrival order', async () => {
@@ -54,8 +54,8 @@ describe('snapshot persistence queue', () => {
     const repository: DataRepository = { load: vi.fn(), save, clear: vi.fn() };
     const queue = createSnapshotSaveQueue();
     await Promise.all([
-      enqueueSnapshotSave(queue, repository, { ...emptySnapshot(), pillars: [{ id: 'first' }] }),
-      enqueueSnapshotSave(queue, repository, { ...emptySnapshot(), pillars: [{ id: 'second' }] }),
+      enqueueSnapshotSave(queue, repository, { ...emptySnapshot(), pillars: [{ id: 'first' } as never] }),
+      enqueueSnapshotSave(queue, repository, { ...emptySnapshot(), pillars: [{ id: 'second' } as never] }),
     ]);
     expect(order).toEqual(['first', 'second']);
   });

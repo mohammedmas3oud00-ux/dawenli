@@ -58,11 +58,11 @@ describe('task recommendations', () => {
   });
 
   it('uses priority defaults when duration and energy are missing', () => {
-    expect(estimateTaskDuration({ ...task, estimated_hours: null, priority: 'high' })).toBe(45);
-    expect(estimateTaskDuration({ ...task, estimated_hours: null, priority: 'medium' })).toBe(30);
-    expect(estimateTaskDuration({ ...task, estimated_hours: null, priority: 'low' })).toBe(15);
-    expect(determineTaskEnergy({ ...task, energy_level: null, priority: 'medium' })).toBe('medium');
-    expect(determineTaskEnergy({ ...task, energy_level: null, priority: 'low' })).toBe('low');
+    expect(estimateTaskDuration({ ...task, estimated_hours: undefined, priority: 'high' })).toBe(45);
+    expect(estimateTaskDuration({ ...task, estimated_hours: undefined, priority: 'medium' })).toBe(30);
+    expect(estimateTaskDuration({ ...task, estimated_hours: undefined, priority: 'low' })).toBe(15);
+    expect(determineTaskEnergy({ ...task, energy_level: undefined, priority: 'medium' })).toBe('medium');
+    expect(determineTaskEnergy({ ...task, energy_level: undefined, priority: 'low' })).toBe('low');
   });
 
   it('ranks overdue and matching tasks with useful reasons', () => {
@@ -70,7 +70,7 @@ describe('task recommendations', () => {
       ...task,
       id: 'overdue',
       estimated_hours: 1,
-      priority: 'high',
+      priority: 'high' as const,
       due_date: '2020-01-01',
       status: 'in_progress' as const,
     };

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { emptySnapshot } from '../../../data/repository';
-import type { DataRepository } from '../../../data/repository';
+import { emptySnapshot, type DataRepository } from '../../../data/repository';
+import type { AppDataSnapshot } from '../../../types/hierarchical';
 import { createInboxService } from './inboxService';
 
 describe('inbox service adapter', () => {
@@ -25,7 +25,7 @@ describe('inbox service adapter', () => {
 
   it('lists items and maps load failures', async () => {
     const service = createInboxService({
-      load: async () => ({ inboxItems: [{ id: 'item-1' }] }),
+      load: async () => ({ ...emptySnapshot(), inboxItems: [{ id: 'item-1' }] }) as AppDataSnapshot,
       save: vi.fn(),
       clear: vi.fn(),
     });

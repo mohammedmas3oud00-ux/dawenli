@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createIbadatService } from './ibadatService';
-import { emptySnapshot } from '../../../data/repository';
-import type { DataRepository } from '../../../data/repository';
+import { emptySnapshot, type DataRepository } from '../../../data/repository';
+import type { AppDataSnapshot } from '../../../types/hierarchical';
 
 describe('ibadat service adapter', () => {
   it('keeps the snapshot contract while saving one log', async () => {
@@ -23,10 +23,12 @@ describe('ibadat service adapter', () => {
 
   it('lists definitions and logs together with error mapping', async () => {
     const service = createIbadatService({
-      load: async () => ({
-        worshipDefinitions: [{ id: 'worship-1' }],
-        worshipLogs: [{ id: 'log-1' }],
-      }),
+      load: async () =>
+        ({
+          ...emptySnapshot(),
+          worshipDefinitions: [{ id: 'worship-1' }],
+          worshipLogs: [{ id: 'log-1' }],
+        }) as AppDataSnapshot,
       save: vi.fn(),
       clear: vi.fn(),
     });

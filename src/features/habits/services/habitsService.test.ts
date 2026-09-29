@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { emptySnapshot, type DataRepository } from '../../../data/repository';
+import type { AppDataSnapshot } from '../../../types/hierarchical';
 import type { Habit } from '../../../types/hierarchical';
 import { createHabitsService } from './habitsService';
 
@@ -20,7 +21,7 @@ describe('habits service CRUD adapter', () => {
 
   it('lists, updates, and deletes habits with error mapping', async () => {
     const listing = createHabitsService({
-      load: async () => ({ habits: [{ id: 'habit-2' }] }),
+      load: async () => ({ ...emptySnapshot(), habits: [{ id: 'habit-2' }] as Habit[] }),
       save: vi.fn(),
       clear: vi.fn(),
     });
@@ -38,9 +39,9 @@ describe('habits service CRUD adapter', () => {
     };
 
     await service.update(start, { ...habit, title: 'Renamed' });
-    expect(save.mock.calls[0][0].habits.map((item) => item.title)).toEqual(['Renamed', 'B']);
+    expect((save.mock.calls[0][0] as AppDataSnapshot).habits.map((item) => item.title)).toEqual(['Renamed', 'B']);
     await service.delete(start, 'habit-2');
-    expect(save.mock.calls[1][0].habits.map((item) => item.id)).toEqual(['habit-1']);
+    expect((save.mock.calls[1][0] as AppDataSnapshot).habits.map((item) => item.id)).toEqual(['habit-1']);
 
     const failing: DataRepository = {
       load: async () => {

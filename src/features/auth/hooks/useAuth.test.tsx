@@ -10,17 +10,16 @@ describe('useAuth', () => {
 
   it('returns the context value inside the provider', () => {
     const value = {
-      session: null,
+      status: 'signedOut' as const,
       user: null,
-      loading: false,
-      error: null,
-      signInWithGoogle: () => Promise.resolve(),
+      adoptUser: () => undefined,
       signOut: () => Promise.resolve(),
     };
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <AuthContext.Provider value={value as never}>{children}</AuthContext.Provider>
     );
     const { result } = renderHook(() => useAuth(), { wrapper });
-    expect(result.current.loading).toBe(false);
+    expect(result.current.status).toBe('signedOut');
+    expect(result.current.user).toBeNull();
   });
 });

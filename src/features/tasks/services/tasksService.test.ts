@@ -26,7 +26,7 @@ describe('tasks service CRUD adapter', () => {
     expect(save.mock.calls[0][0].tasks).toEqual([task]);
 
     const listing = createTasksService({
-      load: async () => ({ tasks: [{ id: 'task-2' }] }),
+      load: async () => ({ ...emptySnapshot(), tasks: [{ id: 'task-2' }] as Task[] }),
       save: vi.fn(),
       clear: vi.fn(),
     });
