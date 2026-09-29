@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  createSnapshotBackup,
   emptySnapshot,
   GuestLocalRepository,
   normalizeSnapshot,
@@ -227,5 +228,24 @@ describe('repository snapshot normalization', () => {
       'user-1',
     );
     await expect(invalid.save(emptySnapshot())).rejects.toMatchObject({ code: 'validation' });
+  });
+
+  it('downloads a snapshot backup through an object url', () => {
+    const createdUrl = 'blob:download-url';
+    const created = vi.fn(() => createdUrl);
+    const revoked = vi.fn();
+    vi.stubGlobal('URL', { createObjectURL: created, revokeObjectURL: revoked });
+    const anchor = { click: vi.fn() } as unknown as HTMLAnchorElement;
+    const createElement = vi.fn(() => anchor);
+    vi.spyOn(document, 'createElement').mockImplementation(createElement);
+
+    createSnapshotBackup(normalizeSnapshot({ ...emptySnapshot(), tasks: [{ id: 'task-1' } as never] }));
+
+    expect(created).toHaveBeenCalledOnce();
+    expect(revoked).toHaveBeenCalledWith(createdUrl);
+    expect(anchor.click).toHaveBeenCalledOnce();
+    expect((anchor as HTMLAnchorElement & { download: string }).download).toContain('dawenli-backup-');
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 });

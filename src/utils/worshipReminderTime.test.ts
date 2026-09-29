@@ -16,4 +16,13 @@ describe('worship reminder periods', () => {
     expect(worshipReminderTime('anytime', {})).toBe('18:00');
     expect(worshipReminderTime('night', { Isha: '23:30' })).toBe('00:30');
   });
+
+  it('treats null and empty periods as anytime', () => {
+    expect(worshipReminderTime(null, {})).toBe('18:00');
+    expect(worshipReminderTime(undefined, {})).toBe('18:00');
+  });
+
+  it('ignores malformed prayer time values', () => {
+    expect(worshipReminderTime('fajr', { Fajr: 'invalid' })).toBeNull();
+  });
 });
