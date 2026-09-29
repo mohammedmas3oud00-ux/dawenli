@@ -17,4 +17,39 @@ describe('tasks service CRUD adapter', () => {
     await service.delete(snapshot, 'task-1');
     expect(save.mock.calls[1][0].tasks).toEqual([]);
   });
+
+  it('prepends new tasks and lists them with error mapping', async () => {
+    const save = vi.fn().mockResolvedValue(undefined);
+    const repository: DataRepository = { load: vi.fn(), save, clear: vi.fn() };
+    const service = createTasksService(repository);
+    await service.create(emptySnapshot(), task);
+    expect(save.mock.calls[0][0].tasks).toEqual([task]);
+
+    const listing = createTasksService({
+      load: async () => ({ tasks: [{ id: 'task-2' }] }),
+      save: vi.fn(),
+      clear: vi.fn(),
+    });
+    await expect(listing.list()).resolves.toMatchObject([{ id: 'task-2' }]);
+
+    const failing: DataRepository = {
+      load: async () => {
+        throw new Error('offline');
+      },
+      save: vi.fn(),
+      clear: vi.fn(),
+    };
+    await expect(createTasksService(failing).list()).rejects.toThrow('offline');
+  });
+
+  it('maps save failures into service errors', async () => {
+    const failing: DataRepository = {
+      load: vi.fn(),
+      save: async () => {
+        throw new Error('storage full');
+      },
+      clear: vi.fn(),
+    };
+    await expect(createTasksService(failing).create(emptySnapshot(), task)).rejects.toThrow('storage full');
+  });
 });
