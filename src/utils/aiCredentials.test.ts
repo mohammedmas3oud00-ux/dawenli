@@ -49,6 +49,6 @@ describe('Gemini credential client boundary', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response('bad gateway', { status: 502, headers: { 'content-type': 'text/plain' } }),
     );
-    await expect(refreshGeminiCredentialStatus()).rejects.toThrow('غير متاحة');
+    await expect(refreshGeminiCredentialStatus()).rejects.toThrow('خطأ في الخادم');
   });
 });
