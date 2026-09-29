@@ -81,6 +81,7 @@ import { useCalendarStore } from '../../features/calendar/store/calendarStore';
 import { applyAiCommandActions, buildAiCommandContext } from '../../features/ai/commands/executor';
 import type { AiCommandAction } from '../../features/ai/commands/schema';
 import { supabase } from '../../shared/services/supabaseClient';
+import { describeError } from '../../shared/services/repositoryErrors';
 
 export const HierarchicalApp: React.FC = () => {
   const { status: authStatus, user: currentUser, adoptUser, signOut: authSignOut } = useAuth();
@@ -335,7 +336,7 @@ export const HierarchicalApp: React.FC = () => {
       setGeminiKeyDraft('');
       setToasts((previous) => [...previous, { id: createId(), type: 'success', title: 'تم حفظ Gemini بأمان', description: 'المفتاح مشفّر ومربوط بحسابك فقط.' }]);
     } catch (error) {
-      setToasts((previous) => [...previous, { id: createId(), type: 'error', title: 'تعذر حفظ مفتاح Gemini', description: error instanceof Error ? error.message : 'تحقق من اتصال الحساب ثم حاول مرة أخرى.' }]);
+      setToasts((previous) => [...previous, { id: createId(), type: 'error', title: 'تعذر حفظ مفتاح Gemini', description: describeError(error, 'تحقق من اتصال الحساب ثم حاول مرة أخرى.') }]);
     }
   };
 
@@ -345,7 +346,7 @@ export const HierarchicalApp: React.FC = () => {
       await deleteCredential();
       setToasts((previous) => [...previous, { id: createId(), type: 'success', title: 'تم حذف مفتاح Gemini', description: 'لن تعمل ميزات الذكاء حتى تضيف مفتاحًا جديدًا.' }]);
     } catch (error) {
-      setToasts((previous) => [...previous, { id: createId(), type: 'error', title: 'تعذر حذف مفتاح Gemini', description: error instanceof Error ? error.message : 'حاول مرة أخرى.' }]);
+      setToasts((previous) => [...previous, { id: createId(), type: 'error', title: 'تعذر حذف مفتاح Gemini', description: describeError(error, 'حاول مرة أخرى.') }]);
     }
   };
 
@@ -949,7 +950,7 @@ export const HierarchicalApp: React.FC = () => {
       await subscribeNotifications(preferences);
       setToasts((previous) => [...previous, { id: createId(), type: 'success', title: 'تم تفعيل التذكيرات', description: 'ستصل تنبيهات الصلاة والمهام والعبادات الموقّتة وفق إعدادات حسابك؛ لا يُرسل تنبيه للشروق.' }]);
     } catch (error) {
-      setToasts((previous) => [...previous, { id: createId(), type: 'error', title: 'تعذر تفعيل التذكيرات', description: error instanceof Error ? error.message : 'حاول مرة أخرى.' }]);
+      setToasts((previous) => [...previous, { id: createId(), type: 'error', title: 'تعذر تفعيل التذكيرات', description: describeError(error, 'حاول مرة أخرى.') }]);
     }
   };
 
@@ -980,7 +981,7 @@ export const HierarchicalApp: React.FC = () => {
       applySnapshot(imported);
       setToasts((previous) => [...previous, { id: createId(), type: 'success', title: 'تم استيراد النسخة الاحتياطية', description: 'أُضيفت البيانات بمعرفات جديدة دون دمج تلقائي.' }]);
     } catch (error) {
-      setToasts((previous) => [...previous, { id: createId(), type: 'error', title: 'تعذر استيراد النسخة', description: error instanceof Error ? error.message : 'ملف JSON غير صالح.' }]);
+      setToasts((previous) => [...previous, { id: createId(), type: 'error', title: 'تعذر استيراد النسخة', description: describeError(error, 'ملف JSON غير صالح.') }]);
     }
   };
 

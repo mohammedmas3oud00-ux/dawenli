@@ -1,21 +1,19 @@
 import React, { useState } from 'react';
 import { AlertCircle, ArrowRight, CheckCircle2, Key, Lock, LogIn, Mail, ShieldCheck, User, UserPlus, X } from 'lucide-react';
 import { authService, isSupabaseConfigured } from '../../features/auth/services/authService';
+import { describeError } from '../../shared/services/repositoryErrors';
 
 const googleAuthEnabled = import.meta.env.VITE_ENABLE_GOOGLE_AUTH === 'true';
 
 function getAuthErrorMessage(error: unknown) {
   const message = error instanceof Error ? error.message : '';
-  if (/invalid login credentials/i.test(message)) {
-    return 'البريد الإلكتروني أو كلمة المرور غير صحيحين. إن كان الحساب جديدًا، أنشئه أولًا وأكّد البريد الإلكتروني.';
+  if (/user already registered|already been registered/i.test(message)) {
+    return 'هذا البريد الإلكتروني مسجّل بالفعل. سجّل الدخول مباشرة أو استخدم بريدًا آخر.';
   }
-  if (/email not confirmed/i.test(message)) {
-    return 'لم يتم تأكيد البريد الإلكتروني بعد. افتح رسالة التأكيد ثم أعد تسجيل الدخول.';
+  if (/signup is disabled|not allowed/i.test(message)) {
+    return 'إنشاء الحسابات الجديدة متوقف حاليًا على الخادم.';
   }
-  if (/email rate limit exceeded/i.test(message)) {
-    return 'تم إرسال طلبات كثيرة للبريد الإلكتروني. انتظر قليلًا ثم حاول مجددًا.';
-  }
-  return message || 'تعذر إتمام المصادقة. حاول لاحقًا.';
+  return describeError(error, 'تعذر إتمام المصادقة. حاول لاحقًا.');
 }
 
 interface AuthUser {

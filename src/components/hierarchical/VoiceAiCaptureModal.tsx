@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AlertCircle, Check, Inbox, Mic, MicOff, RefreshCw, Send, Sparkles, Square, X } from 'lucide-react';
 import { deduplicateArabicSpeech, transcribeAudioBlob } from '../../utils/speechRecognition';
 import { proposeAiCommands } from '../../features/ai/commands/api';
+import { describeError } from '../../shared/services/repositoryErrors';
 import type { AiCommandAction, AiCommandContextItem, AiCommandPlan } from '../../features/ai/commands/schema';
 
 interface Props {
@@ -126,7 +127,7 @@ export function VoiceAiCaptureModal({ isOpen, onClose, context, onApply, onSaveI
       setPlan(next);
       setMessages((previous) => [...previous, { id: `assistant-${Date.now()}`, role: 'assistant', text: next.needsClarification ? (next.clarificationQuestion || 'أحتاج معلومة إضافية قبل المتابعة.') : next.summary }]);
       if (!next.needsClarification) setClarification('');
-    } catch (caught) { if (isOpenRef.current && lifecycleRef.current === lifecycle) setError(caught instanceof Error ? caught.message : 'تعذر تحليل الأمر.'); }
+    } catch (caught) { if (isOpenRef.current && lifecycleRef.current === lifecycle) setError(describeError(caught, 'تعذر تحليل الأمر.')); }
     finally { if (isOpenRef.current && lifecycleRef.current === lifecycle) setBusy(false); }
   };
   const saveInbox = () => { onSaveInbox(input.trim()); onClose(); };
@@ -135,7 +136,7 @@ export function VoiceAiCaptureModal({ isOpen, onClose, context, onApply, onSaveI
     const lifecycle = lifecycleRef.current;
     setBusy(true); setError(null);
     try { await onApply(plan.actions, { audioBlob, attachAudioToJournal: attachAudio }); if (isOpenRef.current && lifecycleRef.current === lifecycle) onClose(); }
-    catch (caught) { if (isOpenRef.current && lifecycleRef.current === lifecycle) setError(caught instanceof Error ? caught.message : 'تعذر تنفيذ الخطة. لم يُحفظ أي تغيير.'); }
+    catch (caught) { if (isOpenRef.current && lifecycleRef.current === lifecycle) setError(describeError(caught, 'تعذر تنفيذ الخطة. لم يُحفظ أي تغيير.')); }
     finally { if (isOpenRef.current && lifecycleRef.current === lifecycle) setBusy(false); }
   };
   if (!isOpen) return null;
