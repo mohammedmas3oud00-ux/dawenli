@@ -400,7 +400,7 @@ export const HierarchicalApp: React.FC = () => {
       const response = await fetch('/api/integrations/google/start', { headers: { Authorization: `Bearer ${data.session?.access_token || ''}`, Accept: 'application/json' } });
       const raw = await response.text();
       let body: { data?: { authorizationUrl?: string }; error?: { message?: string } } = {};
-      try { body = JSON.parse(raw) as typeof body; } catch { throw new Error('خدمة Google Calendar غير متاحة على هذه النسخة من Preview. أعد تحميل الصفحة ثم حاول مرة أخرى.'); }
+      try { body = JSON.parse(raw) as typeof body; } catch { throw new Error('تعذر الوصول إلى خدمة ربط Google Calendar بسبب خطأ في الخادم. حاول لاحقًا، وإذا استمر الخطأ تواصل مع مسؤول الموقع.'); }
       if (!response.ok || !body.data?.authorizationUrl) throw new Error(body.error?.message || 'تعذر بدء ربط Google Calendar.');
       window.location.assign(body.data.authorizationUrl);
     } catch (error) {

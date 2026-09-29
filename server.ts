@@ -143,7 +143,15 @@ const credentialEncryptionSecret = (process.env.GEMINI_KEY_ENCRYPTION_SECRET || 
 const vapidPublicKey = (process.env.VAPID_PUBLIC_KEY || '').trim();
 const vapidPrivateKey = (process.env.VAPID_PRIVATE_KEY || '').trim();
 const vapidSubject = (process.env.VAPID_SUBJECT || 'mailto:admin@example.com').trim();
-if (vapidPublicKey && vapidPrivateKey) webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
+let pushConfigured = false;
+if (vapidPublicKey && vapidPrivateKey) {
+  try {
+    webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
+    pushConfigured = true;
+  } catch {
+    console.error('Invalid VAPID configuration; push notifications are disabled.');
+  }
+}
 
 const taskDigestTime = { hour: '09', minute: '00' };
 
@@ -526,7 +534,7 @@ app.delete('/api/integrations/google/disconnect', requireUserAuth, async (_req, 
 });
 
 app.get('/api/push/public-key', (_req, res) => {
-  if (!vapidPublicKey) return apiError(res, 503, 'NOT_CONFIGURED', 'إشعارات الخلفية غير مهيأة.');
+  if (!pushConfigured) return apiError(res, 503, 'NOT_CONFIGURED', 'إشعارات الخلفية غير مهيأة.');
   return res.json({ ok: true, data: { publicKey: vapidPublicKey } });
 });
 
@@ -540,7 +548,7 @@ app.get('/api/push/subscription', requireUserAuth, async (req, res) => {
 });
 
 app.post('/api/push/subscription', requireUserAuth, async (req, res) => {
-  if (!vapidPublicKey || !vapidPrivateKey) return apiError(res, 503, 'NOT_CONFIGURED', 'إشعارات الخلفية غير مهيأة.');
+  if (!pushConfigured) return apiError(res, 503, 'NOT_CONFIGURED', 'إشعارات الخلفية غير مهيأة.');
   const subscription = req.body?.subscription;
   const timezone = typeof req.body?.timezone === 'string' ? req.body.timezone : 'Africa/Cairo';
   if (!isAllowedPushEndpoint(subscription?.endpoint) || !isValidPushKey(subscription?.keys?.p256dh) || !isValidPushKey(subscription?.keys?.auth) || !isValidTimeZone(timezone)) {
@@ -622,7 +630,7 @@ function calendarEventOccursOn(event: any, occurrenceDate: string) {
 app.all('/api/push/dispatch', async (req, res) => {
   const cronSecret = (process.env.CRON_SECRET || '').trim();
   if (!cronSecret || req.headers.authorization !== `Bearer ${cronSecret}`) return apiError(res, 401, 'UNAUTHORIZED', 'Cron authorization required.');
-  if (!adminClient || !vapidPublicKey || !vapidPrivateKey) return apiError(res, 503, 'NOT_CONFIGURED', 'خدمة الإشعارات الخلفية غير مهيأة.');
+  if (!adminClient || !pushConfigured) return apiError(res, 503, 'NOT_CONFIGURED', 'خدمة الإشعارات الخلفية غير مهيأة.');
   const { data: subscriptions, error } = await adminClient.from('push_subscriptions').select('*');
   if (error) return apiError(res, 503, 'UPSTREAM_ERROR', 'تعذر تحميل اشتراكات الإشعارات.');
   const delivered: string[] = [];

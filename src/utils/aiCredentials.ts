@@ -11,7 +11,9 @@ async function authHeaders(): Promise<Record<string, string>> {
 async function readError(response: Response, fallback: string): Promise<Error> {
   const contentType = response.headers.get('content-type') || '';
   if (!contentType.includes('application/json'))
-    return new Error('خدمة API الخاصة بـ Gemini غير متاحة على هذه النسخة. أعد تحميل Preview ثم حاول مرة أخرى.');
+    return new Error(
+      'تعذر الوصول إلى خدمة Gemini بسبب خطأ في الخادم. حاول لاحقًا، وإذا استمر الخطأ تواصل مع مسؤول الموقع.',
+    );
   const body = (await response.json().catch(() => null)) as { error?: { message?: string } } | null;
   return new Error(body?.error?.message || fallback);
 }
