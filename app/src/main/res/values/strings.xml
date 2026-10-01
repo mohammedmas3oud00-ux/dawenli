@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">دوّنلي</string>
+    <string name="app_tagline">النظام الهرمي للإنتاجية الشخصية والعبادات</string>
+    <string name="nav_dashboard">الرئيسية</string>
+    <string name="nav_pillars">الركائز</string>
+    <string name="nav_visions">الرؤى</string>
+    <string name="nav_goals">الأهداف</string>
+    <string name="nav_projects">المشاريع</string>
+    <string name="nav_tasks">المهام</string>
+    <string name="nav_ibadat">العبادات</string>
+    <string name="nav_habits">العادات</string>
+    <string name="nav_focus">جلسة التركيز</string>
+    <string name="nav_reviews">المراجعات</string>
+    <string name="nav_inbox">صندوق الوارد</string>
+    <string name="nav_vaults">المعرفة</string>
+    <string name="nav_journals">اليوميات</string>
+
+    <string name="add_task">مهمة جديدة</string>
+    <string name="add_project">مشروع جديد</string>
+    <string name="add_goal">هدف جديد</string>
+    <string name="add_pillar">ركيزة جديدة</string>
+    <string name="add_habit">عادة جديدة</string>
+    <string name="add_inbox">خاطرة سريعة</string>
+
+    <string name="status_completed">مكتمل</string>
+    <string name="status_in_progress">قيد التنفيذ</string>
+    <string name="status_todo">قيد الانتظار</string>
+
+    <string name="progress_label">نسبة الإنجاز</string>
+    <string name="today_tasks">مهام اليوم</string>
+    <string name="prayer_times">مواقيت الصلاة</string>
+    <string name="next_prayer">الصلاة القادمة</string>
+</resources>
